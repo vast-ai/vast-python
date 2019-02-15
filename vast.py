@@ -739,11 +739,32 @@ def set__defjob(args):
     argument("--disk",        help="size of local disk partition in GB", type=float, default=10),
     argument("--image",       help="docker container image to launch", type=str),
     argument("--label",       help="label to set on the instance", type=str),
+    argument("--onstart",     help="filename to use as onstart script", type=str),
+    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", type=str),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--lang-utf8",   help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
     argument("--extra",       help=argparse.SUPPRESS),
-    argument("--args",        nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
+    argument("--args",        nargs=argparse.REMAINDER, help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
     usage = "vast create instance id [OPTIONS] [--args ...]",
 )
 def create__instance(args):
+    if args.onstart:
+        with open(args.onstart, "r") as reader:
+            args.onstart_cmd = reader.read()
+    runtype = 'ssh'
+    if args.args:
+        runtype = 'args'
+    if args.jupyter_dir or args.jupyter_lab:
+        args.jupyter = True
+    if args.jupyter and runtype == 'args':
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
+        return 1
+    if args.jupyter:
+        runtype = 'jupyter'
+
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
@@ -753,6 +774,12 @@ def create__instance(args):
         "disk":  args.disk,
         "label": args.label,
         "extra": args.extra,
+        "onstart": args.onstart_cmd,
+        "runtype": runtype,
+        "python_utf8": args.python_utf8,
+        "lang_utf8": args.lang_utf8,
+        "use_jupyter_lab": args.jupyter_lab,
+        "jupyter_dir": args.jupyter_dir,
     })
     r.raise_for_status()
     if args.raw:
