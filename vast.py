@@ -210,7 +210,8 @@ instance_fields = (
     #("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
-def parse_query(query_str, res):
+def parse_query(query_str, res=None):
+    if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
     query_str = query_str.strip()
@@ -368,7 +369,7 @@ def display_table(rows, fields):
     argument("--storage", type=float, default=5.0, help="amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query",            help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
-    usage="vast search instances [--help] [--api-key API_KEY] [--raw] <query>",
+    usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
         
@@ -383,9 +384,9 @@ def display_table(rows, fields):
            
         Examples:
         
-            ./vast search instances 'compute_cap > 610 total_flops < 5'
-            ./vast search instances 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
-            ./vast search instances 'rentable = any'
+            ./vast search offers 'compute_cap > 610 total_flops < 5'
+            ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
+            ./vast search offers 'rentable = any'
        
         Available fields:
             
@@ -741,13 +742,15 @@ def set__defjob(args):
     argument("--label",       help="label to set on the instance", type=str),
     argument("--onstart",     help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
-    argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", type=str),
+    argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
     argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", action="store_true"),
     argument("--lang-utf8",   help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
     argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
     argument("--extra",       help=argparse.SUPPRESS),
     argument("--args",        nargs=argparse.REMAINDER, help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
+    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
+    argument("--force",       help="Skip sanity checks when creating from an existing instance", action="store_true"),
     usage = "vast create instance id [OPTIONS] [--args ...]",
 )
 def create__instance(args):
@@ -780,6 +783,8 @@ def create__instance(args):
         "lang_utf8": args.lang_utf8,
         "use_jupyter_lab": args.jupyter_lab,
         "jupyter_dir": args.jupyter_dir,
+        "create_from": args.create_from,
+        "force": args.force
     })
     r.raise_for_status()
     if args.raw:
@@ -919,7 +924,7 @@ def main():
     #    "label instance":           label_instance,
     #    "list machine":             list_machine,
     #    "unlist machine":           unlist_machine,
-    #    #"search instances":         search_instances,
+    #    #"search offers":         search_instances,
     #    "show instances":           show_instances,
     #    "show host-instances":      host_instances,
     #    "show machines":            show_machines,
@@ -941,7 +946,7 @@ def main():
         "label instance          Set label for existing instance",
         "start instance          Start/restart an existing stopped container instance",
         "stop instance           Stop and hibernate an existing container instance; local storage persists",
-        "search instances        Search for available instances to rent that match specific criteria",
+        "search offers           Search for available instances to rent that match specific criteria",
         "show instances          Show all your current rental instances",
         "",
         "Host:",
