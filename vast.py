@@ -559,7 +559,7 @@ def list__machine(args):
 
 
 @parser.command(
-    argument("id",          help="id of machine to list", type=int),
+    argument("id",          help="id of machine to unlist", type=int),
     usage = "vast unlist machine <id>",
 )
 def unlist__machine(args):
@@ -748,7 +748,7 @@ def set__defjob(args):
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
     argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", action="store_true"),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
     argument("--lang-utf8",   help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
     argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
     argument("--extra",       help=argparse.SUPPRESS),
@@ -797,7 +797,7 @@ def create__instance(args):
         print("Started. {}".format(r.json()))
 
 @parser.command(
-    argument("id",            help="id of instance type to launch", type=int),
+    argument("id",            help="id of instance type to change bid", type=int),
     argument("--price",       help="per machine bid price in $/hour", type=float),
     usage = "vast change bid id [--price PRICE]",
     epilog = deindent("""
