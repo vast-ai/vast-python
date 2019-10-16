@@ -262,7 +262,7 @@ def parse_query(query_str, res=None):
         "disk_bw",
         "disk_space",
         "dlperf",
-        "dlperf_per_dphtotal"
+        "dlperf_per_dphtotal",
         "dph_total",
         "duration",
         "external",
