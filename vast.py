@@ -854,7 +854,8 @@ def set__api_key(args):
     argument("email",    help="Email"),
     argument("password",    help="Password"),
     #argument("--ssh-key",     help="The SSH Pubkey you'd like to use to connect to containers"),
-    usage = "vast create account [--api-key API_KEY] [--ssh-key SSH_KEY] USERNAME PASSWORD",
+    #usage = "vast create account [--api-key API_KEY] [--ssh-key SSH_KEY] USERNAME PASSWORD",
+    usage = "vast create account [--api-key API_KEY] USERNAME PASSWORD",
 )
 def create__account(args):
     if args.username is None:
@@ -879,8 +880,9 @@ def create__account(args):
 @parser.command(
     argument("username",    help="Username or Email", nargs="?", default=None),
     argument("password",    help="Password", nargs="?", default=None),
-    argument("--ssh-key",     help="The SSH Pubkey you'd like to use to connect to containers"),
-    usage = "vast login [--username USERNAME] [--password PASSWORD] [--api-key API_KEY] [--ssh-key SSH_KEY]",
+    #argument("--ssh-key",     help="The SSH Pubkey you'd like to use to connect to containers"),
+    #usage = "vast login [--username USERNAME] [--password PASSWORD] [--api-key API_KEY] [--ssh-key SSH_KEY]",
+    usage = "vast login [--username USERNAME] [--password PASSWORD] [--api-key API_KEY]",
 )
 def login(args):
     if args.username is None:
