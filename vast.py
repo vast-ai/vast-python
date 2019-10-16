@@ -361,13 +361,14 @@ def display_table(rows, fields):
         print("  ".join(out))
 
 @parser.command(
-    argument("-t", "--type", default="on-demand", help="whether to show `interruptible` or `on-demand` offers. default: on-demand"),
-    argument("-i", "--interruptible", dest="type", const="interruptible", action="store_const", help="Alias for --type=interruptible"),
+    argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
+    argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
+    argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
     argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
-    argument("--storage", type=float, default=5.0, help="amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("-o", "--order", type=str, help="comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
+    argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
+    argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query",            help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
@@ -462,6 +463,9 @@ def search__offers(args):
 
         query["order"] = order
         query["type"]  = args.type
+        # For backwards compatibility, support --type=interruptible option
+        if query["type"] == 'interruptible':
+            query["type"] = 'bid'
         if args.disable_bundling:
             query["disable_bundling"] = True
     except ValueError as e:
