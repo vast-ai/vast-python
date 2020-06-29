@@ -502,7 +502,22 @@ def show__instances(args):
         #    cost = str(float(instance["dph_total"]));
         #    print("%-10s%-10s%-12s%-2s x %-16s%-6i%-5i%3iGB   %5iGB   %-16s%-9s%-8s%-12s" % (instance["id"], instance["machine_id"], instance["actual_status"], 1*instance["num_gpus"], instance["gpu_name"], gpu_util, int(instance["cpu_cores"]), int(instance["cpu_ram"])/1000, int(instance["disk_space"]), instance["ssh_host"], instance["ssh_port"], cost[0:5], instance["image_uuid"]));
         #    #print("{id}: {json}".format(id=instance["id"], json=json.dumps(instance, indent=4, sort_keys=True)))
-    
+
+
+@parser.command(
+    argument("--id", help="id of instance to connect to", type=int),
+    usage="vast ssh",
+)
+def ssh(args):
+    req_url = apiurl(args, "/instances", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    if args.id:
+        instance, = [r for r in rows if r['id'] == args.id]
+    else:
+        instance, = rows
+    os.execvp("ssh", ["ssh", "-p", str(instance["ssh_port"]), "root@" + instance["ssh_host"]])
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
