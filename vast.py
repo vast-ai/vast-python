@@ -505,6 +505,37 @@ def show__instances(args):
     
 
 @parser.command(
+    argument("--id", help="id of instance", type=int),
+    usage="vast ssh-url",
+)
+def ssh_url(args):
+    return _ssh_url(args, "ssh://")
+
+
+@parser.command(
+    argument("--id", help="id of instance", type=int),
+    usage="vast scp-url",
+)
+def scp_url(args):
+    return _ssh_url(args, "scp://")
+
+
+def _ssh_url(args, protocol):
+    req_url = apiurl(args, "/instances", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    if args.id:
+        instance, = [r for r in rows if r['id'] == args.id]
+    elif len(rows) > 1:
+        print("Found multiple running instances")
+        return 1
+    else:
+        instance, = rows
+    print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
+    
+    
+@parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage = "vast show machines [OPTIONS]",
 )
