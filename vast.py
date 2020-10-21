@@ -172,26 +172,26 @@ def deindent(message):
 displayable_fields = (
     ("id",                  "ID",       "{}",       None, True),
     ("cuda_max_good",       "CUDA",     "{:0.1f}",  None, True),
-    ("num_gpus",            "Num",      "{} x",     None, False),
+    ("num_gpus",            "Num",      "{}x",     None, False),
     ("gpu_name",            "Model",    "{}",       None, True),
-    ("pcie_bw",             "PCIE BW",  "{:0.1f}",  None, True),
+    ("pcie_bw",             "PCIE_BW",  "{:0.1f}",  None, True),
     ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
     ("cpu_ram",             "RAM",      "{:0.1f}",  lambda x: x/1000, False),
     ("disk_space",          "Storage",  "{:.0f}",     None, True),
     ("dph_total",           "$/hr",     "{:0.4f}",  None, True),
     ("dlperf",              "DLPerf",   "{:0.1f}",   None, True),
     ("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",   None, True),
-    ("inet_up",             "Net up",   "{:0.1f}",   None, True),
-    ("inet_down",           "Net down", "{:0.1f}",   None, True),
+    ("inet_up",             "Net_up",   "{:0.1f}",   None, True),
+    ("inet_down",           "Net_down", "{:0.1f}",   None, True),
     ("reliability2",        "R",        "{:0.1f}",   lambda x: x * 100, True),
-    ("duration",            "Max Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
+    ("duration",            "Max_Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
 )
 
 instance_fields = (
     ("id",                  "ID",       "{}",       None, True),
     ("machine_id",          "Machine",  "{}",       None, True),
     ("actual_status",       "Status",   "{}",       None, True),
-    ("num_gpus",            "Num",      "{} x",     None, False),
+    ("num_gpus",            "Num",      "{}x",     None, False),
     ("gpu_name",            "Model",    "{}",       None, True),
     ("gpu_util",            "Util. %",  "{:0.1f}",  None, True),
     ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
@@ -238,7 +238,7 @@ def parse_query(query_str, res=None):
         "nin": "notin",
         "in": "in",
     };
-    
+
     field_alias = {
         "cuda_vers":        "cuda_max_good",
         "display_active":   "gpu_display_active",
@@ -247,12 +247,12 @@ def parse_query(query_str, res=None):
         "dph":              "dph_total",
         "flops_usd":        "flops_per_dphtotal",
     };
-    
+
     field_multiplier = {
         "cpu_ram"   : 1000,
         "duration"  : 1.0 / (24.0*60.0*60.0),
     }
-    
+
     fields = {
         "compute_cap",
         "cpu_cores",
@@ -291,7 +291,7 @@ def parse_query(query_str, res=None):
         "total_flops",
         "verified"
     };
-    
+
     joined = "".join("".join(x) for x in opts)
     if joined != query_str:
         raise ValueError("Unconsumed text. Did you forget to quote your query? " + repr(joined) + " != " + repr(query_str))
@@ -300,11 +300,11 @@ def parse_query(query_str, res=None):
         v = res.setdefault(field, {})
         op = op.strip()
         op_name = op_names.get(op)
-        
+
         if field in field_alias:
             field = field_alias[field];
-            
-        
+
+
         if not field in fields:
             print("Warning: Unrecognized field: {}, see list of recognized fields.".format(field), file=sys.stderr);
         if not op_name:
@@ -346,6 +346,7 @@ def display_table(rows, fields):
             else:
                 val = conv(val)
                 s = fmt.format(val)
+            s = s.replace(' ', '_')
             idx = len(row)
             lengths[idx] = max(len(s), lengths[idx])
             row.append(s)
@@ -372,24 +373,24 @@ def display_table(rows, fields):
     usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
-        
+
             query = comparison comparison...
             comparison = field op value
             field = <name of a field>
             op = one of: <, <=, ==, !=, >=, >, in, notin
             value = <bool, int, float, etc> | 'any'
-        
+
         note: to pass '>' and '<' on the command line, make sure to use quotes
 
-           
+
         Examples:
-        
+
             ./vast search offers 'compute_cap > 610 total_flops < 5'
             ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
             ./vast search offers 'rentable = any'
-       
+
         Available fields:
-            
+
               Name                  Type       Description
 
             compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
@@ -442,7 +443,7 @@ def search__offers(args):
             query = {}
         else:
             query = { "verified":{"eq":True}, "external":{"eq":False}, "rentable":{"eq":True} }
-    
+
         if args.query is not None:
             query = parse_query(args.query, query)
         #print("query length: {}".format(len(query)));
@@ -467,7 +468,7 @@ def search__offers(args):
     except ValueError as e:
         print("Error: ", e)
         return 1
-    
+
     url = apiurl(args, "/bundles", {"q":query});
     #url = apiurl(args, "/bundles") + "?q=" + quote_plus(json.dumps(query));
     r = requests.get(url);
@@ -497,12 +498,12 @@ def show__instances(args):
         #print("%-10s%-10s%-12s%-5s%-14s%-7s%-7s%-8s%-10s%-14s%-10s%-8s%-12s" % ("Instance", "Machine", "Status", "#", "GPUs", "util%", "vCPUs", "RAM", "Storage", "SSH Addr", "SSH Port", "$/hr", "Image"));
         #for instance in rows:
         #    gpu_util = 0;
-        #    if (instance["gpu_util"] is not None): 
+        #    if (instance["gpu_util"] is not None):
         #        gpu_util = int(instance["gpu_util"]);
         #    cost = str(float(instance["dph_total"]));
         #    print("%-10s%-10s%-12s%-2s x %-16s%-6i%-5i%3iGB   %5iGB   %-16s%-9s%-8s%-12s" % (instance["id"], instance["machine_id"], instance["actual_status"], 1*instance["num_gpus"], instance["gpu_name"], gpu_util, int(instance["cpu_cores"]), int(instance["cpu_ram"])/1000, int(instance["disk_space"]), instance["ssh_host"], instance["ssh_port"], cost[0:5], instance["image_uuid"]));
         #    #print("{id}: {json}".format(id=instance["id"], json=json.dumps(instance, indent=4, sort_keys=True)))
-    
+
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
@@ -538,7 +539,7 @@ def list__machine(args):
 
     #print("PUT " + req_url);
     r = requests.put(req_url, json = {'machine':args.id, 'price_gpu':args.price_gpu, 'price_disk':args.price_disk, 'price_inetu':args.price_inetu, 'price_inetd':args.price_inetd } );
-    
+
     if (r.status_code == 200) :
         #print(r.text);
         rj = r.json();
@@ -563,7 +564,7 @@ def unlist__machine(args):
     #req_url = args.url + "/machines/{machine_id}/asks/".format(machine_id = args.id);
     #print(req_url);
     r = requests.delete(req_url);
-    
+
     if (r.status_code == 200) :
         #print(r.text);
         rj = r.json();
@@ -584,7 +585,7 @@ def remove__defjob(args):
     req_url = apiurl(args, "/machines/{machine_id}/defjob/".format(machine_id = args.id));
     #print(req_url);
     r = requests.delete(req_url);
-    
+
     if (r.status_code == 200) :
         #print(r.text);
         rj = r.json();
@@ -674,7 +675,7 @@ def destroy__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
     r.raise_for_status()
-    
+
 
     if (r.status_code == 200) :
         rj = r.json();
@@ -687,7 +688,7 @@ def destroy__instance(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
-        
+
 @parser.command(
     argument("id",            help="id of machine to launch default instance on", type=int),
     argument("--price_gpu",   help="per gpu rental price in $/hour", type=float),
@@ -702,10 +703,10 @@ def set__defjob(args):
     req_url    = apiurl(args, "/machines/create_bids/");
 
     #print("PUT " + req_url);
-    r = requests.put(req_url, json = 
+    r = requests.put(req_url, json =
         {'machine':args.id, 'price_gpu':args.price_gpu, 'price_inetu':args.price_inetu, 'price_inetd':args.price_inetd,
          'image':args.image, 'args':args.args } );
-    
+
     if (r.status_code == 200) :
         #print(r.text);
         rj = r.json();
@@ -863,7 +864,7 @@ def create__account(args):
 
     url = apiurl(args, "/users/");
     #msg = 'ssh_key': _load_sshkey(args.ssh_key)
-    
+
     r = requests.post(url,
             json={'username':args.username, 'password':  args.password, } );
     r.raise_for_status()
@@ -893,7 +894,7 @@ def login(args):
 
     url = apiurl(args, "/users/current/");
     print(url)
-    
+
     r = requests.put(url,
             json={'username': args.username, 'password': args.password} );
     r.raise_for_status()
@@ -957,7 +958,7 @@ def main():
         "unlist machine          Unlist a machine: destroys and unregisters instance offers (but doesn't effect any active instances)",
         "set min-bid             Set minimum per gpu bid price",
     ]
-    
+
     #cmd0 = ""; cmd1 = "";
     #
     #if len(sys.argv) > 1:
@@ -967,11 +968,11 @@ def main():
     #if len(sys.argv) > 1: cmd0 = sys.argv[1];
 
     #command_type = cmd0;
-        
+
     #if (cmd0 not in func_dict):
     #    if len(sys.argv) > 2: cmd1 = sys.argv[2];
     #    command_type = cmd0 + ' ' + cmd1;
-    
+
     #print("command: {}".format(command_type));
 
     #parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter);
@@ -993,7 +994,7 @@ def main():
                 errmsg = "Please log in or sign up"
             else:
                 errmsg = "(no detail message supplied)"
-        print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));            
+        print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));
     #else:
     #    if cmd0 != "--help" : print("Unrecognized command '" + command_type.strip() + "'. Use vast --help for list of commands.")
     #    parser = argparse.ArgumentParser(
@@ -1007,4 +1008,3 @@ if __name__ == "__main__":
         main()
     except (KeyboardInterrupt, BrokenPipeError):
         pass
-
