@@ -172,26 +172,27 @@ def deindent(message):
 displayable_fields = (
     ("id",                  "ID",       "{}",       None, True),
     ("cuda_max_good",       "CUDA",     "{:0.1f}",  None, True),
-    ("num_gpus",            "Num",      "{} x",     None, False),
+    ("num_gpus",            "Num",      "{}x",     None, False),
     ("gpu_name",            "Model",    "{}",       None, True),
-    ("pcie_bw",             "PCIE BW",  "{:0.1f}",  None, True),
+    ("pcie_bw",             "PCIE_BW",  "{:0.1f}",  None, True),
     ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
     ("cpu_ram",             "RAM",      "{:0.1f}",  lambda x: x/1000, False),
     ("disk_space",          "Storage",  "{:.0f}",     None, True),
     ("dph_total",           "$/hr",     "{:0.4f}",  None, True),
     ("dlperf",              "DLPerf",   "{:0.1f}",   None, True),
     ("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",   None, True),
-    ("inet_up",             "Net up",   "{:0.1f}",   None, True),
-    ("inet_down",           "Net down", "{:0.1f}",   None, True),
+    ("inet_up",             "Net_up",   "{:0.1f}",   None, True),
+    ("inet_down",           "Net_down", "{:0.1f}",   None, True),
     ("reliability2",        "R",        "{:0.1f}",   lambda x: x * 100, True),
-    ("duration",            "Max Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
+    ("duration",            "Max_Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
+    ("machine_id",           "machine_id", "{}",   None, True),
 )
 
 instance_fields = (
     ("id",                  "ID",       "{}",       None, True),
     ("machine_id",          "Machine",  "{}",       None, True),
     ("actual_status",       "Status",   "{}",       None, True),
-    ("num_gpus",            "Num",      "{} x",     None, False),
+    ("num_gpus",            "Num",      "{}x",     None, False),
     ("gpu_name",            "Model",    "{}",       None, True),
     ("gpu_util",            "Util. %",  "{:0.1f}",  None, True),
     ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
@@ -207,6 +208,7 @@ instance_fields = (
     ("inet_up",             "Net up",   "{:0.1f}",  None, True),
     ("inet_down",           "Net down", "{:0.1f}",  None, True),
     ("reliability2",        "R",        "{:0.1f}",  lambda x: x * 100, True),
+    ("label",           "Label", "{}",  None, True),
     #("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
@@ -346,6 +348,7 @@ def display_table(rows, fields):
             else:
                 val = conv(val)
                 s = fmt.format(val)
+            s = s.replace(' ', '_')
             idx = len(row)
             lengths[idx] = max(len(s), lengths[idx])
             row.append(s)
