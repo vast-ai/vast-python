@@ -94,7 +94,7 @@ class apwrap(object):
             name = verb
         return name
 
-    def command(self, *arguments, aliases=(), help=None, **kwargs):
+    def command(self, *arguments, aliases=(), help=None, allow_argbreak=False, **kwargs):
         help_ = help
         if not self.added_help_cmd:
             self.added_help_cmd = True
@@ -117,6 +117,7 @@ class apwrap(object):
             for arg in arguments:
                 sp.add_argument(*arg.args, **arg.kwargs)
             sp.set_defaults(func=func)
+            sp.set_defaults(allow_argbreak=allow_argbreak)
             return func
         if len(arguments) == 1 and type(arguments[0]) != argument:
             func = arguments[0]
@@ -133,10 +134,18 @@ class apwrap(object):
                 argv_[-1] += " " + x
             else:
                 argv_.append(x)
-        args = self.parser.parse_args(argv_, *a, **kw)
+        args, rest = self.parser.parse_known_args(argv_, *a, **kw)
+        if len(rest) > 1 and args.allow_argbreak:
+            if rest[0] != "--":
+                self.parser.error('Remainder args must start with " -- "')
+            rest = rest[1:]
+        else:
+            # Re-parse in strict mode.
+            args = self.parser.parse_args(argv_, *a, **kw)
+            rest = None
         for func in self.post_setup:
-            func(args)
-        return args
+            func(args, rest)
+        return args, rest
 
 parser = apwrap()
 
@@ -505,7 +514,23 @@ def show__instances(args):
         #    cost = str(float(instance["dph_total"]));
         #    print("%-10s%-10s%-12s%-2s x %-16s%-6i%-5i%3iGB   %5iGB   %-16s%-9s%-8s%-12s" % (instance["id"], instance["machine_id"], instance["actual_status"], 1*instance["num_gpus"], instance["gpu_name"], gpu_util, int(instance["cpu_cores"]), int(instance["cpu_ram"])/1000, int(instance["disk_space"]), instance["ssh_host"], instance["ssh_port"], cost[0:5], instance["image_uuid"]));
         #    #print("{id}: {json}".format(id=instance["id"], json=json.dumps(instance, indent=4, sort_keys=True)))
-    
+
+
+@parser.command(
+    argument("--id", help="id of instance to connect to", type=int),
+    usage="vast ssh",
+    allow_argbreak=True,
+)
+def ssh(args, ssh_args=()):
+    req_url = apiurl(args, "/instances", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    if args.id:
+        instance, = [r for r in rows if r['id'] == args.id]
+    else:
+        instance, = rows
+    os.execvp("ssh", ["ssh", "-p", str(instance["ssh_port"]), "root@" + instance["ssh_host"]] + list(ssh_args))
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
@@ -979,7 +1004,7 @@ def main():
 
     #parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter);
 
-    args = parser.parse_args()
+    args, rest = parser.parse_args()
     if args.api_key is api_key_guard:
         if os.path.exists(api_key_file):
             with open(api_key_file, "r") as reader:
@@ -987,7 +1012,10 @@ def main():
         else:
             args.api_key = None
     try:
-        sys.exit(args.func(args) or 0)
+        if rest is None:
+            retval = args.func(args)
+        else:
+            retval = args.func(args, rest)
     except requests.exceptions.HTTPError as e :
         try:
             errmsg = e.response.json().get("msg");
@@ -996,7 +1024,8 @@ def main():
                 errmsg = "Please log in or sign up"
             else:
                 errmsg = "(no detail message supplied)"
-        print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));            
+        print("failed with error {e.response.status_code}: {errmsg}".format(**locals()))
+    sys.exit(retval or 0)
     #else:
     #    if cmd0 != "--help" : print("Unrecognized command '" + command_type.strip() + "'. Use vast --help for list of commands.")
     #    parser = argparse.ArgumentParser(
@@ -1010,4 +1039,3 @@ if __name__ == "__main__":
         main()
     except (KeyboardInterrupt, BrokenPipeError):
         pass
-
