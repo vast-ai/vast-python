@@ -835,12 +835,12 @@ def set__min_bid(args):
 
 
 @parser.command(
-    argument("api-key",    help="Api key to set as currently logged in user"),
+    argument("new_api_key",    help="Api key to set as currently logged in user"),
     usage = "vast set api-key APIKEY",
 )
 def set__api_key(args):
     with open(api_key_file, "w") as writer:
-        writer.write(args.api_key)
+        writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
 
 #def _load_sshkey(arg):
