@@ -261,6 +261,7 @@ def parse_query(query_str, res=None):
         "cpu_cores_effective",
         "cpu_ram",
         "cuda_max_good",
+        "driver_version",
         "disk_bw",
         "disk_space",
         "dlperf",
