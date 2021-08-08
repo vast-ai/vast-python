@@ -172,26 +172,27 @@ def deindent(message):
 displayable_fields = (
     ("id",                  "ID",       "{}",       None, True),
     ("cuda_max_good",       "CUDA",     "{:0.1f}",  None, True),
-    ("num_gpus",            "Num",      "{} x",     None, False),
+    ("num_gpus",            "Num",      "{}x",     None, False),
     ("gpu_name",            "Model",    "{}",       None, True),
-    ("pcie_bw",             "PCIE BW",  "{:0.1f}",  None, True),
+    ("pcie_bw",             "PCIE_BW",  "{:0.1f}",  None, True),
     ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
     ("cpu_ram",             "RAM",      "{:0.1f}",  lambda x: x/1000, False),
     ("disk_space",          "Storage",  "{:.0f}",     None, True),
     ("dph_total",           "$/hr",     "{:0.4f}",  None, True),
     ("dlperf",              "DLPerf",   "{:0.1f}",   None, True),
     ("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",   None, True),
-    ("inet_up",             "Net up",   "{:0.1f}",   None, True),
-    ("inet_down",           "Net down", "{:0.1f}",   None, True),
+    ("inet_up",             "Net_up",   "{:0.1f}",   None, True),
+    ("inet_down",           "Net_down", "{:0.1f}",   None, True),
     ("reliability2",        "R",        "{:0.1f}",   lambda x: x * 100, True),
-    ("duration",            "Max Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
+    ("duration",            "Max_Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
+    ("machine_id",           "machine_id", "{}",   None, True),
 )
 
 instance_fields = (
     ("id",                  "ID",       "{}",       None, True),
     ("machine_id",          "Machine",  "{}",       None, True),
     ("actual_status",       "Status",   "{}",       None, True),
-    ("num_gpus",            "Num",      "{} x",     None, False),
+    ("num_gpus",            "Num",      "{}x",     None, False),
     ("gpu_name",            "Model",    "{}",       None, True),
     ("gpu_util",            "Util. %",  "{:0.1f}",  None, True),
     ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
@@ -207,6 +208,7 @@ instance_fields = (
     ("inet_up",             "Net up",   "{:0.1f}",  None, True),
     ("inet_down",           "Net down", "{:0.1f}",  None, True),
     ("reliability2",        "R",        "{:0.1f}",  lambda x: x * 100, True),
+    ("label",           "Label", "{}",  None, True),
     #("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
@@ -259,6 +261,7 @@ def parse_query(query_str, res=None):
         "cpu_cores_effective",
         "cpu_ram",
         "cuda_max_good",
+        "driver_version",
         "disk_bw",
         "disk_space",
         "dlperf",
@@ -346,6 +349,7 @@ def display_table(rows, fields):
             else:
                 val = conv(val)
                 s = fmt.format(val)
+            s = s.replace(' ', '_')
             idx = len(row)
             lengths[idx] = max(len(s), lengths[idx])
             row.append(s)
@@ -834,12 +838,12 @@ def set__min_bid(args):
 
 
 @parser.command(
-    argument("api-key",    help="Api key to set as currently logged in user"),
+    argument("new_api_key",    help="Api key to set as currently logged in user"),
     usage = "vast set api-key APIKEY",
 )
 def set__api_key(args):
     with open(api_key_file, "w") as writer:
-        writer.write(args.api_key)
+        writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
 
 #def _load_sshkey(arg):
@@ -847,136 +851,31 @@ def set__api_key(args):
 #        with open(arg, "r") as reader:
 #            return reader.read()
 #    return arg
+login_deprecated_message = """
+login via the command line is no longer supported.
+go to https://vast.ai/console/cli in a web browser to get your api key, then run:
+
+    vast set api-key YOUR_API_KEY_HERE
+"""
 
 @parser.command(
-    argument("email",    help="Email"),
-    argument("password",    help="Password"),
-    #argument("--ssh-key",     help="The SSH Pubkey you'd like to use to connect to containers"),
-    usage = "vast create account [--api-key API_KEY] [--ssh-key SSH_KEY] USERNAME PASSWORD",
+    argument("ignored", nargs="*"),
+    usage = login_deprecated_message
 )
 def create__account(args):
-    if args.username is None:
-        args.username = input("Email: ");
-    if args.password is None:
-        args.password = getpass.getpass("Password: ");
-    # TODO: do this?
-    #if args.ssh_key is None:
-    #    args.ssh_key = input("Ssh key: ");
-
-    url = apiurl(args, "/users/");
-    #msg = 'ssh_key': _load_sshkey(args.ssh_key)
-
-    r = requests.post(url,
-            json={'username':args.username, 'password':  args.password, } );
-    r.raise_for_status()
-    resp = r.json()
-    print("You are user {}! Your new api key: {}".format(resp["id"], resp["api_key"]))
-    args.api_key = resp["api_key"]
-    set_api_key(args)
+    print(login_deprecated_message)
 
 @parser.command(
-    argument("username",    help="Username or Email", nargs="?", default=None),
-    argument("password",    help="Password", nargs="?", default=None),
-    argument("--ssh-key",     help="The SSH Pubkey you'd like to use to connect to containers"),
-    usage = "vast login [--username USERNAME] [--password PASSWORD] [--api-key API_KEY] [--ssh-key SSH_KEY]",
+    argument("ignored", nargs="*"),
+    usage = login_deprecated_message,
 )
 def login(args):
-    if args.username is None:
-        args.username = input("Username or Email: ");
-    if args.password is None:
-        try:
-            # weird try/except is because windows gives a typeerror on this line
-            args.password = getpass.getpass("Password: ");
-        except TypeError:
-            try:
-                args.password = getpass.getpass("Password: ".encode("utf-8"))
-            except TypeError:
-                args.password = raw_input("Password: ")
-
-    url = apiurl(args, "/users/current/");
-    print(url)
-
-    r = requests.put(url,
-            json={'username': args.username, 'password': args.password} );
-    r.raise_for_status()
-    resp = r.json()
-    print("You are user {}! Your existing api key: {}".format(resp["id"], resp["api_key"]))
-    args.api_key = resp["api_key"]
-    set__api_key(args)
+    print(login_deprecated_message)
 
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
     parser.add_argument("--api-key",     help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
-
-    #func_dict = {
-    #    "set defjob":               set_defjob,
-    #    "remove defjob":            remove_defjob,
-    #    #"accept ask":              accept_ask,
-    #    #"exec bid":                create_bid,
-    #    #"set ask":                 set_ask,
-    #    #"list asks":               list_asks,
-    #    "create account":           create_account,
-    #    "login":                    login,
-    #    "create instance":          create_instance,
-    #    "change bid":               change_bid,
-    #    "destroy instance":         destroy_instance,
-    #    "start instance":           start_instance,
-    #    "stop instance":            stop_instance,
-    #    "label instance":           label_instance,
-    #    "list machine":             list_machine,
-    #    "unlist machine":           unlist_machine,
-    #    #"search offers":         search_instances,
-    #    "show instances":           show_instances,
-    #    "show host-instances":      host_instances,
-    #    "show machines":            show_machines,
-    #    "set min-bid":              set_min_bid,
-    #    "set api-key":              set_api_key_cmd,
-    #}
-
-
-    func_help = [
-        "General:",
-        "create account          Create a new account with a username and password",
-        "login                   Login to an account and or switch accounts",
-        "set api-key             Set account via api key",
-        "",
-        "Client:",
-        "create instance         Accept an offer and launch a new container instance",
-        "destroy instance        Stop and destroy an existing container instance, deleting local storage",
-        "change bid              Set a new bid price for an interruptible instance",
-        "label instance          Set label for existing instance",
-        "start instance          Start/restart an existing stopped container instance",
-        "stop instance           Stop and hibernate an existing container instance; local storage persists",
-        "search offers           Search for available instances to rent that match specific criteria",
-        "show instances          Show all your current rental instances",
-        "",
-        "Host:",
-        "show machines           Show all your physical machines connected to vast.ai",
-        "set defjob              Change/configure the default low-priority instance to run on a machine",
-        "remove defjob           remove any default instance from a machine",
-        "list machine            List a machine for rental: creates and registers one or more instance offers with pricing",
-        "unlist machine          Unlist a machine: destroys and unregisters instance offers (but doesn't effect any active instances)",
-        "set min-bid             Set minimum per gpu bid price",
-    ]
-
-    #cmd0 = ""; cmd1 = "";
-    #
-    #if len(sys.argv) > 1:
-    #    if (sys.argv[1] == "help"):
-    #        sys.argv[1:2] = []
-    #        sys.argv.append("--help")
-    #if len(sys.argv) > 1: cmd0 = sys.argv[1];
-
-    #command_type = cmd0;
-
-    #if (cmd0 not in func_dict):
-    #    if len(sys.argv) > 2: cmd1 = sys.argv[2];
-    #    command_type = cmd0 + ' ' + cmd1;
-
-    #print("command: {}".format(command_type));
-
-    #parser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter);
 
     args = parser.parse_args()
     if args.api_key is api_key_guard:
@@ -996,12 +895,6 @@ def main():
             else:
                 errmsg = "(no detail message supplied)"
         print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));
-    #else:
-    #    if cmd0 != "--help" : print("Unrecognized command '" + command_type.strip() + "'. Use vast --help for list of commands.")
-    #    parser = argparse.ArgumentParser(
-    #            description="Available Commands:\n\n{}".format("\n".join((func_help))),
-    #            formatter_class=argparse.RawDescriptionHelpFormatter)
-    #    parser.parse_args()
 
 
 if __name__ == "__main__":
