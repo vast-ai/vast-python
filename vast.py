@@ -517,7 +517,21 @@ def show__instances(args):
         #    cost = str(float(instance["dph_total"]));
         #    print("%-10s%-10s%-12s%-2s x %-16s%-6i%-5i%3iGB   %5iGB   %-16s%-9s%-8s%-12s" % (instance["id"], instance["machine_id"], instance["actual_status"], 1*instance["num_gpus"], instance["gpu_name"], gpu_util, int(instance["cpu_cores"]), int(instance["cpu_ram"])/1000, int(instance["disk_space"]), instance["ssh_host"], instance["ssh_port"], cost[0:5], instance["image_uuid"]));
         #    #print("{id}: {json}".format(id=instance["id"], json=json.dumps(instance, indent=4, sort_keys=True)))
-    
+
+
+
+@parser.command(
+    usage="vast show invoices",
+)
+def show__invoices(args):
+    req_url = apiurl(args, "/users/me/invoices");
+    print(req_url);
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["invoices"]
+    print(json.dumps(rows, indent=1, sort_keys=True))
+
+
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
@@ -572,6 +586,8 @@ def show__invoices(args):
     argument("-s", "--price_disk",  help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
     argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
+    argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
+    argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
     usage = "vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
 )
 def list__machine(args):
@@ -579,7 +595,7 @@ def list__machine(args):
     req_url = apiurl(args, "/machines/create_asks/");
 
     #print("PUT " + req_url);
-    r = requests.put(req_url, json = {'machine':args.id, 'price_gpu':args.price_gpu, 'price_disk':args.price_disk, 'price_inetu':args.price_inetu, 'price_inetd':args.price_inetd } );
+    r = requests.put(req_url, json = {'machine':args.id, 'price_gpu':args.price_gpu, 'price_disk':args.price_disk, 'price_inetu':args.price_inetu, 'price_inetd':args.price_inetd, 'min_chunk':args.min_chunk, 'end_date':args.end_date  } );
     
     if (r.status_code == 200) :
         #print(r.text);
@@ -588,7 +604,9 @@ def list__machine(args):
             price_gpu_   = str(args.price_gpu) if args.price_gpu is not None else "def";
             price_inetu_ = str(args.price_inetu);
             price_inetd_ = str(args.price_inetd);
-            print("offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down".format(**locals()));
+            min_chunk_ = str(args.min_chunk);
+            end_date_ = str(args.end_date);
+            print("offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, till {end_date_}".format(**locals()));
         else :
             print(rj["msg"]);
     else :
@@ -940,4 +958,3 @@ if __name__ == "__main__":
         main()
     except (KeyboardInterrupt, BrokenPipeError):
         pass
-
