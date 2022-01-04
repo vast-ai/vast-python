@@ -212,6 +212,15 @@ instance_fields = (
     #("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
+invoice_fields = (
+    ("amount",                  "Amount",       "{}",       None, True),
+    ("description",          "Description",  "{}",       None, True),
+    ("quantity",       "Quantity",   "{}",       None, True),
+    ("rate",            "Rate",      "{}",     None, True),
+    ("timestamp",            "Timestamp",    "{:0.1f}",       None, True),
+    ("type",            "Type",  "{}",  None, True)
+)
+
 def parse_query(query_str, res=None):
     if res is None: res = {}
     if type(query_str) == list:
@@ -477,12 +486,13 @@ def search__offers(args):
     r = requests.get(url);
     r.raise_for_status()
     rows = r.json()["offers"]
-    if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+    if args.tabular:
+        display_table(rows, displayable_fields)
     else:
+        print(json.dumps(rows, indent=1, sort_keys=True))
         #print(url);
         #print("{N} instances types: ".format(N=len(rows)) );
-        display_table(rows, displayable_fields)
+
 
 
 @parser.command(
@@ -493,10 +503,10 @@ def show__instances(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["instances"]
-    if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
-    else:
+    if args.tabular:
         display_table(rows, instance_fields)
+    else:
+        print(json.dumps(rows, indent=1, sort_keys=True))
         #print("{N} instances: ".format(N=len(rows)) );
         #print("%-10s%-10s%-12s%-5s%-14s%-7s%-7s%-8s%-10s%-14s%-10s%-8s%-12s" % ("Instance", "Machine", "Status", "#", "GPUs", "util%", "vCPUs", "RAM", "Storage", "SSH Addr", "SSH Port", "$/hr", "Image"));
         #for instance in rows:
@@ -517,15 +527,41 @@ def show__machines(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["machines"]
-    if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
-    else:
+    if args.tabular:
         for machine in rows:
             if args.quiet:
                 print("{id}".format(id=machine["id"]))
             else:
                 print("{N} machines: ".format(N=len(rows)) );
                 print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
+    else:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+
+
+@parser.command(
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    usage = "vast show invoices [OPTIONS]",
+)
+def show__invoices(args):
+    req_url = apiurl(args, "/users/36683/invoices", {"owner": "me"});
+    ## Hard coding my user_id for now since just using the "/invoices" endpoint doesn't work.
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["invoices"]
+    if args.tabular:
+        display_table(rows, invoice_fields)
+        # for machine in rows:
+        #     if args.quiet:
+        #         print("{description}".format(id=machine["id"]))
+        #     else:
+        #         print("{N} invoices: ".format(N=len(rows)) );
+        #         print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
+    else:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+
+
+
+
 
 
 @parser.command(
@@ -791,10 +827,10 @@ def create__instance(args):
         "force": args.force
     })
     r.raise_for_status()
-    if args.raw:
-        print(json.dumps(r.json(), indent=1))
-    else:
+    if args.tabular:
         print("Started. {}".format(r.json()))
+    else:
+        print(json.dumps(r.json(), indent=1))
 
 @parser.command(
     argument("id",            help="id of instance type to launch", type=int),
@@ -873,6 +909,7 @@ def login(args):
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
+    parser.add_argument("--tabular", action="store_true", help="output human-readable table");
     parser.add_argument("--api-key",     help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
 
     args = parser.parse_args()
