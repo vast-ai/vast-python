@@ -486,10 +486,11 @@ def search__offers(args):
     r = requests.get(url);
     r.raise_for_status()
     rows = r.json()["offers"]
-    if args.tabular:
-        display_table(rows, displayable_fields)
-    else:
+    if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
         #print(url);
         #print("{N} instances types: ".format(N=len(rows)) );
 
@@ -503,10 +504,10 @@ def show__instances(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["instances"]
-    if args.tabular:
-        display_table(rows, instance_fields)
-    else:
+    if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, instance_fields)
         #print("{N} instances: ".format(N=len(rows)) );
         #print("%-10s%-10s%-12s%-5s%-14s%-7s%-7s%-8s%-10s%-14s%-10s%-8s%-12s" % ("Instance", "Machine", "Status", "#", "GPUs", "util%", "vCPUs", "RAM", "Storage", "SSH Addr", "SSH Port", "$/hr", "Image"));
         #for instance in rows:
@@ -527,15 +528,15 @@ def show__machines(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["machines"]
-    if args.tabular:
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
         for machine in rows:
             if args.quiet:
                 print("{id}".format(id=machine["id"]))
             else:
                 print("{N} machines: ".format(N=len(rows)) );
                 print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
-    else:
-        print(json.dumps(rows, indent=1, sort_keys=True))
 
 
 @parser.command(
@@ -548,8 +549,8 @@ def show__invoices(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["invoices"]
-    if args.tabular:
-        display_table(rows, invoice_fields)
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
         # for machine in rows:
         #     if args.quiet:
         #         print("{description}".format(id=machine["id"]))
@@ -557,7 +558,8 @@ def show__invoices(args):
         #         print("{N} invoices: ".format(N=len(rows)) );
         #         print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
     else:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        display_table(rows, invoice_fields)
+
 
 
 
@@ -827,10 +829,11 @@ def create__instance(args):
         "force": args.force
     })
     r.raise_for_status()
-    if args.tabular:
-        print("Started. {}".format(r.json()))
-    else:
+    if args.raw:
         print(json.dumps(r.json(), indent=1))
+    else:
+        print("Started. {}".format(r.json()))
+
 
 @parser.command(
     argument("id",            help="id of instance type to launch", type=int),
