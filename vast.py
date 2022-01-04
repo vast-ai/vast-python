@@ -519,20 +519,6 @@ def show__instances(args):
         #    #print("{id}: {json}".format(id=instance["id"], json=json.dumps(instance, indent=4, sort_keys=True)))
 
 
-
-@parser.command(
-    usage="vast show invoices",
-)
-def show__invoices(args):
-    req_url = apiurl(args, "/users/me/invoices");
-    print(req_url);
-    r = requests.get(req_url);
-    r.raise_for_status()
-    rows = r.json()["invoices"]
-    print(json.dumps(rows, indent=1, sort_keys=True))
-
-
-
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage = "vast show machines [OPTIONS]",
@@ -558,19 +544,12 @@ def show__machines(args):
     usage = "vast show invoices [OPTIONS]",
 )
 def show__invoices(args):
-    req_url = apiurl(args, "/users/36683/invoices", {"owner": "me"});
-    ## Hard coding my user_id for now since just using the "/invoices" endpoint doesn't work.
+    req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["invoices"]
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
-        # for machine in rows:
-        #     if args.quiet:
-        #         print("{description}".format(id=machine["id"]))
-        #     else:
-        #         print("{N} invoices: ".format(N=len(rows)) );
-        #         print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
     else:
         display_table(rows, invoice_fields)
 
@@ -930,7 +909,6 @@ def login(args):
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
-    parser.add_argument("--tabular", action="store_true", help="output human-readable table");
     parser.add_argument("--api-key",     help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
 
     args = parser.parse_args()
