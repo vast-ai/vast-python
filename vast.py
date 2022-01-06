@@ -10,6 +10,9 @@ import os
 import requests
 import getpass
 
+import vast_pdf
+from vast_pdf import main
+
 
 
 try:
@@ -548,11 +551,36 @@ def show__invoices(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["invoices"]
+    current_charges = r.json()["current"]
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
+        print("Current: ", current_charges)
     else:
         display_table(rows, invoice_fields)
+        print("Current: ", current_charges)
 
+
+@parser.command(
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    usage = "vast generate pdf_invoice [OPTIONS]",
+)
+def generate__pdf_invoices(args):
+    req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["invoices"]
+    req_url = apiurl(args, "/users/current", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    user_blob = r.json()
+
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+        print("Current: ", user_blob)
+    else:
+        display_table(rows, invoice_fields)
+        print("Current: ", user_blob)
+        vast_pdf.generate_invoice(user_blob)
 
 
 
