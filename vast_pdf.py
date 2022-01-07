@@ -43,24 +43,31 @@ def _build_invoice_information() -> Table:
     table_001.add(Paragraph("%d/%d/%d" % (now.day, now.month, now.year), horizontal_alignment=Alignment.RIGHT))
 
     table_001.add(Paragraph("100 Van Ness Ave."))
-    table_001.add(Paragraph("Invoice #", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
-    table_001.add(Paragraph("%d" % random.randint(1000, 10000), horizontal_alignment=Alignment.RIGHT))
-
-    table_001.add(Paragraph("San Francisco CA 94102"))
     table_001.add(Paragraph("Payment Terms:", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_001.add(Paragraph("Charged - Do Not Pay", horizontal_alignment=Alignment.RIGHT))
 
-    table_001.add(Paragraph("[Email Address]"))
+    table_001.add(Paragraph("San Francisco CA 94102"))
+
+    table_001.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_001.add(Paragraph(" ", horizontal_alignment=Alignment.RIGHT))
+
+    table_001.add(Paragraph("fixme@vast.ai"))
     table_001.add(Paragraph(" "))
     table_001.add(Paragraph(" "))
 
-    table_001.add(Paragraph("[Company Website]"))
+    table_001.add(Paragraph("https://vast.ai/"))
     table_001.add(Paragraph(" "))
     table_001.add(Paragraph(" "))
 
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
     table_001.no_borders()
     return table_001
+
+
+def blank_row(table, col_num, row_num=1):
+    for j in range(row_num):
+        for i in range(col_num):
+            table.add(Paragraph(" "))
 
 
 def field_and_blank_line(user_blob, table, fieldname):
@@ -81,15 +88,17 @@ def _build_billing_and_shipping_information(user_blob) -> Table:
     table_001.add(
         Paragraph(
             "BILL TO",
-            background_color=HexColor("263238"),
-            font_color=X11Color("White"),
+            font="Helvetica-Bold"
+            # background_color=HexColor("263238"),
+            # font_color=X11Color("White"),
         )
     )
     table_001.add(
         Paragraph(
             " ",
-            background_color=HexColor("263238"),
-            font_color=X11Color("White"),
+            font="Helvetica-Bold"
+            # background_color=HexColor("263238"),
+            # font_color=X11Color("White"),
         )
     )
 
@@ -114,7 +123,8 @@ def _build_billing_and_shipping_information(user_blob) -> Table:
     # table_001.add(Paragraph(" "))  # SHIPPING
     table_001.add(Paragraph("%s, %s" % (user_blob["billaddress_city"], user_blob["billaddress_zip"])))  # BILLING
     table_001.add(Paragraph(" "))  # SHIPPING
-    table_001.add(Paragraph("[Phone]"))  # BILLING
+    # table_001.add(Paragraph("[Phone]"))  # BILLING
+    table_001.add(Paragraph(" "))  # BILLING
     table_001.add(Paragraph(" "))  # SHIPPING
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
 
@@ -146,8 +156,8 @@ def _build_itemized_description_table(products: typing.List[Product] = []):
     for h in ["Item", "Quantity", "Rate", "Amount"]:
         table_001.add(
             TableCell(
-                Paragraph(h, font_color=X11Color("White")),
-                background_color=HexColor("0b3954"),
+                Paragraph(h, font_color=X11Color("White")),# vertical_alignment=Alignment.MIDDLE),
+                background_color=HexColor("0b3954"), padding_top=Decimal(8), padding_bottom=Decimal(8)
             )
         )
     products = products[0]
@@ -160,12 +170,13 @@ def _build_itemized_description_table(products: typing.List[Product] = []):
     for row_number, item in enumerate(products):
         c = even_color if row_number % 2 == 0 else odd_color
         table_001.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
-        table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.quantity), # font="Helvetica-Bold",
+        table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.quantity),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.price_per_sku), # font="Helvetica-Bold",
+        table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.price_per_sku),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(TableCell(Paragraph("{:10.3f}".format(item.quantity * item.price_per_sku), # font="Helvetica-Bold",
-                                          horizontal_alignment=Alignment.RIGHT), background_color=c))
+        table_001.add(
+            TableCell(Paragraph("{:10.3f}".format(item.quantity * item.price_per_sku),  # font="Helvetica-Bold",
+                                horizontal_alignment=Alignment.RIGHT), background_color=c))
 
     # Optionally add some empty rows to have a fixed number of rows for styling purposes
     for row_number in range(len(products), 10):
@@ -215,7 +226,7 @@ def make_random_instance_charge(products: typing.List[Product] = []):
     products.append(Product(template_gpu_charge % random_instance_id, random_quantity_gpu, random_rate_gpu))
     products.append(Product(template_storage_charge % random_instance_id, random_quantity_storage, random_rate_storage))
 
-    #return product_list
+    # return product_list
 
 
 def random_instance_charges(n):
@@ -228,6 +239,7 @@ def random_instance_charges(n):
         # Product("Labor", 14, 60)
     ])
 
+
 def random_instance_charges_old():
     random_instance_id = random.randint(2125000, 2126000)
     random_quantity_gpu = random.random() * 10
@@ -239,8 +251,6 @@ def random_instance_charges_old():
         Product(template_storage_charge % random_instance_id, random_quantity_storage, random_rate_storage),
         # Product("Labor", 14, 60)
     ])
-
-
 
 
 def generate_invoice(user_blob):
@@ -259,23 +269,32 @@ def generate_invoice(user_blob):
 
     # add corporate logo
 
-
-
     now = datetime.datetime.now()
-    table_date_and_invoice = FixedColumnWidthTable(number_of_rows=1, number_of_columns=1)
-    table_date_and_invoice.add(
-        Image(
-            logo_img,
-            width=Decimal(72),
-            height=Decimal(105),
-        ))
-    # table_date_and_invoice.add(Paragraph("Invoice #", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
-    # table_date_and_invoice.add(Paragraph("%d" % random.randint(1000, 10000), horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num = FixedColumnWidthTable(number_of_rows=5, number_of_columns=4)
+    table_logo_and_invoice_num.add(
+        TableCell(
+            Image(
+                logo_img,
+                width=Decimal(72),
+                height=Decimal(105),
+            ), row_span=2)
+    )
+    table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(Paragraph("Invoice", font="Helvetica", font_size=Decimal(50),
+                                             horizontal_alignment=Alignment.RIGHT))
+    # table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(
+        Paragraph("# %d" % random.randint(1000, 10000), font="Helvetica", font_size=Decimal(20),
+                  horizontal_alignment=Alignment.RIGHT))
+    blank_row(table_logo_and_invoice_num, 4, 3)
     #
-    # table_date_and_invoice.add(Paragraph("Date", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
-    # table_date_and_invoice.add(Paragraph("%d/%d/%d" % (now.day, now.month, now.year), horizontal_alignment=Alignment.RIGHT))
-    table_date_and_invoice.no_borders()
-    page_layout.add(table_date_and_invoice)
+    # table_logo_and_invoice_num.add(Paragraph("Date", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    # table_logo_and_invoice_num.add(Paragraph("%d/%d/%d" % (now.day, now.month, now.year), horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.no_borders()
+    page_layout.add(table_logo_and_invoice_num)
 
     # Invoice information table
     page_layout.add(_build_invoice_information())
