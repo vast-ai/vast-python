@@ -582,7 +582,7 @@ def generate__pdf_invoices(args):
     else:
         display_table(rows_inv, invoice_fields)
         #print("Current: ", user_blob)
-        vast_pdf.generate_invoice(user_blob)
+        vast_pdf.generate_invoice(user_blob, rows_inv)
 
 
 
