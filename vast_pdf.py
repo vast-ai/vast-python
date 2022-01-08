@@ -48,7 +48,7 @@ def _build_invoice_information(invoice_total = 0) -> Table:
     table_001.add(Paragraph("San Francisco CA 94102"))
 
     table_001.add(Paragraph("Total", font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
-    table_001.add(Paragraph("     {:10.3f}".format(invoice_total), font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
+    table_001.add(Paragraph(f'-${invoice_total:.3f}', font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
 
     table_001.add(Paragraph("fixme@vast.ai"))
     table_001.add(Paragraph(" "))
@@ -140,9 +140,9 @@ class Product:
         self.name: str = name
         assert quantity >= 0
         self.quantity: int = quantity
-        assert price_per_sku <= 0
+        assert price_per_sku >= 0
         self.price_per_sku: float = price_per_sku
-        assert amount <= 0
+        assert amount >= 0
         self.amount: float = amount
 
 
@@ -174,10 +174,10 @@ def _build_itemized_description_table(products: typing.List[Product] = [],
         table_001.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
         table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.quantity),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.price_per_sku),  # font="Helvetica-Bold",
+        table_001.add(TableCell(Paragraph("     -${:10.3f}".format(item.price_per_sku),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
         table_001.add(
-            TableCell(Paragraph("{:10.3f}".format(item.amount),  # font="Helvetica-Bold",
+            TableCell(Paragraph("-${:10.3f}".format(item.amount),  # font="Helvetica-Bold",
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
 
     # Optionally add some empty rows to have a fixed number of rows for styling purposes
@@ -208,7 +208,7 @@ def _build_itemized_description_table(products: typing.List[Product] = [],
 
     table_001.add(
         TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-    table_001.add(TableCell(Paragraph("{:10.3f}".format(sums["amount"]), horizontal_alignment=Alignment.RIGHT)))
+    table_001.add(TableCell(Paragraph("-${:10.3f}".format(-sums["amount"]), horizontal_alignment=Alignment.RIGHT)))
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
     table_001.no_borders()
     return table_001
@@ -230,8 +230,8 @@ def make_random_instance_charge(products: typing.List[Product] = []):
 
 
 def product_row(charges):
-    return Product(charges["description"], float(charges["quantity"]), -float(charges["rate"]),
-                   -float(charges["amount"]))
+    return Product(charges["description"], float(charges["quantity"]), float(charges["rate"]),
+                   float(charges["amount"]))
 
 
 def product_rows(rows_invoice=None):
@@ -294,7 +294,7 @@ def generate_invoice(user_blob, rows_invoice):
     f = r'./vast.ai-logo.png'
     logo_img = PIL.Image.open(f)
 
-    invoice_total = compute_column_sum(rows_invoice, "amount", True)
+    invoice_total = compute_column_sum(rows_invoice, "amount")
     # add corporate logo
 
     now = datetime.datetime.now()
