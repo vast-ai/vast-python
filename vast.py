@@ -13,13 +13,10 @@ import getpass
 import vast_pdf
 from vast_pdf import main
 
-
-
 try:
     from urllib import quote_plus  # Python 2.X
 except ImportError:
     from urllib.parse import quote_plus  # Python 3+
-
 
 try:
     JSONDecodeError = json.JSONDecodeError
@@ -36,23 +33,30 @@ api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
 api_key_guard = object()
 
+
 class argument(object):
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
+
 class hidden_aliases(object):
     # just a bit of a hack
     def __init__(self, l):
         self.l = l
+
     def __iter__(self):
         return iter(self.l)
+
     def __bool__(self):
         return False
+
     def __nonzero__(self):
         return False
-    def append(self,x):
+
+    def append(self, x):
         self.l.append(x)
+
 
 class apwrap(object):
     def __init__(self, *args, **kwargs):
@@ -114,13 +118,14 @@ class apwrap(object):
             for x in aliases:
                 verb, _, obj = x.partition(" ")
                 aliases_transformed.append(self.get_name(verb, obj))
-            kwargs["formatter_class"] =argparse.RawDescriptionHelpFormatter
+            kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
             self.subparser_objs.append(sp)
             for arg in arguments:
                 sp.add_argument(*arg.args, **arg.kwargs)
             sp.set_defaults(func=func)
             return func
+
         if len(arguments) == 1 and type(arguments[0]) != argument:
             func = arguments[0]
             arguments = []
@@ -141,7 +146,9 @@ class apwrap(object):
             func(args)
         return args
 
+
 parser = apwrap()
+
 
 def apiurl(args, subpath, query_args=None):
     if query_args is None:
@@ -149,18 +156,20 @@ def apiurl(args, subpath, query_args=None):
     if args.api_key is not None:
         query_args["api_key"] = args.api_key
     if query_args:
-        #a_list      = [<expression> for <l-expression> in <expression>]
+        # a_list      = [<expression> for <l-expression> in <expression>]
         '''
         vector result;
         for (l_expression: expression) {
             result.push_back(expression);
         }
         '''
-        #an_iterator = (<expression> for <l-expression> in <expression>)
+        # an_iterator = (<expression> for <l-expression> in <expression>)
         return args.url + subpath + "?" + "&".join(
-                "{x}={y}".format(x=x, y=quote_plus(y if isinstance(y, str) else json.dumps(y))) for x, y in query_args.items())
+            "{x}={y}".format(x=x, y=quote_plus(y if isinstance(y, str) else json.dumps(y))) for x, y in
+            query_args.items())
     else:
         return args.url + subpath
+
 
 def deindent(message):
     """
@@ -172,65 +181,69 @@ def deindent(message):
     message = re.sub(r"^ {," + str(a) + "}", "", message, flags=re.MULTILINE)
     return message.strip()
 
+
 displayable_fields = (
-    ("id",                  "ID",       "{}",       None, True),
-    ("cuda_max_good",       "CUDA",     "{:0.1f}",  None, True),
-    ("num_gpus",            "Num",      "{}x",     None, False),
-    ("gpu_name",            "Model",    "{}",       None, True),
-    ("pcie_bw",             "PCIE_BW",  "{:0.1f}",  None, True),
-    ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
-    ("cpu_ram",             "RAM",      "{:0.1f}",  lambda x: x/1000, False),
-    ("disk_space",          "Storage",  "{:.0f}",     None, True),
-    ("dph_total",           "$/hr",     "{:0.4f}",  None, True),
-    ("dlperf",              "DLPerf",   "{:0.1f}",   None, True),
-    ("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",   None, True),
-    ("inet_up",             "Net_up",   "{:0.1f}",   None, True),
-    ("inet_down",           "Net_down", "{:0.1f}",   None, True),
-    ("reliability2",        "R",        "{:0.1f}",   lambda x: x * 100, True),
-    ("duration",            "Max_Days", "{:0.1f}",   lambda x: x/(24.0*60.0*60.0), True),
-    ("machine_id",           "machine_id", "{}",   None, True),
+    ("id", "ID", "{}", None, True),
+    ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
+    ("num_gpus", "Num", "{}x", None, False),
+    ("gpu_name", "Model", "{}", None, True),
+    ("pcie_bw", "PCIE_BW", "{:0.1f}", None, True),
+    ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
+    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
+    ("disk_space", "Storage", "{:.0f}", None, True),
+    ("dph_total", "$/hr", "{:0.4f}", None, True),
+    ("dlperf", "DLPerf", "{:0.1f}", None, True),
+    ("dlperf_per_dphtotal", "DLP/$", "{:0.1f}", None, True),
+    ("inet_up", "Net_up", "{:0.1f}", None, True),
+    ("inet_down", "Net_down", "{:0.1f}", None, True),
+    ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
+    ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
+    ("machine_id", "machine_id", "{}", None, True),
 )
 
 instance_fields = (
-    ("id",                  "ID",       "{}",       None, True),
-    ("machine_id",          "Machine",  "{}",       None, True),
-    ("actual_status",       "Status",   "{}",       None, True),
-    ("num_gpus",            "Num",      "{}x",     None, False),
-    ("gpu_name",            "Model",    "{}",       None, True),
-    ("gpu_util",            "Util. %",  "{:0.1f}",  None, True),
-    ("cpu_cores_effective", "vCPUs",    "{:0.1f}",  None, True),
-    ("cpu_ram",             "RAM",      "{:0.1f}",  lambda x: x/1000, False),
-    ("disk_space",          "Storage",  "{:.0f}",     None, True),
-    ("ssh_host",            "SSH Addr", "{}",       None, True),
-    ("ssh_port",            "SSH Port", "{}",       None, True),
-    ("dph_total",           "$/hr",     "{:0.4f}",  None, True),
-    ("image_uuid",          "Image",    "{}",       None, True),
+    ("id", "ID", "{}", None, True),
+    ("machine_id", "Machine", "{}", None, True),
+    ("actual_status", "Status", "{}", None, True),
+    ("num_gpus", "Num", "{}x", None, False),
+    ("gpu_name", "Model", "{}", None, True),
+    ("gpu_util", "Util. %", "{:0.1f}", None, True),
+    ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
+    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
+    ("disk_space", "Storage", "{:.0f}", None, True),
+    ("ssh_host", "SSH Addr", "{}", None, True),
+    ("ssh_port", "SSH Port", "{}", None, True),
+    ("dph_total", "$/hr", "{:0.4f}", None, True),
+    ("image_uuid", "Image", "{}", None, True),
 
-    #("dlperf",              "DLPerf",   "{:0.1f}",  None, True),
-    #("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",  None, True),
-    ("inet_up",             "Net up",   "{:0.1f}",  None, True),
-    ("inet_down",           "Net down", "{:0.1f}",  None, True),
-    ("reliability2",        "R",        "{:0.1f}",  lambda x: x * 100, True),
-    ("label",           "Label", "{}",  None, True),
-    #("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
+    # ("dlperf",              "DLPerf",   "{:0.1f}",  None, True),
+    # ("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",  None, True),
+    ("inet_up", "Net up", "{:0.1f}", None, True),
+    ("inet_down", "Net down", "{:0.1f}", None, True),
+    ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
+    ("label", "Label", "{}", None, True),
+    # ("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
 invoice_fields = (
-    ("amount",                  "Amount",       "{}",       None, True),
-    ("description",          "Description",  "{}",       None, True),
-    ("quantity",       "Quantity",   "{}",       None, True),
-    ("rate",            "Rate",      "{}",     None, True),
-    ("timestamp",            "Timestamp",    "{:0.1f}",       None, True),
-    ("type",            "Type",  "{}",  None, True)
+    ("amount", "Amount", "{}", None, True),
+    ("description", "Description", "{}", None, True),
+    ("quantity", "Quantity", "{}", None, True),
+    ("rate", "Rate", "{}", None, True),
+    ("timestamp", "Timestamp", "{:0.1f}", None, True),
+    ("type", "Type", "{}", None, True)
 )
+
 
 def parse_query(query_str, res=None):
     if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
     query_str = query_str.strip()
-    opts = re.findall("([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|[^ ]+)?( *)", query_str)
-    #res = {}
+    opts = re.findall(
+        "([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|[^ ]+)?( *)",
+        query_str)
+    # res = {}
     op_names = {
         ">=": "gte",
         ">": "gt",
@@ -252,21 +265,21 @@ def parse_query(query_str, res=None):
         "nin": "notin",
         "in": "in",
     };
-    
+
     field_alias = {
-        "cuda_vers":        "cuda_max_good",
-        "display_active":   "gpu_display_active",
-        "reliability":      "reliability2",
-        "dlperf_usd":       "dlperf_per_dphtotal",
-        "dph":              "dph_total",
-        "flops_usd":        "flops_per_dphtotal",
+        "cuda_vers": "cuda_max_good",
+        "display_active": "gpu_display_active",
+        "reliability": "reliability2",
+        "dlperf_usd": "dlperf_per_dphtotal",
+        "dph": "dph_total",
+        "flops_usd": "flops_per_dphtotal",
     };
-    
+
     field_multiplier = {
-        "cpu_ram"   : 1000,
-        "duration"  : 1.0 / (24.0*60.0*60.0),
+        "cpu_ram": 1000,
+        "duration": 1.0 / (24.0 * 60.0 * 60.0),
     }
-    
+
     fields = {
         "compute_cap",
         "cpu_cores",
@@ -283,7 +296,7 @@ def parse_query(query_str, res=None):
         "external",
         "flops_per_dphtotal",
         "gpu_display_active",
-        #"gpu_ram_free_min",
+        # "gpu_ram_free_min",
         "gpu_mem_bw",
         "gpu_name",
         "gpu_ram",
@@ -306,20 +319,20 @@ def parse_query(query_str, res=None):
         "total_flops",
         "verified"
     };
-    
+
     joined = "".join("".join(x) for x in opts)
     if joined != query_str:
-        raise ValueError("Unconsumed text. Did you forget to quote your query? " + repr(joined) + " != " + repr(query_str))
+        raise ValueError(
+            "Unconsumed text. Did you forget to quote your query? " + repr(joined) + " != " + repr(query_str))
     for field, op, _, value, _ in opts:
         value = value.strip(",[]")
         v = res.setdefault(field, {})
         op = op.strip()
         op_name = op_names.get(op)
-        
+
         if field in field_alias:
             field = field_alias[field];
-            
-        
+
         if not field in fields:
             print("Warning: Unrecognized field: {}, see list of recognized fields.".format(field), file=sys.stderr);
         if not op_name:
@@ -345,6 +358,7 @@ def parse_query(query_str, res=None):
         v[op_name] = value
         res[field] = v;
     return res
+
 
 def display_table(rows, fields):
     header = [name for _, name, _, _, _ in fields]
@@ -376,15 +390,24 @@ def display_table(rows, fields):
             out.append(s)
         print("  ".join(out))
 
+
 @parser.command(
-    argument("-t", "--type", default="on-demand", help="whether to show `interruptible` or `on-demand` offers. default: on-demand"),
-    argument("-i", "--interruptible", dest="type", const="interruptible", action="store_const", help="Alias for --type=interruptible"),
-    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
+    argument("-t", "--type", default="on-demand",
+             help="whether to show `interruptible` or `on-demand` offers. default: on-demand"),
+    argument("-i", "--interruptible", dest="type", const="interruptible", action="store_const",
+             help="Alias for --type=interruptible"),
+    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const",
+             help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
-    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
+    argument("--disable-bundling", action="store_true",
+             help="Show identical offers. This request is more heavily rate limited."),
     argument("--storage", type=float, default=5.0, help="amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("-o", "--order", type=str, help="comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
-    argument("query",            help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
+    argument("-o", "--order", type=str,
+             help="comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
+             default='score-'),
+    argument("query",
+             help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
+             nargs="*", default=None),
     usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
@@ -445,11 +468,11 @@ def display_table(rows, fields):
 )
 def search__offers(args):
     field_alias = {
-        "cuda_vers"     : "cuda_max_good",
-        "reliability"   : "reliability2",
-        "dlperf_usd"    : "dlperf_per_dphtotal",
-        "dph"           : "dph_total",
-        "flops_usd"     : "flops_per_dphtotal",
+        "cuda_vers": "cuda_max_good",
+        "reliability": "reliability2",
+        "dlperf_usd": "dlperf_per_dphtotal",
+        "dph": "dph_total",
+        "flops_usd": "flops_per_dphtotal",
     };
 
     try:
@@ -457,13 +480,11 @@ def search__offers(args):
         if args.no_default:
             query = {}
         else:
-            query = { "verified":{"eq":True}, "external":{"eq":False}, "rentable":{"eq":True} }
-    
+            query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}}
+
         if args.query is not None:
             query = parse_query(args.query, query)
-        #print("query length: {}".format(len(query)));
-        #for k,q in query.items():
-            #print("{} {}".format(k, q));
+
         order = []
         for name in args.order.split(","):
             name = name.strip()
@@ -477,15 +498,14 @@ def search__offers(args):
             order.append([field, direction])
 
         query["order"] = order
-        query["type"]  = args.type
+        query["type"] = args.type
         if args.disable_bundling:
             query["disable_bundling"] = True
     except ValueError as e:
         print("Error: ", e)
         return 1
-    
-    url = apiurl(args, "/bundles", {"q":query});
-    #url = apiurl(args, "/bundles") + "?q=" + quote_plus(json.dumps(query));
+
+    url = apiurl(args, "/bundles", {"q": query})
     r = requests.get(url);
     r.raise_for_status()
     rows = r.json()["offers"]
@@ -493,10 +513,6 @@ def search__offers(args):
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
         display_table(rows, displayable_fields)
-
-        #print(url);
-        #print("{N} instances types: ".format(N=len(rows)) );
-
 
 
 @parser.command(
@@ -511,20 +527,11 @@ def show__instances(args):
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
         display_table(rows, instance_fields)
-        #print("{N} instances: ".format(N=len(rows)) );
-        #print("%-10s%-10s%-12s%-5s%-14s%-7s%-7s%-8s%-10s%-14s%-10s%-8s%-12s" % ("Instance", "Machine", "Status", "#", "GPUs", "util%", "vCPUs", "RAM", "Storage", "SSH Addr", "SSH Port", "$/hr", "Image"));
-        #for instance in rows:
-        #    gpu_util = 0;
-        #    if (instance["gpu_util"] is not None): 
-        #        gpu_util = int(instance["gpu_util"]);
-        #    cost = str(float(instance["dph_total"]));
-        #    print("%-10s%-10s%-12s%-2s x %-16s%-6i%-5i%3iGB   %5iGB   %-16s%-9s%-8s%-12s" % (instance["id"], instance["machine_id"], instance["actual_status"], 1*instance["num_gpus"], instance["gpu_name"], gpu_util, int(instance["cpu_cores"]), int(instance["cpu_ram"])/1000, int(instance["disk_space"]), instance["ssh_host"], instance["ssh_port"], cost[0:5], instance["image_uuid"]));
-        #    #print("{id}: {json}".format(id=instance["id"], json=json.dumps(instance, indent=4, sort_keys=True)))
 
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage = "vast show machines [OPTIONS]",
+    usage="vast show machines [OPTIONS]",
 )
 def show__machines(args):
     req_url = apiurl(args, "/machines", {"owner": "me"});
@@ -538,13 +545,13 @@ def show__machines(args):
             if args.quiet:
                 print("{id}".format(id=machine["id"]))
             else:
-                print("{N} machines: ".format(N=len(rows)) );
+                print("{N} machines: ".format(N=len(rows)));
                 print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
 
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage = "vast show invoices [OPTIONS]",
+    usage="vast show invoices [OPTIONS]",
 )
 def show__invoices(args):
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
@@ -562,7 +569,7 @@ def show__invoices(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage = "vast generate pdf_invoice [OPTIONS]",
+    usage="vast generate pdf_invoice [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"});
@@ -581,92 +588,80 @@ def generate__pdf_invoices(args):
         print("Current: ", user_blob)
     else:
         display_table(rows_inv, invoice_fields)
-        #print("Current: ", user_blob)
         vast_pdf.generate_invoice(user_blob, rows_inv)
 
 
-
-
-
-
 @parser.command(
-    argument("id",                  help="id of machine to list", type=int),
-    argument("-g", "--price_gpu",   help="per gpu rental price in $/hour  (price for active instances)", type=float),
-    argument("-s", "--price_disk",  help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
+    argument("id", help="id of machine to list", type=int),
+    argument("-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float),
+    argument("-s", "--price_disk",
+             help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
     argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
-    usage = "vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    usage="vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
 )
 def list__machine(args):
-    #req_url = args.url + "/machines/create_asks/?user_id=" + str(args.user);
-    req_url = apiurl(args, "/machines/create_asks/");
+    req_url = apiurl(args, "/machines/create_asks/")
+    r = requests.put(req_url, json={'machine': args.id, 'price_gpu': args.price_gpu,
+                                    'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
+                                    'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
+                                    'end_date': args.end_date})
 
-    #print("PUT " + req_url);
-    r = requests.put(req_url, json = {'machine':args.id, 'price_gpu':args.price_gpu, 'price_disk':args.price_disk, 'price_inetu':args.price_inetu, 'price_inetd':args.price_inetd, 'min_chunk':args.min_chunk, 'end_date':args.end_date  } );
-    
-    if (r.status_code == 200) :
-        #print(r.text);
+    if (r.status_code == 200):
         rj = r.json();
-        if (rj["success"]) :
-            price_gpu_   = str(args.price_gpu) if args.price_gpu is not None else "def";
+        if (rj["success"]):
+            price_gpu_ = str(args.price_gpu) if args.price_gpu is not None else "def";
             price_inetu_ = str(args.price_inetu);
             price_inetd_ = str(args.price_inetd);
             min_chunk_ = str(args.min_chunk);
             end_date_ = str(args.end_date);
-            print("offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, till {end_date_}".format(**locals()));
-        else :
+            print(
+                "offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, till {end_date_}".format(
+                    **locals()));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
-    argument("id",          help="id of machine to list", type=int),
-    usage = "vast unlist machine <id>",
+    argument("id", help="id of machine to list", type=int),
+    usage="vast unlist machine <id>",
 )
 def unlist__machine(args):
-    req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id = args.id));
-    #req_url = args.url + "/machines/{machine_id}/asks/".format(machine_id = args.id);
-    #print(req_url);
-    r = requests.delete(req_url);
-    
-    if (r.status_code == 200) :
-        #print(r.text);
+    req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
+    r = requests.delete(req_url)
+    if (r.status_code == 200):
         rj = r.json();
-        if (rj["success"]) :
-            print("all offers for machine {machine_id} removed, machine delisted.".format(machine_id = args.id));
-        else :
+        if (rj["success"]):
+            print("all offers for machine {machine_id} removed, machine delisted.".format(machine_id=args.id));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
-    argument("id",          help="id of machine to remove default instance from", type=int),
+    argument("id", help="id of machine to remove default instance from", type=int),
 )
 def remove__defjob(args):
-
-    req_url = apiurl(args, "/machines/{machine_id}/defjob/".format(machine_id = args.id));
-    #print(req_url);
+    req_url = apiurl(args, "/machines/{machine_id}/defjob/".format(machine_id=args.id));
+    # print(req_url);
     r = requests.delete(req_url);
-    
-    if (r.status_code == 200) :
-        #print(r.text);
+
+    if (r.status_code == 200):
         rj = r.json();
-        if (rj["success"]) :
-            print("default instance for machine {machine_id} removed.".format(machine_id = args.id));
-        else :
+        if (rj["success"]):
+            print("default instance for machine {machine_id} removed.".format(machine_id=args.id));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
-
-
-
 
 
 def set_ask(args):
@@ -674,8 +669,8 @@ def set_ask(args):
 
 
 @parser.command(
-    argument("id",            help="id of instance to start/restart", type=int),
-    usage = "vast start instance <id> [--raw]",
+    argument("id", help="id of instance to start/restart", type=int),
+    usage="vast start instance <id> [--raw]",
 )
 def start__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
@@ -684,20 +679,20 @@ def start__instance(args):
     })
     r.raise_for_status()
 
-    if (r.status_code == 200) :
+    if (r.status_code == 200):
         rj = r.json();
-        if (rj["success"]) :
-            print("starting instance {args.id}.".format(**(locals())) );
-        else :
+        if (rj["success"]):
+            print("starting instance {args.id}.".format(**(locals())));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
-    argument("id",            help="id of instance to stop", type=int),
-    usage = "vast stop instance [--raw] <id>",
+    argument("id", help="id of instance to stop", type=int),
+    usage="vast stop instance [--raw] <id>",
 )
 def stop__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
@@ -706,20 +701,21 @@ def stop__instance(args):
     })
     r.raise_for_status()
 
-    if (r.status_code == 200) :
+    if (r.status_code == 200):
         rj = r.json();
-        if (rj["success"]) :
-            print("stopping instance {args.id}.".format(**(locals())) );
-        else :
+        if (rj["success"]):
+            print("stopping instance {args.id}.".format(**(locals())));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+
 @parser.command(
-    argument("id",            help="id of instance to label", type=int),
-    argument("label",         help="label to set", type=str),
-    usage = "vast label instance <id> <label>",
+    argument("id", help="id of instance to label", type=int),
+    argument("label", help="label to set", type=str),
+    usage="vast label instance <id> <label>",
 )
 def label__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
@@ -730,97 +726,89 @@ def label__instance(args):
 
     rj = r.json();
     if rj["success"]:
-        print("label for {args.id} set to {args.label}.".format(**(locals())) );
-    else :
+        print("label for {args.id} set to {args.label}.".format(**(locals())));
+    else:
         print(rj["msg"]);
 
 
 @parser.command(
-    argument("id",            help="id of instance to delete", type=int),
+    argument("id", help="id of instance to delete", type=int),
     usage="vast destroy instance id [-h] [--api-key API_KEY] [--raw]"
 )
 def destroy__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
     r.raise_for_status()
-    
 
-    if (r.status_code == 200) :
+    if (r.status_code == 200):
         rj = r.json();
-        if (rj["success"]) :
-            print("destroying instance {args.id}.".format(**(locals())) );
-        else :
+        if (rj["success"]):
+            print("destroying instance {args.id}.".format(**(locals())));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
 
-        
 @parser.command(
-    argument("id",            help="id of machine to launch default instance on", type=int),
-    argument("--price_gpu",   help="per gpu rental price in $/hour", type=float),
+    argument("id", help="id of machine to launch default instance on", type=int),
+    argument("--price_gpu", help="per gpu rental price in $/hour", type=float),
     argument("--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
-    argument("--image",       help="docker container image to launch", type=str),
-    argument("--args",        nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
+    argument("--image", help="docker container image to launch", type=str),
+    argument("--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
     usage="vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]"
 )
 def set__defjob(args):
-    #req_url = args.url + "/machines/create_asks/?user_id=" + str(args.user);
-    req_url    = apiurl(args, "/machines/create_bids/");
+    req_url = apiurl(args, "/machines/create_bids/");
 
-    #print("PUT " + req_url);
-    r = requests.put(req_url, json = 
-        {'machine':args.id, 'price_gpu':args.price_gpu, 'price_inetu':args.price_inetu, 'price_inetd':args.price_inetd,
-         'image':args.image, 'args':args.args } );
-    
-    if (r.status_code == 200) :
-        #print(r.text);
+    r = requests.put(req_url, json=
+    {'machine': args.id, 'price_gpu': args.price_gpu, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd,
+     'image': args.image, 'args': args.args});
+
+    if (r.status_code == 200):
+
         rj = r.json();
-        if (rj["success"]) :
-            print("bids created for machine {args.id},  @ ${args.price_gpu}/gpu/day, ${args.price_inetu}/GB up, ${args.price_inetd}/GB down".format(**locals()));
-        else :
+        if (rj["success"]):
+            print(
+                "bids created for machine {args.id},  @ ${args.price_gpu}/gpu/day, ${args.price_inetu}/GB up, ${args.price_inetd}/GB down".format(
+                    **locals()));
+        else:
             print(rj["msg"]);
-    else :
+    else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
 
-
-
-
-
-
-
-#def delete_bid(args):
-#    print("delete bids!\n");
-#
-#def set_bid(args):
-#    print("set bids!\n");
-#
-#
-#def accept_bid(args):
-#    print("accept bid!\n");
-
 @parser.command(
-    argument("id",            help="id of instance type to launch", type=int),
-    argument("--price",       help="per machine bid price in $/hour", type=float),
-    argument("--disk",        help="size of local disk partition in GB", type=float, default=10),
-    argument("--image",       help="docker container image to launch", type=str),
-    argument("--label",       help="label to set on the instance", type=str),
-    argument("--onstart",     help="filename to use as onstart script", type=str),
+    argument("id", help="id of instance type to launch", type=int),
+    argument("--price", help="per machine bid price in $/hour", type=float),
+    argument("--disk", help="size of local disk partition in GB", type=float, default=10),
+    argument("--image", help="docker container image to launch", type=str),
+    argument("--label", help="label to set on the instance", type=str),
+    argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
-    argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", action="store_true"),
-    argument("--lang-utf8",   help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
-    argument("--extra",       help=argparse.SUPPRESS),
-    argument("--args",        nargs=argparse.REMAINDER, help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
-    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
-    argument("--force",       help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage = "vast create instance id [OPTIONS] [--args ...]",
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--jupyter-dir",
+             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
+             type=str),
+    argument("--jupyter-lab",
+             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
+             action="store_true"),
+    argument("--lang-utf8",
+             help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
+             action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
+             action="store_true"),
+    argument("--extra", help=argparse.SUPPRESS),
+    argument("--args", nargs=argparse.REMAINDER,
+             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
+    argument("--create-from",
+             help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
+             type=str),
+    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
+    usage="vast create instance id [OPTIONS] [--args ...]",
 )
 def create__instance(args):
     if args.onstart:
@@ -832,7 +820,8 @@ def create__instance(args):
     if args.jupyter_dir or args.jupyter_lab:
         args.jupyter = True
     if args.jupyter and runtype == 'args':
-        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.",
+              file=sys.stderr)
         return 1
     if args.jupyter:
         runtype = 'jupyter'
@@ -841,9 +830,9 @@ def create__instance(args):
     r = requests.put(url, json={
         "client_id": "me",
         "image": args.image,
-        "args":  args.args,
+        "args": args.args,
         "price": args.price,
-        "disk":  args.disk,
+        "disk": args.disk,
         "label": args.label,
         "extra": args.extra,
         "onstart": args.onstart_cmd,
@@ -863,10 +852,10 @@ def create__instance(args):
 
 
 @parser.command(
-    argument("id",            help="id of instance type to launch", type=int),
-    argument("--price",       help="per machine bid price in $/hour", type=float),
-    usage = "vast change bid id [--price PRICE]",
-    epilog = deindent("""
+    argument("id", help="id of instance type to launch", type=int),
+    argument("--price", help="per machine bid price in $/hour", type=float),
+    usage="vast change bid id [--price PRICE]",
+    epilog=deindent("""
         Change the current bid price of instance id to PRICE.
         If PRICE is not specified, then a winning bid price is used as the default.
     """),
@@ -875,17 +864,17 @@ def change__bid(args):
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
-        "price" : args.price,
+        "price": args.price,
     })
     r.raise_for_status()
     print("Per gpu bid price changed".format(r.json()))
 
 
 @parser.command(
-    argument("id",            help="id of machine to set min bid price for", type=int),
-    argument("--price",       help="per gpu min bid price in $/hour", type=float),
-    usage = "vast set min_bid id [--price PRICE]",
-    epilog = deindent("""
+    argument("id", help="id of machine to set min bid price for", type=int),
+    argument("--price", help="per gpu min bid price in $/hour", type=float),
+    usage="vast set min_bid id [--price PRICE]",
+    epilog=deindent("""
         Change the current min bid price of machine id to PRICE.
     """),
 )
@@ -893,24 +882,23 @@ def set__min_bid(args):
     url = apiurl(args, "/machines/{id}/minbid/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
-        "price" : args.price,
+        "price": args.price,
     })
     r.raise_for_status()
     print("Per gpu min bid price changed".format(r.json()))
 
 
-
-
 @parser.command(
-    argument("new_api_key",    help="Api key to set as currently logged in user"),
-    usage = "vast set api-key APIKEY",
+    argument("new_api_key", help="Api key to set as currently logged in user"),
+    usage="vast set api-key APIKEY",
 )
 def set__api_key(args):
     with open(api_key_file, "w") as writer:
         writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
 
-#def _load_sshkey(arg):
+
+# def _load_sshkey(arg):
 #    if arg is not None and os.path.exists(arg):
 #        with open(arg, "r") as reader:
 #            return reader.read()
@@ -922,24 +910,28 @@ go to https://vast.ai/console/cli in a web browser to get your api key, then run
     vast set api-key YOUR_API_KEY_HERE
 """
 
+
 @parser.command(
     argument("ignored", nargs="*"),
-    usage = login_deprecated_message
+    usage=login_deprecated_message
 )
 def create__account(args):
     print(login_deprecated_message)
 
+
 @parser.command(
     argument("ignored", nargs="*"),
-    usage = login_deprecated_message,
+    usage=login_deprecated_message,
 )
 def login(args):
     print(login_deprecated_message)
 
+
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
-    parser.add_argument("--api-key",     help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base),
+                        type=str, required=False, default=api_key_guard)
 
     args = parser.parse_args()
     if args.api_key is api_key_guard:
@@ -950,7 +942,7 @@ def main():
             args.api_key = None
     try:
         sys.exit(args.func(args) or 0)
-    except requests.exceptions.HTTPError as e :
+    except requests.exceptions.HTTPError as e:
         try:
             errmsg = e.response.json().get("msg");
         except JSONDecodeError:

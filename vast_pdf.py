@@ -24,14 +24,13 @@ from borb.pdf.document import Document
 from borb.pdf.page.page import Page
 from borb.pdf.pdf import PDF
 
-## Globals: Probably shouldn't use globals but this is fast.
-template_gpu_charge = "Instance %d GPU charge: hours * $/hr"
-template_storage_charge = "Instance %d storage charge: hours * $/hr"
 
-
-def _build_invoice_information(invoice_total = 0) -> Table:
+def build_2nd_block_table(invoice_total=0) -> Table:
     """
-    This function builds a Table containing invoice information
+    This function builds a Table containing invoice information.
+    This information spans the page and is the second large block of
+    text on the page.
+    :param float invoice_total: Total charges for entire invoice.
     :return:    a Table containing invoice information
     """
     now = datetime.datetime.now()
@@ -47,8 +46,10 @@ def _build_invoice_information(invoice_total = 0) -> Table:
 
     table_001.add(Paragraph("San Francisco CA 94102"))
 
-    table_001.add(Paragraph("Total", font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
-    table_001.add(Paragraph(f'-${invoice_total:.3f}', font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
+    table_001.add(
+        Paragraph("Total", font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
+    table_001.add(Paragraph(f'-${invoice_total:.3f}', font="Helvetica-Bold", font_size=Decimal(20),
+                            horizontal_alignment=Alignment.RIGHT))
 
     table_001.add(Paragraph("fixme@vast.ai"))
     table_001.add(Paragraph(" "))
@@ -64,6 +65,11 @@ def _build_invoice_information(invoice_total = 0) -> Table:
 
 
 def blank_row(table, col_num, row_num=1):
+    """Just a set of blank rows to act as filler.
+    :param table: The table we want to modify
+    :param int col_num: How many columns in the table?
+    :param int row_num: How many blank rows do we need?
+    """
     for j in range(row_num):
         for i in range(col_num):
             table.add(Paragraph(" "))
@@ -74,83 +80,50 @@ def field_and_blank_line(user_blob, table, fieldname):
     table.add(Paragraph(" "))
 
 
-def maptest(fieldname):
-    print(str(fieldname))
-
-
-def _build_billing_and_shipping_information(user_blob) -> Table:
+def build_billto_table(user_blob) -> Table:
     """
     This function builds a Table containing billing and shipping information
+    It spans the page and uses blank cells to pad the right side of the page
+    :param Dict user_blob: A dict containing the user's info.
     :return:    a Table containing shipping and billing information
     """
     table_001 = FixedColumnWidthTable(number_of_rows=6, number_of_columns=2)
-    table_001.add(
-        Paragraph(
-            "BILL TO",
-            font="Helvetica-Bold"
-            # background_color=HexColor("263238"),
-            # font_color=X11Color("White"),
-        )
-    )
-    table_001.add(
-        Paragraph(
-            " ",
-            font="Helvetica-Bold"
-            # background_color=HexColor("263238"),
-            # font_color=X11Color("White"),
-        )
-    )
+    table_001.add(Paragraph("BILL TO", font="Helvetica-Bold"))
+    table_001.add(Paragraph(" ", font="Helvetica-Bold"))
 
     field_ids = ["fullname", "billaddress_line1", "billaddress_line2"]
-    # , "billaddress_line1", "billaddress_line2",
-    #          "billaddress_city", "billaddress_zip", "billaddress_country"]
-    # time.sleep(5)
-    # print(list(map(lambda fieldname: maptest(fieldname), field_ids)))
-    # time.sleep(5)
     print(list(map(lambda fieldname: field_and_blank_line(user_blob, table_001, fieldname), field_ids)))
 
-    print("USER_BLOB: ", user_blob)
-    # table_001.add(Paragraph(str(user_blob["fullname"])))  # BILLING
-    # table_001.add(Paragraph(" "))  # SHIPPING
-    # table_001.add(Paragraph("[Company Name]"))  # BILLING
-    # table_001.add(Paragraph(" "))  # SHIPPING
-    # table_001.add(Paragraph(user_blob["billaddress_line1"]))  # BILLING
-
-    # if user_blob["billaddress_line2"]:
-    #     table_001.add(Paragraph(user_blob["billaddress_line2"]))  # BILLING
-
-    # table_001.add(Paragraph(" "))  # SHIPPING
     table_001.add(Paragraph("%s, %s" % (user_blob["billaddress_city"], user_blob["billaddress_zip"])))  # BILLING
     table_001.add(Paragraph(" "))  # SHIPPING
-    # table_001.add(Paragraph("[Phone]"))  # BILLING
     table_001.add(Paragraph(" "))  # BILLING
     table_001.add(Paragraph(" "))  # SHIPPING
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-
     table_001.no_borders()
     return table_001
 
 
-class Product:
+class Charge:
     """
-    This class represents a purchased product
+    This class represents a charge line.
     """
 
-    def __init__(self, name: str, quantity: int, price_per_sku: float, amount: float):
+    def __init__(self, name: str, quantity: float, rate: float, amount: float):
         self.name: str = name
         assert quantity >= 0
         self.quantity: int = quantity
-        assert price_per_sku >= 0
-        self.price_per_sku: float = price_per_sku
+        assert rate >= 0
+        self.price_per_sku: float = rate
         assert amount >= 0
         self.amount: float = amount
 
 
-def _build_itemized_description_table(products: typing.List[Product] = [],
-                                      sums={"quantity": 0, "rate": 0, "amount": 0}):
+def build_charge_table(products: typing.List[Charge] = [],
+                       sums: typing.Dict[str, int] = {"quantity": 0, "rate": 0, "amount": 0}):
     """
     This function builds a Table containing itemized billing information
-    :param:     products
+    :param:     List products: the rows on the invoice
+    :param:     Dict sums: Dict of fields that can be summed
     :return:    a Table containing itemized billing information
     """
     table_001 = FlexibleColumnWidthTable(number_of_rows=13, number_of_columns=4)
@@ -162,10 +135,6 @@ def _build_itemized_description_table(products: typing.List[Product] = [],
                 background_color=HexColor("0b3954"), padding_top=Decimal(8), padding_bottom=Decimal(8)
             )
         )
-    # products = products[0]
-    # FIXME: ^^^ no idea why this is necessary. The products list somehow becomes
-    # FIXME: the first element in another outer list when passed into this function.
-    # FIXME: I tried taking the typing information out but it still does this.
 
     odd_color = HexColor("BBBBBB")
     even_color = HexColor("FFFFFF")
@@ -218,59 +187,30 @@ def main():
     print("Script called from command line - probably not what we want.")
 
 
-def make_random_instance_charge(products: typing.List[Product] = []):
-    random_instance_id = random.randint(2125000, 2126000)
-    random_quantity_gpu = random.random() * 10
-    random_rate_gpu = random.random() * -0.5
-    random_quantity_storage = random.random() * 10
-    random_rate_storage = random.random() * -0.5
-
-    products.append(Product(template_gpu_charge % random_instance_id, random_quantity_gpu, random_rate_gpu))
-    products.append(Product(template_storage_charge % random_instance_id, random_quantity_storage, random_rate_storage))
-
-
 def product_row(charges):
-    return Product(charges["description"], float(charges["quantity"]), float(charges["rate"]),
-                   float(charges["amount"]))
+    """Makes a single row with charge information in it."""
+    return Charge(charges["description"], float(charges["quantity"]), float(charges["rate"]),
+                  float(charges["amount"]))
 
 
 def product_rows(rows_invoice=None):
+    """Makes a page worth of rows of charges."""
     if rows_invoice is None:
         rows_invoice = []
     return list(map(lambda charges: product_row(charges), rows_invoice))
 
 
-def build_invoice_charges_table(rows_invoice, max_rows=5):
-    rows_invoice_chunk = rows_invoice[0:max_rows]
-    sums = {"amount" : compute_column_sum(rows_invoice, "amount", True)}
-    del rows_invoice[0:max_rows]
-    return _build_itemized_description_table(product_rows(rows_invoice_chunk), sums)
+def build_invoice_charges_table(rows_invoice, charges_per_page=5):
+    """This function creates a page of invoice charges and depeletes
+    the list of charges by the number it prints out."""
+    rows_invoice_chunk = rows_invoice[0:charges_per_page]
+    sums = {"amount": compute_column_sum(rows_invoice, "amount", True)}
+    del rows_invoice[0:charges_per_page]
+    return build_charge_table(product_rows(rows_invoice_chunk), sums)
 
-
-def random_instance_charges(n):
-    products = []
-    for x in range(n):
-        make_random_instance_charge(products)
-
-    return _build_itemized_description_table([
-        products
-        # Product("Labor", 14, 60)
-    ])
-
-
-# def random_instance_charges_old():
-#     random_instance_id = random.randint(2125000, 2126000)
-#     random_quantity_gpu = random.random() * 10
-#     random_rate_gpu = random.random() * -0.5
-#     random_quantity_storage = random.random() * 10
-#     random_rate_storage = random.random() * -0.5
-#     return _build_itemized_description_table([
-#         Product(template_gpu_charge % random_instance_id, random_quantity_gpu, random_rate_gpu),
-#         Product(template_storage_charge % random_instance_id, random_quantity_storage, random_rate_storage),
-#         # Product("Labor", 14, 60)
-#     ])
 
 def compute_column_sum(rows_invoice, column_name, values_are_negative=False):
+    """Sum over one of the columns in the invoice."""
     s = 0
     for row in rows_invoice:
         if values_are_negative:
@@ -311,47 +251,30 @@ def generate_invoice(user_blob, rows_invoice):
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph("Invoice", font="Helvetica", font_size=Decimal(50),
                                              horizontal_alignment=Alignment.RIGHT))
-    # table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(
         Paragraph("# %d" % random.randint(1000, 10000), font="Helvetica", font_size=Decimal(20),
                   horizontal_alignment=Alignment.RIGHT))
     blank_row(table_logo_and_invoice_num, 4, 3)
-    #
-    # table_logo_and_invoice_num.add(Paragraph("Date", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
-    # table_logo_and_invoice_num.add(Paragraph("%d/%d/%d" % (now.day, now.month, now.year), horizontal_alignment=Alignment.RIGHT))
+
     table_logo_and_invoice_num.no_borders()
     page_layout.add(table_logo_and_invoice_num)
 
     # Invoice information table
-    page_layout.add(_build_invoice_information(invoice_total))
+    page_layout.add(build_2nd_block_table(invoice_total))
 
     # Empty paragraph for spacing
     page_layout.add(Paragraph(" "))
 
     # Billing and shipping information table
-    page_layout.add(_build_billing_and_shipping_information(user_blob))
-
-    # Empty paragraph for spacing
+    page_layout.add(build_billto_table(user_blob))
     page_layout.add(Paragraph(" "))
 
-    # template_gpu_charge = "Instance %d GPU charge: hours * $/hr"
-    # random_instance_id = random.randint(2125000, 2126000)
-    # random_quantity_gpu = random.random() * 10
-    # random_rate_gpu = random.random() * 0.5
-    # random_quantity_storage = random.random() * 10
-    # random_rate_storage = random.random() * 0.5
-
-    # invoices = user_blob["invoices"]
-    # Itemized description
-    max_rows = 8
-    table_invoice_rows = build_invoice_charges_table(rows_invoice, max_rows)
-    #    page_layout.add(random_instance_charges(4))
-
+    rows_per_page = 10
+    table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page)
     page_layout.add(table_invoice_rows)
 
-    # store
     with open("borb_invoice_example.pdf", "wb") as out_file_handle:
         PDF.dumps(out_file_handle, pdf)
 
