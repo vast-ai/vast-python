@@ -210,11 +210,12 @@ def compute_column_sum(rows_invoice, column_name, values_are_negative=False):
     """Sum over one of the columns in the invoice."""
     s = 0
     for row in rows_invoice:
+        v = math.floor(float(row[column_name]) * 100) / 100
         if values_are_negative:
-            s = s - float(row[column_name])
+            s = s - v
         else:
-            s = s + float(row[column_name])
-    return s
+            s = s + v
+    return math.floor(s * 100) / 100
 
 
 def generate_invoice_page(user_blob, rows_invoice, page_number):
