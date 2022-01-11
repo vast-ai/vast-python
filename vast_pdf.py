@@ -33,7 +33,6 @@ invoice_number = random.randint(1000, 10000)
 page_count = 0
 
 
-
 def build_2nd_block_table() -> Table:
     """
     This function builds a Table containing invoice information.
@@ -128,16 +127,16 @@ class Charge:
         self.amount: float = amount
 
 
-def build_charge_table(products: typing.List[Charge] = [],
+def build_charge_table(charges: typing.List[Charge] = [],
                        sums: typing.Dict[str, int] = {"quantity": 0, "rate": 0, "amount": 0}):
     """
     This function builds a Table containing itemized billing information
-    :param:     List products: the rows on the invoice
+    :param:     List charges: the rows on the invoice
     :param:     Dict sums: Dict of fields that can be summed
     :return:    a Table containing itemized billing information
     """
     global invoice_total
-    num_rows = len(products)
+    num_rows = len(charges)
     table_001 = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
 
     for h in ["Item", "Quantity", "Rate", "Amount"]:
@@ -150,7 +149,7 @@ def build_charge_table(products: typing.List[Charge] = [],
 
     odd_color = HexColor("BBBBBB")
     even_color = HexColor("FFFFFF")
-    for row_number, item in enumerate(products):
+    for row_number, item in enumerate(charges):
         c = even_color if row_number % 2 == 0 else odd_color
         table_001.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
         table_001.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
@@ -162,17 +161,16 @@ def build_charge_table(products: typing.List[Charge] = [],
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
 
     # Optionally add some empty rows to have a fixed number of rows for styling purposes
-    # for row_number in range(len(products), 10):
+    # for row_number in range(len(charges), 10):
     #     c = even_color if row_number % 2 == 0 else odd_color
     #     for _ in range(0, 4):
     #         table_001.add(TableCell(Paragraph(" "), background_color=c))
 
     # total
-    # total: float = sum([x.price_per_sku * x.quantity for x in products])
+    # total: float = sum([x.price_per_sku * x.quantity for x in charges])
     table_001.add(
         TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
     table_001.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
-
 
     table_001.add(
         TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
@@ -227,8 +225,6 @@ def generate_invoice_page(user_blob, rows_invoice, page_number):
     else:
         rows_per_page = num_rows_subsequents_pages
 
-
-
     page: Page = Page()
 
     # set PageLayout
@@ -236,7 +232,6 @@ def generate_invoice_page(user_blob, rows_invoice, page_number):
                                                  vertical_margin=page.get_page_info().get_height() * Decimal(0.02))
     f = r'./vast.ai-logo.png'
     logo_img = PIL.Image.open(f)
-
 
     # add corporate logo
 
@@ -250,7 +245,8 @@ def generate_invoice_page(user_blob, rows_invoice, page_number):
                 height=Decimal(105),
             ), row_span=2)
     )
-    table_logo_and_invoice_num.add(Paragraph("Page %d of %d" % (page_number, page_count), font="Helvetica", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(
+        Paragraph("Page %d of %d" % (page_number, page_count), font="Helvetica", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph("Invoice", font="Helvetica", font_size=Decimal(50),
                                              horizontal_alignment=Alignment.RIGHT))
@@ -287,8 +283,10 @@ def compute_pages_needed(rows_invoice):
     return page_count
 
 
-
 def generate_invoice(user_blob, rows_invoice):
+    """This is the main function in this file. It calls everything else
+    and makes the invoice page by page."""
+    rows_invoice = list(filter(lambda row: True if (float(row["amount"]) > 0) else False, rows_invoice))
     # create Document
     pdf: Document = Document()
     global page_count
@@ -297,21 +295,10 @@ def generate_invoice(user_blob, rows_invoice):
     invoice_total = compute_column_sum(rows_invoice, "amount")
     page_number = 1
     while (len(rows_invoice) > 0):
-        if page_number == 1:
-            page = generate_invoice_page(user_blob, rows_invoice, page_number)
-        else:
-            # if len(rows_invoice) < num_rows_subsequents_pages:
-            #     print("There are ", str(len(rows_invoice)), " rows left!")
-            #     break
-            page = generate_invoice_page(user_blob, rows_invoice, page_number)
-
+        page = generate_invoice_page(user_blob, rows_invoice, page_number)
         print("Adding page ", str(page_number))
         pdf.append_page(page)
         page_number += 1
-
-
-
-
 
     # page = generate_invoice_page(user_blob, rows_invoice, True)
     # pdf.append_page(page)

@@ -576,16 +576,19 @@ def generate__pdf_invoices(args):
     r_inv = requests.get(req_url_inv);
     r_inv.raise_for_status()
     print("R_INV:", r_inv.content)
+    # print("R_INV:", str(r_inv.__dict__))
     rows_inv = r_inv.json()["invoices"]
     req_url = apiurl(args, "/users/current", {"owner": "me"});
     r = requests.get(req_url);
     r.raise_for_status()
     print("R_USER:", r.content)
+    #print("R_USER:", str(r.__dict__))
     user_blob = r.json()
 
     if args.raw:
         print(json.dumps(rows_inv, indent=1, sort_keys=True))
         print("Current: ", user_blob)
+        print("Raw mode")
     else:
         display_table(rows_inv, invoice_fields)
         vast_pdf.generate_invoice(user_blob, rows_inv)
