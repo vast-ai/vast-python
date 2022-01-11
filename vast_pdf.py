@@ -4,6 +4,7 @@
 # Currently only makes invoices.
 
 import datetime
+import math
 import time
 import random
 from decimal import Decimal
@@ -24,15 +25,24 @@ from borb.pdf.document import Document
 from borb.pdf.page.page import Page
 from borb.pdf.pdf import PDF
 
+## Globals
+num_rows_first_page = 10
+num_rows_subsequents_pages = 25
+invoice_total = 0
+invoice_number = random.randint(1000, 10000)
+page_count = 0
 
-def build_2nd_block_table(invoice_total=0) -> Table:
+
+
+def build_2nd_block_table() -> Table:
     """
     This function builds a Table containing invoice information.
     This information spans the page and is the second large block of
     text on the page.
-    :param float invoice_total: Total charges for entire invoice.
+
     :return:    a Table containing invoice information
     """
+    global invoice_total
     now = datetime.datetime.now()
     table_001 = FixedColumnWidthTable(number_of_rows=5, number_of_columns=3)
 
@@ -48,7 +58,7 @@ def build_2nd_block_table(invoice_total=0) -> Table:
 
     table_001.add(
         Paragraph("Total", font="Helvetica-Bold", font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
-    table_001.add(Paragraph(f'-${invoice_total:.3f}', font="Helvetica-Bold", font_size=Decimal(20),
+    table_001.add(Paragraph(f'-${invoice_total:.2f}', font="Helvetica-Bold", font_size=Decimal(20),
                             horizontal_alignment=Alignment.RIGHT))
 
     table_001.add(Paragraph("fixme@vast.ai"))
@@ -126,7 +136,9 @@ def build_charge_table(products: typing.List[Charge] = [],
     :param:     Dict sums: Dict of fields that can be summed
     :return:    a Table containing itemized billing information
     """
-    table_001 = FlexibleColumnWidthTable(number_of_rows=13, number_of_columns=4)
+    global invoice_total
+    num_rows = len(products)
+    table_001 = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
 
     for h in ["Item", "Quantity", "Rate", "Amount"]:
         table_001.add(
@@ -141,43 +153,30 @@ def build_charge_table(products: typing.List[Charge] = [],
     for row_number, item in enumerate(products):
         c = even_color if row_number % 2 == 0 else odd_color
         table_001.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
-        table_001.add(TableCell(Paragraph("     {:10.3f}".format(item.quantity),  # font="Helvetica-Bold",
+        table_001.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(TableCell(Paragraph("     -${:10.3f}".format(item.price_per_sku),  # font="Helvetica-Bold",
+        table_001.add(TableCell(Paragraph("     -${:10.2f}".format(item.price_per_sku),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
         table_001.add(
-            TableCell(Paragraph("-${:10.3f}".format(item.amount),  # font="Helvetica-Bold",
+            TableCell(Paragraph("-${:10.2f}".format(item.amount),  # font="Helvetica-Bold",
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
 
     # Optionally add some empty rows to have a fixed number of rows for styling purposes
-    for row_number in range(len(products), 10):
-        c = even_color if row_number % 2 == 0 else odd_color
-        for _ in range(0, 4):
-            table_001.add(TableCell(Paragraph(" "), background_color=c))
+    # for row_number in range(len(products), 10):
+    #     c = even_color if row_number % 2 == 0 else odd_color
+    #     for _ in range(0, 4):
+    #         table_001.add(TableCell(Paragraph(" "), background_color=c))
 
-    # subtotal
-    subtotal: float = sum([x.price_per_sku * x.quantity for x in products])
+    # total
+    # total: float = sum([x.price_per_sku * x.quantity for x in products])
     table_001.add(
         TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
     table_001.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
 
-    # discounts
-    # table_001.add(
-    #     TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
-    # table_001.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
-
-    # taxes
-    taxes: float = subtotal * 0.06
-    # table_001.add(
-    #    TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-    # table_001.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
-
-    # total
-    total: float = subtotal
 
     table_001.add(
         TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-    table_001.add(TableCell(Paragraph("-${:10.3f}".format(-sums["amount"]), horizontal_alignment=Alignment.RIGHT)))
+    table_001.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
     table_001.no_borders()
     return table_001
@@ -201,7 +200,7 @@ def product_rows(rows_invoice=None):
 
 
 def build_invoice_charges_table(rows_invoice, charges_per_page=5):
-    """This function creates a page of invoice charges and depeletes
+    """This function creates a page of invoice charges and depletes
     the list of charges by the number it prints out."""
     rows_invoice_chunk = rows_invoice[0:charges_per_page]
     sums = {"amount": compute_column_sum(rows_invoice, "amount", True)}
@@ -220,13 +219,17 @@ def compute_column_sum(rows_invoice, column_name, values_are_negative=False):
     return s
 
 
-def generate_invoice(user_blob, rows_invoice):
-    # create Document
-    pdf: Document = Document()
+def generate_invoice_page(user_blob, rows_invoice, page_number):
+    global invoice_number
 
-    # add Page
+    if page_number == 1:
+        rows_per_page = num_rows_first_page
+    else:
+        rows_per_page = num_rows_subsequents_pages
+
+
+
     page: Page = Page()
-    pdf.append_page(page)
 
     # set PageLayout
     page_layout: PageLayout = SingleColumnLayout(page,
@@ -234,7 +237,7 @@ def generate_invoice(user_blob, rows_invoice):
     f = r'./vast.ai-logo.png'
     logo_img = PIL.Image.open(f)
 
-    invoice_total = compute_column_sum(rows_invoice, "amount")
+
     # add corporate logo
 
     now = datetime.datetime.now()
@@ -247,33 +250,73 @@ def generate_invoice(user_blob, rows_invoice):
                 height=Decimal(105),
             ), row_span=2)
     )
-    table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(Paragraph("Page %d of %d" % (page_number, page_count), font="Helvetica", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph("Invoice", font="Helvetica", font_size=Decimal(50),
                                              horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
-    table_logo_and_invoice_num.add(
-        Paragraph("# %d" % random.randint(1000, 10000), font="Helvetica", font_size=Decimal(20),
-                  horizontal_alignment=Alignment.RIGHT))
+    table_logo_and_invoice_num.add(Paragraph("# %d" % invoice_number, font="Helvetica",
+                                             font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
     blank_row(table_logo_and_invoice_num, 4, 3)
 
     table_logo_and_invoice_num.no_borders()
     page_layout.add(table_logo_and_invoice_num)
 
-    # Invoice information table
-    page_layout.add(build_2nd_block_table(invoice_total))
+    if page_number == 1:
+        # Invoice information table
+        page_layout.add(build_2nd_block_table())
 
-    # Empty paragraph for spacing
-    page_layout.add(Paragraph(" "))
+        # Empty paragraph for spacing
+        page_layout.add(Paragraph(" "))
 
-    # Billing and shipping information table
-    page_layout.add(build_billto_table(user_blob))
-    page_layout.add(Paragraph(" "))
+        # Billing and shipping information table
+        page_layout.add(build_billto_table(user_blob))
+        page_layout.add(Paragraph(" "))
 
-    rows_per_page = 10
+    # rows_per_page = 10
     table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page)
     page_layout.add(table_invoice_rows)
+    return page
+
+
+def compute_pages_needed(rows_invoice):
+    num_rows_invoice = len(rows_invoice)
+    num_rows_invoice = num_rows_invoice - num_rows_first_page
+    page_count: int = math.ceil(num_rows_invoice / num_rows_subsequents_pages) + 1
+    return page_count
+
+
+
+def generate_invoice(user_blob, rows_invoice):
+    # create Document
+    pdf: Document = Document()
+    global page_count
+    page_count = compute_pages_needed(rows_invoice)
+    global invoice_total
+    invoice_total = compute_column_sum(rows_invoice, "amount")
+    page_number = 1
+    while (len(rows_invoice) > 0):
+        if page_number == 1:
+            page = generate_invoice_page(user_blob, rows_invoice, page_number)
+        else:
+            # if len(rows_invoice) < num_rows_subsequents_pages:
+            #     print("There are ", str(len(rows_invoice)), " rows left!")
+            #     break
+            page = generate_invoice_page(user_blob, rows_invoice, page_number)
+
+        print("Adding page ", str(page_number))
+        pdf.append_page(page)
+        page_number += 1
+
+
+
+
+
+    # page = generate_invoice_page(user_blob, rows_invoice, True)
+    # pdf.append_page(page)
+    # page = generate_invoice_page(user_blob, rows_invoice, False)
+    # pdf.append_page(page)
 
     with open("borb_invoice_example.pdf", "wb") as out_file_handle:
         PDF.dumps(out_file_handle, pdf)
