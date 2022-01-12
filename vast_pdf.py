@@ -25,11 +25,14 @@ from borb.pdf.document import Document
 from borb.pdf.page.page import Page
 from borb.pdf.pdf import PDF
 
+
+
 ## Globals
 num_rows_first_page = 10
 num_rows_subsequents_pages = 25
 invoice_total = 0
-invoice_number = random.randint(1000, 10000)
+now = datetime.date.today()
+invoice_number = now.year * 12 + now.month - 1
 page_count = 0
 
 

@@ -194,6 +194,7 @@ displayable_fields = (
     ("dph_total", "$/hr", "{:0.4f}", None, True),
     ("dlperf", "DLPerf", "{:0.1f}", None, True),
     ("dlperf_per_dphtotal", "DLP/$", "{:0.1f}", None, True),
+    ("driver_version", "Nvidia Driver Version", "{}", None, True),
     ("inet_up", "Net_up", "{:0.1f}", None, True),
     ("inet_down", "Net_down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
@@ -441,6 +442,7 @@ def display_table(rows, fields):
             dlperf:                 float     DL-perf score  (see FAQ for explanation)
             dlperf_usd:             float     DL-perf/$
             dph:                    float     $/hour rental cost
+            driver_version          string    driver version in use on a host.
             duration:               float     max rental duration in days
             external:               bool      show external offers
             flops_usd:              float     TFLOPs/$
