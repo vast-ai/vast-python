@@ -151,6 +151,7 @@ parser = apwrap()
 
 
 def apiurl(args, subpath, query_args=None):
+    """Creates the endpoint URL for a given combination of parameters."""
     if query_args is None:
         query_args = {}
     if args.api_key is not None:
@@ -182,6 +183,7 @@ def deindent(message):
     return message.strip()
 
 
+# These are the fields that are displayed when a search is run
 displayable_fields = (
     ("id", "ID", "{}", None, True),
     ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
@@ -202,6 +204,7 @@ displayable_fields = (
     ("machine_id", "machine_id", "{}", None, True),
 )
 
+# These fields are displayed when you do 'show instances'
 instance_fields = (
     ("id", "ID", "{}", None, True),
     ("machine_id", "Machine", "{}", None, True),
@@ -216,7 +219,6 @@ instance_fields = (
     ("ssh_port", "SSH Port", "{}", None, True),
     ("dph_total", "$/hr", "{:0.4f}", None, True),
     ("image_uuid", "Image", "{}", None, True),
-
     # ("dlperf",              "DLPerf",   "{:0.1f}",  None, True),
     # ("dlperf_per_dphtotal", "DLP/$",    "{:0.1f}",  None, True),
     ("inet_up", "Net up", "{:0.1f}", None, True),
@@ -237,6 +239,7 @@ invoice_fields = (
 
 
 def parse_query(query_str, res=None):
+    """"""
     if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
@@ -362,6 +365,8 @@ def parse_query(query_str, res=None):
 
 
 def display_table(rows, fields):
+    """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
+    of it. """
     header = [name for _, name, _, _, _ in fields]
     out_rows = [header]
     lengths = [len(x) for x in header]
@@ -469,6 +474,7 @@ def display_table(rows, fields):
     aliases=hidden_aliases(["search instances"]),
 )
 def search__offers(args):
+    """Actually runs the parse_query function"""
     field_alias = {
         "cuda_vers": "cuda_max_good",
         "reliability": "reliability2",
@@ -521,6 +527,7 @@ def search__offers(args):
     usage="vast show instances [--api-key API_KEY] [--raw]",
 )
 def show__instances(args):
+    """Shows the stats on the machine the user is renting."""
     req_url = apiurl(args, "/instances", {"owner": "me"});
     r = requests.get(req_url);
     r.raise_for_status()
@@ -584,7 +591,7 @@ def generate__pdf_invoices(args):
     r = requests.get(req_url);
     r.raise_for_status()
     print("R_USER:", r.content)
-    #print("R_USER:", str(r.__dict__))
+    # print("R_USER:", str(r.__dict__))
     user_blob = r.json()
 
     if args.raw:

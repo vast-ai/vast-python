@@ -2,7 +2,7 @@
 ## CLI Tools ##
 
 * Invoices
-  * Get real invoice #
+  * ~~Get real invoice #~~
   * ~~Pagination system for long invoices.~~
   * ~~Sum charges the way the existing invoice does.~~
   * ~~Clean out dead code and standardize coding style~~

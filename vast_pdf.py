@@ -28,7 +28,7 @@ from borb.pdf.pdf import PDF
 
 
 ## Globals
-num_rows_first_page = 10
+num_rows_first_page = 15
 num_rows_subsequents_pages = 25
 invoice_total = 0
 now = datetime.date.today()
@@ -46,7 +46,7 @@ def build_2nd_block_table() -> Table:
     """
     global invoice_total
     now = datetime.datetime.now()
-    table_001 = FixedColumnWidthTable(number_of_rows=5, number_of_columns=3)
+    table_001 = FixedColumnWidthTable(number_of_rows=3, number_of_columns=3)
 
     table_001.add(Paragraph("Vast.ai Inc."))
     table_001.add(Paragraph("Date", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
@@ -63,13 +63,15 @@ def build_2nd_block_table() -> Table:
     table_001.add(Paragraph(f'-${invoice_total:.2f}', font="Helvetica-Bold", font_size=Decimal(20),
                             horizontal_alignment=Alignment.RIGHT))
 
-    table_001.add(Paragraph("fixme@vast.ai"))
-    table_001.add(Paragraph(" "))
-    table_001.add(Paragraph(" "))
+    # table_001.add(Paragraph("fixme@vast.ai"))
+    # table_001.add(Paragraph(" "))
+    # table_001.add(Paragraph(" "))
+    # table_001.add(Paragraph(" "))
 
-    table_001.add(Paragraph("https://vast.ai/"))
-    table_001.add(Paragraph(" "))
-    table_001.add(Paragraph(" "))
+    # table_001.add(Paragraph("https://vast.ai/"))
+    # table_001.add(Paragraph(" "))
+    # table_001.add(Paragraph(" "))
+    # table_001.add(Paragraph(" "))
 
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
     table_001.no_borders()
@@ -123,7 +125,7 @@ class Charge:
     def __init__(self, name: str, quantity: float, rate: float, amount: float):
         self.name: str = name
         assert quantity >= 0
-        self.quantity: int = quantity
+        self.quantity: float = quantity
         assert rate >= 0
         self.price_per_sku: float = rate
         assert amount >= 0
