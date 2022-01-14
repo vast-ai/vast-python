@@ -11,7 +11,7 @@ import requests
 import getpass
 
 import vast_pdf
-from vast_pdf import main
+# from vast_pdf import main
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -235,6 +235,38 @@ invoice_fields = (
     ("rate", "Rate", "{}", None, True),
     ("timestamp", "Timestamp", "{:0.1f}", None, True),
     ("type", "Type", "{}", None, True)
+)
+
+user_fields = (
+    # ("api_key", "api_key", "{}", None, True),
+    ("balance", "Balance", "{}", None, True),
+    ("balance_threshold", "Bal. Thld", "{}", None, True),
+    ("balance_threshold_enabled", "Bal. Thld Enabled", "{}", None, True),
+    ("billaddress_city", "City", "{}", None, True),
+    ("billaddress_country", "Country", "{}", None, True),
+    ("billaddress_line1", "Addr Line 1", "{}", None, True),
+    ("billaddress_line2", "Addr line 2", "{}", None, True),
+    ("billaddress_zip", "Zip", "{}", None, True),
+    ("billed_expected", "Billed Expected", "{}", None, True),
+    ("billed_verified", "Billed Vfy", "{}", None, True),
+    ("billing_creditonly", "Billing Creditonly", "{}", None, True),
+    ("can_pay", "Can Pay", "{}", None, True),
+    ("credit", "Credit", "{:0.2f}", None, True),
+    ("email", "Email", "{}", None, True),
+    ("email_verified", "Email Vfy", "{}", None, True),
+    ("fullname", "Full Name", "{}", None, True),
+    ("got_signup_credit", "Got Signup Credit", "{}", None, True),
+    ("has_billing", "Has Billing", "{}", None, True),
+    ("has_payout", "Has Payout", "{}", None, True),
+    ("id", "Id", "{}", None, True),
+    ("last4", "Last4", "{}", None, True),
+    ("paid_expected", "Paid Expected", "{}", None, True),
+    ("paid_verified", "Paid Vfy", "{}", None, True),
+    ("password_resettable", "Pwd Resettable", "{}", None, True),
+    ("paypal_email", "Paypal Email", "{}", None, True),
+    ("ssh_key", "Ssh Key", "{}", None, True),
+    ("user", "User", "{}", None, True),
+    ("username", "Username", "{}", None, True)
 )
 
 
@@ -574,6 +606,27 @@ def show__invoices(args):
     else:
         display_table(rows, invoice_fields)
         print("Current: ", current_charges)
+
+
+@parser.command(
+    argument("-q", "--quiet", action="store_true", help="display information about user"),
+    usage="vast show user[OPTIONS]",
+)
+def show__user(args):
+    req_url = apiurl(args, "/users/current", {"owner": "me"});
+    # req_url = "https://vast.ai/api/v0/users/current/?api_key=38d9223af02d6587452791106f1a0e4071a3872d05daa282608b0a080aadb7d7"
+
+    r = requests.get(req_url);
+    r.raise_for_status()
+    user_blob = r.json()
+    user_blob.pop("api_key")
+
+    if args.raw:
+        print(json.dumps(user_blob, indent=1, sort_keys=True))
+        print("Current: ", user_blob)
+        print("Raw mode")
+    else:
+        display_table([user_blob], user_fields)
 
 
 @parser.command(
