@@ -10,7 +10,11 @@ import os
 import requests
 import getpass
 
-import vast_pdf
+try:
+    import vast_pdf
+except ImportError:
+    print("Please install the Borb PDF library if you need to generate PDF invoices.\nUse the command 'pip3 install borb' to do this.")
+
 # from vast_pdf import main
 
 try:
