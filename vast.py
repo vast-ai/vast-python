@@ -326,7 +326,7 @@ def parse_query(query_str, res=None):
         "disk_bw",
         "disk_space",
         "dlperf",
-        "dlperf_per_dphtotal"
+        "dlperf_per_dphtotal",
         "dph_total",
         "duration",
         "external",
@@ -430,22 +430,15 @@ def display_table(rows, fields):
 
 
 @parser.command(
-    argument("-t", "--type", default="on-demand",
-             help="whether to show `interruptible` or `on-demand` offers. default: on-demand"),
-    argument("-i", "--interruptible", dest="type", const="interruptible", action="store_const",
-             help="Alias for --type=interruptible"),
-    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const",
-             help="Alias for --type=on-demand"),
+    argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
+    argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
+    argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
+    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
-    argument("--disable-bundling", action="store_true",
-             help="Show identical offers. This request is more heavily rate limited."),
-    argument("--storage", type=float, default=5.0, help="amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("-o", "--order", type=str,
-             help="comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
-             default='score-'),
-    argument("query",
-             help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
-             nargs="*", default=None),
+    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
+    argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
+    argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
+    argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
@@ -538,7 +531,10 @@ def search__offers(args):
             order.append([field, direction])
 
         query["order"] = order
-        query["type"] = args.type
+        query["type"]  = args.type
+        # For backwards compatibility, support --type=interruptible option
+        if query["type"] == 'interruptible':
+            query["type"] = 'bid'
         if args.disable_bundling:
             query["disable_bundling"] = True
     except ValueError as e:
@@ -570,6 +566,37 @@ def show__instances(args):
         display_table(rows, instance_fields)
 
 
+@parser.command(
+    argument("--id", help="id of instance", type=int),
+    usage="vast ssh-url",
+)
+def ssh_url(args):
+    return _ssh_url(args, "ssh://")
+
+
+@parser.command(
+    argument("--id", help="id of instance", type=int),
+    usage="vast scp-url",
+)
+def scp_url(args):
+    return _ssh_url(args, "scp://")
+
+
+def _ssh_url(args, protocol):
+    req_url = apiurl(args, "/instances", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    if args.id:
+        instance, = [r for r in rows if r['id'] == args.id]
+    elif len(rows) > 1:
+        print("Found multiple running instances")
+        return 1
+    else:
+        instance, = rows
+    print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
+    
+    
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage="vast show machines [OPTIONS]",
@@ -693,8 +720,8 @@ def list__machine(args):
 
 
 @parser.command(
-    argument("id", help="id of machine to list", type=int),
-    usage="vast unlist machine <id>",
+    argument("id", help="id of machine to unlist", type=int),
+    usage = "vast unlist machine <id>",
 )
 def unlist__machine(args):
     req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
@@ -854,26 +881,15 @@ def set__defjob(args):
     argument("--label", help="label to set on the instance", type=str),
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
-    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--jupyter-dir",
-             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
-             type=str),
-    argument("--jupyter-lab",
-             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
-             action="store_true"),
-    argument("--lang-utf8",
-             help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
-             action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
-             action="store_true"),
-    argument("--extra", help=argparse.SUPPRESS),
-    argument("--args", nargs=argparse.REMAINDER,
-             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
-    argument("--create-from",
-             help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
-             type=str),
-    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="vast create instance id [OPTIONS] [--args ...]",
+    argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+    argument("--lang-utf8",   help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
+    argument("--extra",       help=argparse.SUPPRESS),
+    argument("--args",        nargs=argparse.REMAINDER, help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
+    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
+    argument("--force",       help="Skip sanity checks when creating from an existing instance", action="store_true"), usage = "vast create instance id [OPTIONS] [--args ...]",
 )
 def create__instance(args):
     if args.onstart:
@@ -917,10 +933,10 @@ def create__instance(args):
 
 
 @parser.command(
-    argument("id", help="id of instance type to launch", type=int),
+    argument("id",      help="id of instance type to change bid", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
-    usage="vast change bid id [--price PRICE]",
-    epilog=deindent("""
+    usage = "vast change bid id [--price PRICE]",
+    epilog = deindent("""
         Change the current bid price of instance id to PRICE.
         If PRICE is not specified, then a winning bid price is used as the default.
     """),
