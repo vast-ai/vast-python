@@ -623,14 +623,18 @@ def show__machines(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    argument("-s", "--start_date", help="unix timestamp of the start date (optional)", type=int),
+    argument("-e", "--end_date", help="unix timestamp of the end date (optional)", type=int),
     usage="vast show invoices [OPTIONS]",
 )
 def show__invoices(args):
+    end_date_ = str(args.end_date);
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
-    r = requests.get(req_url);
+    r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["invoices"]
     current_charges = r.json()["current"]
+
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
         print("Current: ", current_charges)
@@ -662,6 +666,8 @@ def show__user(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    argument("-s", "--start_date", help="unix timestamp of the start date (optional)", type=int),
+    argument("-e", "--end_date", help="unix timestamp of the end date (optional)", type=int),
     usage="vast generate pdf_invoice [OPTIONS]",
 )
 def generate__pdf_invoices(args):

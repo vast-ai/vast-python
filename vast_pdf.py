@@ -32,6 +32,7 @@ invoice_total: float = 0
 now = datetime.date.today()
 invoice_number: int = now.year * 12 + now.month - 1
 page_count: int = 0
+no_table_borders = True
 
 
 # def Paragraph_wr(text: str, *args, **kwargs):
@@ -82,7 +83,7 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
     # table.add(Paragraph(" "))
 
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-    # table.no_borders()
+    if no_table_borders: table.no_borders()
     return table
 
 
@@ -128,7 +129,7 @@ def build_billto_table(user_blob: dict) -> FixedColumnWidthTable:
     table.add(Paragraph(" "))  # BILLING
     table.add(Paragraph(" "))  # SHIPPING
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-    # table.no_borders()
+    if no_table_borders: table.no_borders()
     return table
 
 
@@ -155,10 +156,10 @@ def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidth
     """
     global invoice_total
     num_rows = len(charges)
-    table_001 = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
+    table = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
 
     for h in ["Item", "Quantity", "Rate", "Amount"]:
-        table_001.add(
+        table.add(
             TableCell(
                 Paragraph(h, font_color=X11Color("White")),  # vertical_alignment=Alignment.MIDDLE),
                 background_color=HexColor("0b3954"), padding_top=Decimal(8), padding_bottom=Decimal(8)
@@ -169,12 +170,12 @@ def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidth
     even_color = HexColor("FFFFFF")
     for row_number, item in enumerate(charges):
         c = even_color if row_number % 2 == 0 else odd_color
-        table_001.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
-        table_001.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
+        table.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
+        table.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(TableCell(Paragraph("     -${:10.2f}".format(item.price_per_sku),  # font="Helvetica-Bold",
+        table.add(TableCell(Paragraph("     -${:10.2f}".format(item.price_per_sku),  # font="Helvetica-Bold",
                                           horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(
+        table.add(
             TableCell(Paragraph("-${:10.2f}".format(item.amount),  # font="Helvetica-Bold",
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
 
@@ -182,20 +183,20 @@ def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidth
     # for row_number in range(len(charges), 10):
     #     c = even_color if row_number % 2 == 0 else odd_color
     #     for _ in range(0, 4):
-    #         table_001.add(TableCell(Paragraph(" "), background_color=c))
+    #         table.add(TableCell(Paragraph(" "), background_color=c))
 
     # total
     # total: float = sum([x.price_per_sku * x.quantity for x in charges])
-    table_001.add(
+    table.add(
         TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
-    table_001.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
+    table.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
 
-    table_001.add(
+    table.add(
         TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-    table_001.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
-    table_001.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
-    # table_001.no_borders()
-    return table_001
+    table.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
+    table.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
+    if no_table_borders: table.no_borders()
+    return table
 
 
 # def main():
@@ -296,7 +297,7 @@ def generate_invoice_page(user_blob: typing.Dict,
                                              font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
     blank_row(table_logo_and_invoice_num, 4, 3)
 
-    # table_logo_and_invoice_num.no_borders()
+    if no_table_borders: table_logo_and_invoice_num.no_borders()
     page_layout.add(table_logo_and_invoice_num)
 
     if page_number == 1:
