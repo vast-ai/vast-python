@@ -34,6 +34,16 @@ invoice_number: int = now.year * 12 + now.month - 1
 page_count: int = 0
 
 
+# def Paragraph_wr(text: str, *args, **kwargs):
+#     """This is just a wrapper for the Paragraph function that prevents the text from being the null string "".
+#
+#      :param str text: The text to be checked for null.
+#      """
+#     if text == "":
+#         text = " "
+#     return Paragraph(text, *args, **kwargs)
+
+
 def build_2nd_block_table() -> FixedColumnWidthTable:
     """
     This function builds a Table containing invoice information.
@@ -72,7 +82,7 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
     # table.add(Paragraph(" "))
 
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-    table.no_borders()
+    # table.no_borders()
     return table
 
 
@@ -118,7 +128,7 @@ def build_billto_table(user_blob: dict) -> FixedColumnWidthTable:
     table.add(Paragraph(" "))  # BILLING
     table.add(Paragraph(" "))  # SHIPPING
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-    table.no_borders()
+    # table.no_borders()
     return table
 
 
@@ -184,7 +194,7 @@ def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidth
         TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
     table_001.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
     table_001.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
-    table_001.no_borders()
+    # table_001.no_borders()
     return table_001
 
 
@@ -286,7 +296,7 @@ def generate_invoice_page(user_blob: typing.Dict,
                                              font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
     blank_row(table_logo_and_invoice_num, 4, 3)
 
-    table_logo_and_invoice_num.no_borders()
+    # table_logo_and_invoice_num.no_borders()
     page_layout.add(table_logo_and_invoice_num)
 
     if page_number == 1:
@@ -315,6 +325,18 @@ def compute_pages_needed(rows_invoice: typing.List[typing.Dict]) -> int:
     num_rows_invoice = num_rows_invoice - num_rows_first_page
     page_count: int = math.ceil(num_rows_invoice / num_rows_subsequents_pages) + 1
     return page_count
+
+
+def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
+    """Map over a dict and translate any null string values into ' '.
+    Leave everthing else as is."""
+    # Beware: locally defined function.
+    def translate_nulls(s):
+        if s == "":
+            return " "
+        return s
+    new_d = {k: translate_nulls(v) for k, v in d.items()}
+    return new_d
 
 
 def generate_invoice(user_blob: typing.Dict, rows_invoice):

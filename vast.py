@@ -665,18 +665,19 @@ def show__user(args):
     usage="vast generate pdf_invoice [OPTIONS]",
 )
 def generate__pdf_invoices(args):
-    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"});
-    r_inv = requests.get(req_url_inv);
+    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
+    r_inv = requests.get(req_url_inv)
     r_inv.raise_for_status()
     print("R_INV:", r_inv.content)
     # print("R_INV:", str(r_inv.__dict__))
     rows_inv = r_inv.json()["invoices"]
-    req_url = apiurl(args, "/users/current", {"owner": "me"});
-    r = requests.get(req_url);
+    req_url = apiurl(args, "/users/current", {"owner": "me"})
+    r = requests.get(req_url)
     r.raise_for_status()
     print("R_USER:", r.content)
     # print("R_USER:", str(r.__dict__))
     user_blob = r.json()
+    user_blob = vast_pdf.translate_null_strings_to_blanks(user_blob)
 
     if args.raw:
         print(json.dumps(rows_inv, indent=1, sort_keys=True))
