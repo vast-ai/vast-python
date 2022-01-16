@@ -53,8 +53,9 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
 
     :return Table:    a Table containing invoice information
     """
-    global invoice_total
-    now = datetime.datetime.now()
+    global invoice_total, now
+
+    # now = datetime.datetime.now()
     table = FixedColumnWidthTable(number_of_rows=3, number_of_columns=3)
 
     table.add(Paragraph("Vast.ai Inc."))
@@ -148,10 +149,11 @@ class Charge:
         self.amount: float = amount
 
 
-def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidthTable:
+def build_charge_table(charges: typing.List[Charge], page_number: int) -> FlexibleColumnWidthTable:
     """
     This function builds a Table containing itemized billing information
     :param:     List charges: the rows on the invoice
+    :param      int page_number: The page we are on
     :return:    a Table containing itemized billing information
     """
     global invoice_total
@@ -179,21 +181,16 @@ def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidth
             TableCell(Paragraph("-${:10.2f}".format(item.amount),  # font="Helvetica-Bold",
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
 
-    # Optionally add some empty rows to have a fixed number of rows for styling purposes
-    # for row_number in range(len(charges), 10):
-    #     c = even_color if row_number % 2 == 0 else odd_color
-    #     for _ in range(0, 4):
-    #         table.add(TableCell(Paragraph(" "), background_color=c))
+    if page_number == page_count:
+        table.add(
+            TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
+        table.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
 
-    # total
-    # total: float = sum([x.price_per_sku * x.quantity for x in charges])
-    table.add(
-        TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
-    table.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
-
-    table.add(
-        TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-    table.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
+        table.add(
+            TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
+        table.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
+    else:
+        blank_row(table, 4, 2)
     table.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
     if no_table_borders: table.no_borders()
     return table
@@ -217,7 +214,7 @@ def product_rows(rows_invoice=None):
 
 
 def build_invoice_charges_table(rows_invoice: typing.List[typing.Dict],
-                                charges_per_page: int = 5) -> FlexibleColumnWidthTable:
+                                charges_per_page: int, page_number: int) -> FlexibleColumnWidthTable:
     """This function creates a page of invoice charges and depletes
     the list of charges by the number it prints out.
     :param typing.List[typing.Dict] rows_invoice: List of rows in the invoice
@@ -226,7 +223,7 @@ def build_invoice_charges_table(rows_invoice: typing.List[typing.Dict],
     rows_invoice_chunk = rows_invoice[0:charges_per_page]
     # sums = {"amount": compute_column_sum(rows_invoice, "amount", True)}
     del rows_invoice[0:charges_per_page]
-    return build_charge_table(product_rows(rows_invoice_chunk))
+    return build_charge_table(product_rows(rows_invoice_chunk), page_number)
 
 
 def compute_column_sum(rows_invoice: typing.List[typing.Dict],
@@ -312,7 +309,7 @@ def generate_invoice_page(user_blob: typing.Dict,
         page_layout.add(Paragraph(" "))
 
     # rows_per_page = 10
-    table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page)
+    table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page, page_number)
     page_layout.add(table_invoice_rows)
     return page
 
