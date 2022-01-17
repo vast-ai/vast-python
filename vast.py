@@ -7,6 +7,12 @@ import json
 import sys
 import argparse
 import os
+import time
+from datetime import date
+
+# import dateutil
+import dateutil
+from dateutil import parser
 import requests
 import getpass
 
@@ -599,8 +605,8 @@ def _ssh_url(args, protocol):
     else:
         instance, = rows
     print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
-    
-    
+
+
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage="vast show machines [OPTIONS]",
@@ -623,16 +629,18 @@ def show__machines(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    argument("-s", "--start_date", help="unix timestamp of the start date (optional)", type=int),
-    argument("-e", "--end_date", help="unix timestamp of the end date (optional)", type=int),
+    argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
+    argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     usage="vast show invoices [OPTIONS]",
 )
 def show__invoices(args):
-    end_date_ = str(args.end_date);
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
     r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["invoices"]
+    # print("Timestamp for first row: ", rows[0]["timestamp"])
+    invoice_date_filter_data = filter_invoices_date(args, rows)
+    rows = invoice_date_filter_data["rows"]
     current_charges = r.json()["current"]
 
     if args.raw:
@@ -664,10 +672,35 @@ def show__user(args):
         display_table([user_blob], user_fields)
 
 
+
+def filter_invoices_date(args, rows):
+    end_timestamp = 9999999999
+    start_timestamp = 0
+    start_date_txt = end_date_txt = "--"
+    try:
+        end_date = dateutil.parser.parse(str(args.end_date))
+        end_date_txt = end_date.isoformat()
+        end_timestamp = time.mktime(end_date.timetuple())
+    except ValueError:
+        print("Warning: Invalid end date format!")
+    try:
+        start_date = dateutil.parser.parse(str(args.start_date))
+        start_date_txt = start_date.isoformat()
+        start_timestamp = time.mktime(start_date.timetuple())
+    except ValueError:
+        print("Warning: Invalid start date format!")
+
+    date_header_text = "Invoice items between " + start_date_txt + " and " + end_date_txt
+
+    rows = list(filter(lambda row: row["timestamp"] <= end_timestamp
+                       and row["timestamp"] >= start_timestamp, rows))
+    return {"rows": rows, "date_header_text": date_header_text}
+
+
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    argument("-s", "--start_date", help="unix timestamp of the start date (optional)", type=int),
-    argument("-e", "--end_date", help="unix timestamp of the end date (optional)", type=int),
+    argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
+    argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     usage="vast generate pdf_invoice [OPTIONS]",
 )
 def generate__pdf_invoices(args):
@@ -677,6 +710,10 @@ def generate__pdf_invoices(args):
     print("R_INV:", r_inv.content)
     # print("R_INV:", str(r_inv.__dict__))
     rows_inv = r_inv.json()["invoices"]
+
+    invoice_date_filter_data = filter_invoices_date(args, rows_inv)
+    rows_inv = invoice_date_filter_data["rows"]
+
     req_url = apiurl(args, "/users/current", {"owner": "me"})
     r = requests.get(req_url)
     r.raise_for_status()
@@ -691,7 +728,7 @@ def generate__pdf_invoices(args):
         print("Raw mode")
     else:
         display_table(rows_inv, invoice_fields)
-        vast_pdf.generate_invoice(user_blob, rows_inv)
+        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_date_filter_data["date_header_text"])
 
 
 @parser.command(

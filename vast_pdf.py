@@ -249,7 +249,7 @@ def compute_column_sum(rows_invoice: typing.List[typing.Dict],
 
 def generate_invoice_page(user_blob: typing.Dict,
                           rows_invoice: typing.List[typing.Dict],
-                          page_number) -> Page:
+                          page_number, date_header_text="") -> Page:
     """Makes a single page of the invoice.
 
     :param Dict user_blob: Dict of info about the user
@@ -306,7 +306,7 @@ def generate_invoice_page(user_blob: typing.Dict,
 
         # Billing and shipping information table
         page_layout.add(build_billto_table(user_blob))
-        page_layout.add(Paragraph(" "))
+        page_layout.add(Paragraph(date_header_text + " "))
 
     # rows_per_page = 10
     table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page, page_number)
@@ -337,7 +337,7 @@ def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     return new_d
 
 
-def generate_invoice(user_blob: typing.Dict, rows_invoice):
+def generate_invoice(user_blob: typing.Dict, rows_invoice, date_header_text=""):
     """This is the main function in this file. It calls everything else
     and makes the invoice page by page.
 
@@ -353,7 +353,7 @@ def generate_invoice(user_blob: typing.Dict, rows_invoice):
     invoice_total = compute_column_sum(rows_invoice, "amount")
     page_number = 1
     while len(rows_invoice) > 0:
-        page = generate_invoice_page(user_blob, rows_invoice, page_number)
+        page = generate_invoice_page(user_blob, rows_invoice, page_number, date_header_text)
         print("Adding page ", str(page_number))
         pdf.append_page(page)
         page_number += 1
