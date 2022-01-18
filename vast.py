@@ -686,7 +686,7 @@ def show__user(args):
         display_table([user_blob], user_fields)
 
 
-def filter_invoice_items(args: typing.Dict, rows: typing.List) -> typing.Dict:
+def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
     'only_charge' and 'only_credits' options.
 
@@ -696,23 +696,22 @@ def filter_invoice_items(args: typing.Dict, rows: typing.List) -> typing.Dict:
     :return List: Returns the filtered list of rows.
 
     """
-    end_timestamp = 9999999999
-    start_timestamp = 0
-    start_date_txt = end_date_txt = "--"
+    end_timestamp: float = 9999999999
+    start_timestamp: float = 0
     if args.end_date:
         try:
             end_date = dateutil.parser.parse(str(args.end_date))
             end_date_txt = end_date.isoformat()
             end_timestamp = time.mktime(end_date.timetuple())
         except ValueError:
-            print("Warning: Invalid end date format!")
+            print("Warning: Invalid end date format! Ignoring end date!")
     if args.start_date:
         try:
             start_date = dateutil.parser.parse(str(args.start_date))
             start_date_txt = start_date.isoformat()
             start_timestamp = time.mktime(start_date.timetuple())
         except ValueError:
-            print("Warning: Invalid start date format!")
+            print("Warning: Invalid start date format! Ignoring start date!")
 
     if args.only_charges:
         type_txt = "Only showing charges."
@@ -730,9 +729,17 @@ def filter_invoice_items(args: typing.Dict, rows: typing.List) -> typing.Dict:
         def type_filter_fn(row):
             return True
 
-    header_text = "Invoice items between " \
-                       + start_date_txt + " and " \
-                       + end_date_txt + ". " + type_txt
+    if args.end_date:
+        if args.start_date:
+            header_text = f'Invoice items after {start_date_txt} and before {end_date_txt}.'
+        else:
+            header_text = f'Invoice items before {end_date_txt}.'
+    elif args.start_date:
+        header_text = f'Invoice items after {start_date_txt}.'
+    else:
+        header_text = " "
+
+    header_text = header_text + " " + type_txt
 
     rows = list(filter(lambda row: end_timestamp >= row["timestamp"] >= start_timestamp
                                    and type_filter_fn(row), rows))
@@ -751,18 +758,12 @@ def generate__pdf_invoices(args):
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
     r_inv = requests.get(req_url_inv)
     r_inv.raise_for_status()
-    print("R_INV:", r_inv.content)
-    # print("R_INV:", str(r_inv.__dict__))
     rows_inv = r_inv.json()["invoices"]
-
-    invoice_date_filter_data = filter_invoice_items(args, rows_inv)
-    rows_inv = invoice_date_filter_data["rows"]
-
+    invoice_filter_data = filter_invoice_items(args, rows_inv)
+    rows_inv = invoice_filter_data["rows"]
     req_url = apiurl(args, "/users/current", {"owner": "me"})
     r = requests.get(req_url)
     r.raise_for_status()
-    print("R_USER:", r.content)
-    # print("R_USER:", str(r.__dict__))
     user_blob = r.json()
     user_blob = vast_pdf.translate_null_strings_to_blanks(user_blob)
 
@@ -772,7 +773,7 @@ def generate__pdf_invoices(args):
         print("Raw mode")
     else:
         display_table(rows_inv, invoice_fields)
-        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_date_filter_data["header_text"])
+        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data["header_text"])
 
 
 @parser.command(
