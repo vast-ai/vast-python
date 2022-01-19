@@ -747,7 +747,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
         type_txt = "Only showing credits."
         selector_flag = "only_credits"
         def type_filter_fn(row):
-            return True if row["type"] == "credit" else False
+            return True if row["type"] == "payment" else False
     else:
         type_txt = ""
 
