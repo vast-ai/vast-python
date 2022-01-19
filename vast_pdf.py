@@ -2,7 +2,7 @@
 
 # vast_pdf: Library of functions to create PDF reports of various type.
 # Currently only makes invoices.
-
+import argparse
 import datetime
 import math
 import time
@@ -32,6 +32,17 @@ invoice_total: float = 0
 now = datetime.date.today()
 invoice_number: int = now.year * 12 + now.month - 1
 page_count: int = 0
+no_table_borders = True
+
+
+# def Paragraph_wr(text: str, *args, **kwargs):
+#     """This is just a wrapper for the Paragraph function that prevents the text from being the null string "".
+#
+#      :param str text: The text to be checked for null.
+#      """
+#     if text == "":
+#         text = " "
+#     return Paragraph(text, *args, **kwargs)
 
 
 def build_2nd_block_table() -> FixedColumnWidthTable:
@@ -42,8 +53,9 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
 
     :return Table:    a Table containing invoice information
     """
-    global invoice_total
-    now = datetime.datetime.now()
+    global invoice_total, now
+
+    # now = datetime.datetime.now()
     table = FixedColumnWidthTable(number_of_rows=3, number_of_columns=3)
 
     table.add(Paragraph("Vast.ai Inc."))
@@ -72,7 +84,7 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
     # table.add(Paragraph(" "))
 
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-    table.no_borders()
+    if no_table_borders: table.no_borders()
     return table
 
 
@@ -118,7 +130,7 @@ def build_billto_table(user_blob: dict) -> FixedColumnWidthTable:
     table.add(Paragraph(" "))  # BILLING
     table.add(Paragraph(" "))  # SHIPPING
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
-    table.no_borders()
+    if no_table_borders: table.no_borders()
     return table
 
 
@@ -129,26 +141,27 @@ class Charge:
 
     def __init__(self, name: str, quantity: float, rate: float, amount: float):
         self.name: str = name
-        assert quantity >= 0
+        # assert quantity >= 0
         self.quantity: float = quantity
-        assert rate >= 0
+        # assert rate >= 0
         self.price_per_sku: float = rate
-        assert amount >= 0
+        # assert amount >= 0
         self.amount: float = amount
 
 
-def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidthTable:
+def build_charge_table(charges: typing.List[Charge], page_number: int) -> FlexibleColumnWidthTable:
     """
     This function builds a Table containing itemized billing information
     :param:     List charges: the rows on the invoice
+    :param      int page_number: The page we are on
     :return:    a Table containing itemized billing information
     """
     global invoice_total
     num_rows = len(charges)
-    table_001 = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
+    table = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
 
     for h in ["Item", "Quantity", "Rate", "Amount"]:
-        table_001.add(
+        table.add(
             TableCell(
                 Paragraph(h, font_color=X11Color("White")),  # vertical_alignment=Alignment.MIDDLE),
                 background_color=HexColor("0b3954"), padding_top=Decimal(8), padding_bottom=Decimal(8)
@@ -159,33 +172,28 @@ def build_charge_table(charges: typing.List[Charge] = []) -> FlexibleColumnWidth
     even_color = HexColor("FFFFFF")
     for row_number, item in enumerate(charges):
         c = even_color if row_number % 2 == 0 else odd_color
-        table_001.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
-        table_001.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
-                                          horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(TableCell(Paragraph("     -${:10.2f}".format(item.price_per_sku),  # font="Helvetica-Bold",
-                                          horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table_001.add(
+        table.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
+        table.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
+                                      horizontal_alignment=Alignment.RIGHT), background_color=c))
+        table.add(TableCell(Paragraph("     -${:10.2f}".format(item.price_per_sku),  # font="Helvetica-Bold",
+                                      horizontal_alignment=Alignment.RIGHT), background_color=c))
+        table.add(
             TableCell(Paragraph("-${:10.2f}".format(item.amount),  # font="Helvetica-Bold",
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
 
-    # Optionally add some empty rows to have a fixed number of rows for styling purposes
-    # for row_number in range(len(charges), 10):
-    #     c = even_color if row_number % 2 == 0 else odd_color
-    #     for _ in range(0, 4):
-    #         table_001.add(TableCell(Paragraph(" "), background_color=c))
+    if page_number == page_count:
+        table.add(
+            TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
+        table.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
 
-    # total
-    # total: float = sum([x.price_per_sku * x.quantity for x in charges])
-    table_001.add(
-        TableCell(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT, ), col_span=3, ))
-    table_001.add(TableCell(Paragraph(" ", horizontal_alignment=Alignment.RIGHT)))
-
-    table_001.add(
-        TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-    table_001.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
-    table_001.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
-    table_001.no_borders()
-    return table_001
+        table.add(
+            TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
+        table.add(TableCell(Paragraph("-${:10.2f}".format(invoice_total), horizontal_alignment=Alignment.RIGHT)))
+    else:
+        blank_row(table, 4, 2)
+    table.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
+    if no_table_borders: table.no_borders()
+    return table
 
 
 # def main():
@@ -206,7 +214,7 @@ def product_rows(rows_invoice=None):
 
 
 def build_invoice_charges_table(rows_invoice: typing.List[typing.Dict],
-                                charges_per_page: int = 5) -> FlexibleColumnWidthTable:
+                                charges_per_page: int, page_number: int) -> FlexibleColumnWidthTable:
     """This function creates a page of invoice charges and depletes
     the list of charges by the number it prints out.
     :param typing.List[typing.Dict] rows_invoice: List of rows in the invoice
@@ -215,7 +223,7 @@ def build_invoice_charges_table(rows_invoice: typing.List[typing.Dict],
     rows_invoice_chunk = rows_invoice[0:charges_per_page]
     # sums = {"amount": compute_column_sum(rows_invoice, "amount", True)}
     del rows_invoice[0:charges_per_page]
-    return build_charge_table(product_rows(rows_invoice_chunk))
+    return build_charge_table(product_rows(rows_invoice_chunk), page_number)
 
 
 def compute_column_sum(rows_invoice: typing.List[typing.Dict],
@@ -241,9 +249,10 @@ def compute_column_sum(rows_invoice: typing.List[typing.Dict],
 
 def generate_invoice_page(user_blob: typing.Dict,
                           rows_invoice: typing.List[typing.Dict],
-                          page_number) -> Page:
+                          page_number, date_header_text="") -> Page:
     """Makes a single page of the invoice.
 
+    :param date_header_text:
     :param Dict user_blob: Dict of info about the user
     :param typing.List[typing.Dict] rows_invoice: List of rows in the invoice
     :param int page_number: The page number for this page.
@@ -286,7 +295,7 @@ def generate_invoice_page(user_blob: typing.Dict,
                                              font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
     blank_row(table_logo_and_invoice_num, 4, 3)
 
-    table_logo_and_invoice_num.no_borders()
+    if no_table_borders: table_logo_and_invoice_num.no_borders()
     page_layout.add(table_logo_and_invoice_num)
 
     if page_number == 1:
@@ -298,11 +307,15 @@ def generate_invoice_page(user_blob: typing.Dict,
 
         # Billing and shipping information table
         page_layout.add(build_billto_table(user_blob))
-        page_layout.add(Paragraph(" "))
 
-    # rows_per_page = 10
-    table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page)
-    page_layout.add(table_invoice_rows)
+    page_layout.add(Paragraph(date_header_text + " "))
+
+    if len(rows_invoice) == 0:
+        # If we don't handle this case the client crashes with no output.
+        page_layout.add(Paragraph("NO DATA"))
+    else:
+        table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page, page_number)
+        page_layout.add(table_invoice_rows)
     return page
 
 
@@ -317,14 +330,29 @@ def compute_pages_needed(rows_invoice: typing.List[typing.Dict]) -> int:
     return page_count
 
 
-def generate_invoice(user_blob: typing.Dict, rows_invoice):
+def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
+    """Map over a dict and translate any null string values into ' '.
+    Leave everthing else as is."""
+
+    # Beware: locally defined function.
+    def translate_nulls(s):
+        if s == "":
+            return " "
+        return s
+
+    new_d = {k: translate_nulls(v) for k, v in d.items()}
+    return new_d
+
+
+def generate_invoice(user_blob: typing.Dict, rows_invoice: typing.List[typing.Dict], filter_data: typing.Dict):
     """This is the main function in this file. It calls everything else
     and makes the invoice page by page.
 
-    :param Dict user_blob: Dict of info about the user
+
+    :param user_blob: info about the user
     :param typing.List[typing.Dict] rows_invoice: The list of dicts we use elsewhere.
     """
-    rows_invoice = list(filter(lambda row: True if (float(row["amount"]) > 0) else False, rows_invoice))
+
     # create Document
     pdf: Document = Document()
     global page_count
@@ -332,14 +360,25 @@ def generate_invoice(user_blob: typing.Dict, rows_invoice):
     global invoice_total
     invoice_total = compute_column_sum(rows_invoice, "amount")
     page_number = 1
-    while len(rows_invoice) > 0:
-        page = generate_invoice_page(user_blob, rows_invoice, page_number)
-        print("Adding page ", str(page_number))
-        pdf.append_page(page)
-        page_number += 1
 
-    with open("borb_invoice_example.pdf", "wb") as out_file_handle:
-        PDF.dumps(out_file_handle, pdf)
+    if len(rows_invoice) == 0:
+        page = generate_invoice_page(user_blob, rows_invoice, page_number, filter_data["header_text"])
+        print("Adding Empty page ", str(page_number))
+        pdf.append_page(page)
+    else:
+        while len(rows_invoice) > 0:
+            page = generate_invoice_page(user_blob, rows_invoice, page_number, filter_data["header_text"])
+            print("Adding page ", str(page_number))
+            pdf.append_page(page)
+            page_number += 1
+
+    with open("borb_invoice_example.pdf", "wb") as debug_file_handle:
+        PDF.dumps(debug_file_handle, pdf)
+    debug_file_handle.close()
+
+    with open(filter_data["pdf_filename"], "wb") as users_file_handle:
+        PDF.dumps(users_file_handle, pdf)
+    users_file_handle.close()
 
 
 if __name__ == "__main__":

@@ -7,13 +7,21 @@ import json
 import sys
 import argparse
 import os
+import time
+import typing
+from datetime import date
+
+# import dateutil
+import dateutil
+from dateutil import parser
 import requests
 import getpass
 
 try:
     import vast_pdf
 except ImportError:
-    print("Please install the Borb PDF library if you need to generate PDF invoices.\nUse the command 'pip3 install borb' to do this.")
+    print(
+        "Please install the Borb PDF library if you need to generate PDF invoices.\nUse the command 'pip3 install borb' to do this.")
 
 # from vast_pdf import main
 
@@ -154,8 +162,13 @@ class apwrap(object):
 parser = apwrap()
 
 
-def apiurl(args, subpath, query_args=None):
-    """Creates the endpoint URL for a given combination of parameters."""
+def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
+    """Creates the endpoint URL for a given combination of parameters.
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    :param str subpath: added to end of URL to further specify endpoint.
+    :param typing.Dict query_args: specifics such as API key and search parameters that complete the URL.
+    :rtype str:
+    """
     if query_args is None:
         query_args = {}
     if args.api_key is not None:
@@ -176,9 +189,13 @@ def apiurl(args, subpath, query_args=None):
         return args.url + subpath
 
 
-def deindent(message):
+def deindent(message: str) -> str:
     """
-    deindent a quoted string
+    deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
+    removes that many from the start of every line.
+
+    :param str message: Message to deindent.
+    :rtype str:
     """
     message = re.sub(r" *$", "", message, flags=re.MULTILINE)
     indents = [len(x) for x in re.findall("^ *(?=[^ ])", message, re.MULTILINE) if len(x)]
@@ -400,9 +417,21 @@ def parse_query(query_str, res=None):
     return res
 
 
-def display_table(rows, fields):
+def display_table(rows: list, fields: typing.Tuple) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
-    of it. """
+    of it.
+
+    :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields
+    tuple.
+    :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable
+    version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool
+    determining text justification. True = left justify, False = right justify. Here is an example showing the tuples
+    in action.
+    :rtype None:
+
+    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)
+
+    """
     header = [name for _, name, _, _, _ in fields]
     out_rows = [header]
     lengths = [len(x) for x in header]
@@ -434,15 +463,22 @@ def display_table(rows, fields):
 
 
 @parser.command(
-    argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
+    argument("-t", "--type", default="on-demand",
+             help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
-    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
+    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const",
+             help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
-    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
+    argument("--disable-bundling", action="store_true",
+             help="Show identical offers. This request is more heavily rate limited."),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
-    argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
+    argument("-o", "--order", type=str,
+             help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
+             default='score-'),
+    argument("query",
+             help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
+             nargs="*", default=None),
     usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
@@ -535,7 +571,7 @@ def search__offers(args):
             order.append([field, direction])
 
         query["order"] = order
-        query["type"]  = args.type
+        query["type"] = args.type
         # For backwards compatibility, support --type=interruptible option
         if query["type"] == 'interruptible':
             query["type"] = 'bid'
@@ -599,8 +635,8 @@ def _ssh_url(args, protocol):
     else:
         instance, = rows
     print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
-    
-    
+
+
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage="vast show machines [OPTIONS]",
@@ -623,18 +659,29 @@ def show__machines(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
+    argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
+    argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
+    argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
     usage="vast show invoices [OPTIONS]",
 )
 def show__invoices(args):
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
-    r = requests.get(req_url);
+    r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["invoices"]
+    # print("Timestamp for first row: ", rows[0]["timestamp"])
+    invoice_filter_data = filter_invoice_items(args, rows)
+    rows = invoice_filter_data["rows"]
+    filter_header = invoice_filter_data["header_text"]
+
     current_charges = r.json()["current"]
+
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
         print("Current: ", current_charges)
     else:
+        print(filter_header)
         display_table(rows, invoice_fields)
         print("Current: ", current_charges)
 
@@ -660,23 +707,111 @@ def show__user(args):
         display_table([user_blob], user_fields)
 
 
+def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
+    """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
+    'only_charge' and 'only_credits' options.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :param List rows: The rows of items in the invoice
+
+    :rtype List: Returns the filtered list of rows.
+
+    """
+    selector_flag = ""
+    end_timestamp: float = 9999999999
+    start_timestamp: float = 0
+    start_date_txt = ""
+    end_date_txt = ""
+
+    if args.end_date:
+        try:
+            end_date = dateutil.parser.parse(str(args.end_date))
+            end_date_txt = end_date.isoformat()
+            end_timestamp = time.mktime(end_date.timetuple())
+        except ValueError:
+            print("Warning: Invalid end date format! Ignoring end date!")
+    if args.start_date:
+        try:
+            start_date = dateutil.parser.parse(str(args.start_date))
+            start_date_txt = start_date.isoformat()
+            start_timestamp = time.mktime(start_date.timetuple())
+        except ValueError:
+            print("Warning: Invalid start date format! Ignoring start date!")
+
+    if args.only_charges:
+        type_txt = "Only showing charges."
+        selector_flag = "only_charges"
+        def type_filter_fn(row):
+            return True if row["type"] == "charge" else False
+    elif args.only_credits:
+        type_txt = "Only showing credits."
+        selector_flag = "only_credits"
+        def type_filter_fn(row):
+            return True if row["type"] == "credit" else False
+    else:
+        type_txt = ""
+
+        def type_filter_fn(row):
+            return True
+
+    if args.end_date:
+        if args.start_date:
+            header_text = f'Invoice items after {start_date_txt} and before {end_date_txt}.'
+        else:
+            header_text = f'Invoice items before {end_date_txt}.'
+    elif args.start_date:
+        header_text = f'Invoice items after {start_date_txt}.'
+    else:
+        header_text = " "
+
+    header_text = header_text + " " + type_txt
+
+    rows = list(filter(lambda row: end_timestamp >= row["timestamp"] >= start_timestamp
+                                   and type_filter_fn(row) and float(row["amount"]) != 0, rows))
+
+    if start_date_txt:
+        start_date_txt = "S:" + start_date_txt
+
+    if end_date_txt:
+        end_date_txt = "E:" + end_date_txt
+
+    pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
+                                      [str(vast_pdf.invoice_number),
+                                       start_date_txt,
+                                       end_date_txt,
+                                       selector_flag]))
+
+    filename = "invoice_" + "-".join(pdf_filename_fields) + ".pdf"
+    return {"rows": rows, "header_text": header_text, "pdf_filename": filename}
+
+
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
+    argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
+    argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
+    argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
     usage="vast generate pdf_invoice [OPTIONS]",
 )
 def generate__pdf_invoices(args):
-    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"});
-    r_inv = requests.get(req_url_inv);
+    """
+    Makes a PDF version of the data returned by the "show invoices" command. Takes the same command line args as that
+    command.
+
+    :param argparse.Namespace args:
+    :return:
+    """
+    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
+    r_inv = requests.get(req_url_inv)
     r_inv.raise_for_status()
-    print("R_INV:", r_inv.content)
-    # print("R_INV:", str(r_inv.__dict__))
     rows_inv = r_inv.json()["invoices"]
-    req_url = apiurl(args, "/users/current", {"owner": "me"});
-    r = requests.get(req_url);
+    invoice_filter_data = filter_invoice_items(args, rows_inv)
+    rows_inv = invoice_filter_data["rows"]
+    req_url = apiurl(args, "/users/current", {"owner": "me"})
+    r = requests.get(req_url)
     r.raise_for_status()
-    print("R_USER:", r.content)
-    # print("R_USER:", str(r.__dict__))
     user_blob = r.json()
+    user_blob = vast_pdf.translate_null_strings_to_blanks(user_blob)
 
     if args.raw:
         print(json.dumps(rows_inv, indent=1, sort_keys=True))
@@ -684,7 +819,7 @@ def generate__pdf_invoices(args):
         print("Raw mode")
     else:
         display_table(rows_inv, invoice_fields)
-        vast_pdf.generate_invoice(user_blob, rows_inv)
+        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data)
 
 
 @parser.command(
@@ -725,7 +860,7 @@ def list__machine(args):
 
 @parser.command(
     argument("id", help="id of machine to unlist", type=int),
-    usage = "vast unlist machine <id>",
+    usage="vast unlist machine <id>",
 )
 def unlist__machine(args):
     req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
@@ -832,6 +967,10 @@ def label__instance(args):
     usage="vast destroy instance id [-h] [--api-key API_KEY] [--raw]"
 )
 def destroy__instance(args):
+    """Perfoms the same action as pressing the "DESTROY" button on the website at https://vast.ai/console/instances/.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
     r.raise_for_status()
@@ -885,17 +1024,30 @@ def set__defjob(args):
     argument("--label", help="label to set on the instance", type=str),
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
-    argument("--jupyter",     help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--jupyter-dir",
+             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
+             type=str),
     argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
-    argument("--lang-utf8",   help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
-    argument("--extra",       help=argparse.SUPPRESS),
-    argument("--args",        nargs=argparse.REMAINDER, help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
-    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
-    argument("--force",       help="Skip sanity checks when creating from an existing instance", action="store_true"), usage = "vast create instance id [OPTIONS] [--args ...]",
+    argument("--lang-utf8",
+             help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
+             action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
+             action="store_true"),
+    argument("--extra", help=argparse.SUPPRESS),
+    argument("--args", nargs=argparse.REMAINDER,
+             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
+    argument("--create-from",
+             help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
+             type=str),
+    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
+    usage="vast create instance id [OPTIONS] [--args ...]",
 )
-def create__instance(args):
+def create__instance(args: argparse.Namespace):
+    """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    """
     if args.onstart:
         with open(args.onstart, "r") as reader:
             args.onstart_cmd = reader.read()
@@ -937,15 +1089,16 @@ def create__instance(args):
 
 
 @parser.command(
-    argument("id",      help="id of instance type to change bid", type=int),
+    argument("id", help="id of instance type to change bid", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
-    usage = "vast change bid id [--price PRICE]",
-    epilog = deindent("""
+    usage="vast change bid id [--price PRICE]",
+    epilog=deindent("""
         Change the current bid price of instance id to PRICE.
         If PRICE is not specified, then a winning bid price is used as the default.
     """),
 )
-def change__bid(args):
+def change__bid(args: argparse.Namespace):
+    """Alter the bid with id contained in args."""
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
