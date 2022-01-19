@@ -2,7 +2,7 @@
 
 # vast_pdf: Library of functions to create PDF reports of various type.
 # Currently only makes invoices.
-
+import argparse
 import datetime
 import math
 import time
@@ -141,11 +141,11 @@ class Charge:
 
     def __init__(self, name: str, quantity: float, rate: float, amount: float):
         self.name: str = name
-        assert quantity >= 0
+        # assert quantity >= 0
         self.quantity: float = quantity
-        assert rate >= 0
+        # assert rate >= 0
         self.price_per_sku: float = rate
-        assert amount >= 0
+        # assert amount >= 0
         self.amount: float = amount
 
 
@@ -174,9 +174,9 @@ def build_charge_table(charges: typing.List[Charge], page_number: int) -> Flexib
         c = even_color if row_number % 2 == 0 else odd_color
         table.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
         table.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
-                                          horizontal_alignment=Alignment.RIGHT), background_color=c))
+                                      horizontal_alignment=Alignment.RIGHT), background_color=c))
         table.add(TableCell(Paragraph("     -${:10.2f}".format(item.price_per_sku),  # font="Helvetica-Bold",
-                                          horizontal_alignment=Alignment.RIGHT), background_color=c))
+                                      horizontal_alignment=Alignment.RIGHT), background_color=c))
         table.add(
             TableCell(Paragraph("-${:10.2f}".format(item.amount),  # font="Helvetica-Bold",
                                 horizontal_alignment=Alignment.RIGHT), background_color=c))
@@ -252,6 +252,7 @@ def generate_invoice_page(user_blob: typing.Dict,
                           page_number, date_header_text="") -> Page:
     """Makes a single page of the invoice.
 
+    :param date_header_text:
     :param Dict user_blob: Dict of info about the user
     :param typing.List[typing.Dict] rows_invoice: List of rows in the invoice
     :param int page_number: The page number for this page.
@@ -306,11 +307,15 @@ def generate_invoice_page(user_blob: typing.Dict,
 
         # Billing and shipping information table
         page_layout.add(build_billto_table(user_blob))
-        page_layout.add(Paragraph(date_header_text + " "))
 
-    # rows_per_page = 10
-    table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page, page_number)
-    page_layout.add(table_invoice_rows)
+    page_layout.add(Paragraph(date_header_text + " "))
+
+    if len(rows_invoice) == 0:
+        # If we don't handle this case the client crashes with no output.
+        page_layout.add(Paragraph("NO DATA"))
+    else:
+        table_invoice_rows = build_invoice_charges_table(rows_invoice, rows_per_page, page_number)
+        page_layout.add(table_invoice_rows)
     return page
 
 
@@ -328,23 +333,26 @@ def compute_pages_needed(rows_invoice: typing.List[typing.Dict]) -> int:
 def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     """Map over a dict and translate any null string values into ' '.
     Leave everthing else as is."""
+
     # Beware: locally defined function.
     def translate_nulls(s):
         if s == "":
             return " "
         return s
+
     new_d = {k: translate_nulls(v) for k, v in d.items()}
     return new_d
 
 
-def generate_invoice(user_blob: typing.Dict, rows_invoice, date_header_text=""):
+def generate_invoice(user_blob: typing.Dict, rows_invoice: typing.List[typing.Dict], filter_data: typing.Dict):
     """This is the main function in this file. It calls everything else
     and makes the invoice page by page.
 
-    :param Dict user_blob: Dict of info about the user
+
+    :param user_blob: info about the user
     :param typing.List[typing.Dict] rows_invoice: The list of dicts we use elsewhere.
     """
-    rows_invoice = list(filter(lambda row: True if (float(row["amount"]) > 0) else False, rows_invoice))
+
     # create Document
     pdf: Document = Document()
     global page_count
@@ -352,14 +360,25 @@ def generate_invoice(user_blob: typing.Dict, rows_invoice, date_header_text=""):
     global invoice_total
     invoice_total = compute_column_sum(rows_invoice, "amount")
     page_number = 1
-    while len(rows_invoice) > 0:
-        page = generate_invoice_page(user_blob, rows_invoice, page_number, date_header_text)
-        print("Adding page ", str(page_number))
-        pdf.append_page(page)
-        page_number += 1
 
-    with open("borb_invoice_example.pdf", "wb") as out_file_handle:
-        PDF.dumps(out_file_handle, pdf)
+    if len(rows_invoice) == 0:
+        page = generate_invoice_page(user_blob, rows_invoice, page_number, filter_data["header_text"])
+        print("Adding Empty page ", str(page_number))
+        pdf.append_page(page)
+    else:
+        while len(rows_invoice) > 0:
+            page = generate_invoice_page(user_blob, rows_invoice, page_number, filter_data["header_text"])
+            print("Adding page ", str(page_number))
+            pdf.append_page(page)
+            page_number += 1
+
+    with open("borb_invoice_example.pdf", "wb") as debug_file_handle:
+        PDF.dumps(debug_file_handle, pdf)
+    debug_file_handle.close()
+
+    with open(filter_data["pdf_filename"], "wb") as users_file_handle:
+        PDF.dumps(users_file_handle, pdf)
+    users_file_handle.close()
 
 
 if __name__ == "__main__":

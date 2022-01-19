@@ -162,8 +162,13 @@ class apwrap(object):
 parser = apwrap()
 
 
-def apiurl(args, subpath, query_args=None):
-    """Creates the endpoint URL for a given combination of parameters."""
+def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
+    """Creates the endpoint URL for a given combination of parameters.
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    :param str subpath: added to end of URL to further specify endpoint.
+    :param typing.Dict query_args: specifics such as API key and search parameters that complete the URL.
+    :rtype str:
+    """
     if query_args is None:
         query_args = {}
     if args.api_key is not None:
@@ -184,9 +189,13 @@ def apiurl(args, subpath, query_args=None):
         return args.url + subpath
 
 
-def deindent(message):
+def deindent(message: str) -> str:
     """
-    deindent a quoted string
+    deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
+    removes that many from the start of every line.
+
+    :param str message: Message to deindent.
+    :rtype str:
     """
     message = re.sub(r" *$", "", message, flags=re.MULTILINE)
     indents = [len(x) for x in re.findall("^ *(?=[^ ])", message, re.MULTILINE) if len(x)]
@@ -408,9 +417,21 @@ def parse_query(query_str, res=None):
     return res
 
 
-def display_table(rows, fields):
+def display_table(rows: list, fields: typing.Tuple) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
-    of it. """
+    of it.
+
+    :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields
+    tuple.
+    :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable
+    version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool
+    determining text justification. True = left justify, False = right justify. Here is an example showing the tuples
+    in action.
+    :rtype None:
+
+    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)
+
+    """
     header = [name for _, name, _, _, _ in fields]
     out_rows = [header]
     lengths = [len(x) for x in header]
@@ -650,9 +671,9 @@ def show__invoices(args):
     r.raise_for_status()
     rows = r.json()["invoices"]
     # print("Timestamp for first row: ", rows[0]["timestamp"])
-    filter_data = filter_invoice_items(args, rows)
-    rows = filter_data["rows"]
-    filter_header = filter_data["header_text"]
+    invoice_filter_data = filter_invoice_items(args, rows)
+    rows = invoice_filter_data["rows"]
+    filter_header = invoice_filter_data["header_text"]
 
     current_charges = r.json()["current"]
 
@@ -690,14 +711,18 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
     'only_charge' and 'only_credits' options.
 
-    :param Dict args: should supply all the command-line options
+    :param argparse.Namespace args: should supply all the command-line options
     :param List rows: The rows of items in the invoice
 
-    :return List: Returns the filtered list of rows.
+    :rtype List: Returns the filtered list of rows.
 
     """
+    selector_flag = ""
     end_timestamp: float = 9999999999
     start_timestamp: float = 0
+    start_date_txt = ""
+    end_date_txt = ""
+
     if args.end_date:
         try:
             end_date = dateutil.parser.parse(str(args.end_date))
@@ -715,12 +740,12 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
 
     if args.only_charges:
         type_txt = "Only showing charges."
-
+        selector_flag = "only_charges"
         def type_filter_fn(row):
             return True if row["type"] == "charge" else False
     elif args.only_credits:
         type_txt = "Only showing credits."
-
+        selector_flag = "only_credits"
         def type_filter_fn(row):
             return True if row["type"] == "credit" else False
     else:
@@ -742,8 +767,22 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     header_text = header_text + " " + type_txt
 
     rows = list(filter(lambda row: end_timestamp >= row["timestamp"] >= start_timestamp
-                                   and type_filter_fn(row), rows))
-    return {"rows": rows, "header_text": header_text}
+                                   and type_filter_fn(row) and float(row["amount"]) != 0, rows))
+
+    if start_date_txt:
+        start_date_txt = "S:" + start_date_txt
+
+    if end_date_txt:
+        end_date_txt = "E:" + end_date_txt
+
+    pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
+                                      [str(vast_pdf.invoice_number),
+                                       start_date_txt,
+                                       end_date_txt,
+                                       selector_flag]))
+
+    filename = "invoice_" + "-".join(pdf_filename_fields) + ".pdf"
+    return {"rows": rows, "header_text": header_text, "pdf_filename": filename}
 
 
 @parser.command(
@@ -755,6 +794,13 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     usage="vast generate pdf_invoice [OPTIONS]",
 )
 def generate__pdf_invoices(args):
+    """
+    Makes a PDF version of the data returned by the "show invoices" command. Takes the same command line args as that
+    command.
+
+    :param argparse.Namespace args:
+    :return:
+    """
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
     r_inv = requests.get(req_url_inv)
     r_inv.raise_for_status()
@@ -773,7 +819,7 @@ def generate__pdf_invoices(args):
         print("Raw mode")
     else:
         display_table(rows_inv, invoice_fields)
-        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data["header_text"])
+        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data)
 
 
 @parser.command(
@@ -921,6 +967,10 @@ def label__instance(args):
     usage="vast destroy instance id [-h] [--api-key API_KEY] [--raw]"
 )
 def destroy__instance(args):
+    """Perfoms the same action as pressing the "DESTROY" button on the website at https://vast.ai/console/instances/.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
     r.raise_for_status()
@@ -993,7 +1043,11 @@ def set__defjob(args):
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     usage="vast create instance id [OPTIONS] [--args ...]",
 )
-def create__instance(args):
+def create__instance(args: argparse.Namespace):
+    """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    """
     if args.onstart:
         with open(args.onstart, "r") as reader:
             args.onstart_cmd = reader.read()
@@ -1043,7 +1097,8 @@ def create__instance(args):
         If PRICE is not specified, then a winning bid price is used as the default.
     """),
 )
-def change__bid(args):
+def change__bid(args: argparse.Namespace):
+    """Alter the bid with id contained in args."""
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
