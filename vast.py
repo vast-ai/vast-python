@@ -539,7 +539,10 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
     aliases=hidden_aliases(["search instances"]),
 )
 def search__offers(args):
-    """Actually runs the parse_query function"""
+    """Creates a query based on search parameters as in the examples above.
+    
+    :param argparse.Namespace args: should supply all the command-line options
+    """
     field_alias = {
         "cuda_vers": "cuda_max_good",
         "reliability": "reliability2",
@@ -595,7 +598,9 @@ def search__offers(args):
     usage="vast show instances [--api-key API_KEY] [--raw]",
 )
 def show__instances(args):
-    """Shows the stats on the machine the user is renting."""
+    """Shows the stats on the machine the user is renting.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
     req_url = apiurl(args, "/instances", {"owner": "me"});
     r = requests.get(req_url);
     r.raise_for_status()
@@ -611,6 +616,11 @@ def show__instances(args):
     usage="vast ssh-url",
 )
 def ssh_url(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     return _ssh_url(args, "ssh://")
 
 
@@ -619,6 +629,11 @@ def ssh_url(args):
     usage="vast scp-url",
 )
 def scp_url(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     return _ssh_url(args, "scp://")
 
 
@@ -642,6 +657,9 @@ def _ssh_url(args, protocol):
     usage="vast show machines [OPTIONS]",
 )
 def show__machines(args):
+    """Show the machines user is offering for rent.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
     req_url = apiurl(args, "/machines", {"owner": "me"});
     r = requests.get(req_url);
     r.raise_for_status()
@@ -666,6 +684,13 @@ def show__machines(args):
     usage="vast show invoices [OPTIONS]",
 )
 def show__invoices(args):
+    """
+    Show current payments and charges. Various options available to limit time range and type
+    of items. Default is to show everything for user's entire billing history.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
     r = requests.get(req_url)
     r.raise_for_status()
@@ -691,6 +716,12 @@ def show__invoices(args):
     usage="vast show user[OPTIONS]",
 )
 def show__user(args):
+    """
+    Shows stats for logged-in user. Does not show API key.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
     # req_url = "https://vast.ai/api/v0/users/current/?api_key=38d9223af02d6587452791106f1a0e4071a3872d05daa282608b0a080aadb7d7"
 
@@ -798,7 +829,7 @@ def generate__pdf_invoices(args):
     Makes a PDF version of the data returned by the "show invoices" command. Takes the same command line args as that
     command.
 
-    :param argparse.Namespace args:
+    :param argparse.Namespace args: should supply all the command-line options
     :return:
     """
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
@@ -834,6 +865,12 @@ def generate__pdf_invoices(args):
     usage="vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
 )
 def list__machine(args):
+    """
+
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     req_url = apiurl(args, "/machines/create_asks/")
     r = requests.put(req_url, json={'machine': args.id, 'price_gpu': args.price_gpu,
                                     'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
@@ -863,6 +900,12 @@ def list__machine(args):
     usage="vast unlist machine <id>",
 )
 def unlist__machine(args):
+    """
+    Removes machine from list of machines for rent.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
     r = requests.delete(req_url)
     if (r.status_code == 200):
@@ -880,6 +923,12 @@ def unlist__machine(args):
     argument("id", help="id of machine to remove default instance from", type=int),
 )
 def remove__defjob(args):
+    """
+
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     req_url = apiurl(args, "/machines/{machine_id}/defjob/".format(machine_id=args.id));
     # print(req_url);
     r = requests.delete(req_url);
@@ -896,6 +945,11 @@ def remove__defjob(args):
 
 
 def set_ask(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     print("set asks!\n");
 
 
@@ -904,6 +958,11 @@ def set_ask(args):
     usage="vast start instance <id> [--raw]",
 )
 def start__instance(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "state": "running"
@@ -926,6 +985,11 @@ def start__instance(args):
     usage="vast stop instance [--raw] <id>",
 )
 def stop__instance(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "state": "stopped"
@@ -949,6 +1013,11 @@ def stop__instance(args):
     usage="vast label instance <id> <label>",
 )
 def label__instance(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "label": args.label
@@ -969,7 +1038,7 @@ def label__instance(args):
 def destroy__instance(args):
     """Perfoms the same action as pressing the "DESTROY" button on the website at https://vast.ai/console/instances/.
 
-    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    :param argparse.Namespace args: should supply all the command-line options
     """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
@@ -996,6 +1065,11 @@ def destroy__instance(args):
     usage="vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]"
 )
 def set__defjob(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     req_url = apiurl(args, "/machines/create_bids/");
 
     r = requests.put(req_url, json=
@@ -1098,7 +1172,9 @@ def create__instance(args: argparse.Namespace):
     """),
 )
 def change__bid(args: argparse.Namespace):
-    """Alter the bid with id contained in args."""
+    """Alter the bid with id contained in args.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
@@ -1117,6 +1193,11 @@ def change__bid(args: argparse.Namespace):
     """),
 )
 def set__min_bid(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :return:
+    """
     url = apiurl(args, "/machines/{id}/minbid/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
@@ -1131,16 +1212,15 @@ def set__min_bid(args):
     usage="vast set api-key APIKEY",
 )
 def set__api_key(args):
+    """Caution: a bad API key will make it impossible to connect to the servers.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    """
     with open(api_key_file, "w") as writer:
         writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
 
 
-# def _load_sshkey(arg):
-#    if arg is not None and os.path.exists(arg):
-#        with open(arg, "r") as reader:
-#            return reader.read()
-#    return arg
 login_deprecated_message = """
 login via the command line is no longer supported.
 go to https://vast.ai/console/cli in a web browser to get your api key, then run:
