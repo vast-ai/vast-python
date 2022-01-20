@@ -26,14 +26,15 @@ from borb.pdf.page.page import Page
 from borb.pdf.pdf import PDF
 
 ## Globals
-num_rows_first_page: int = 15
-num_rows_subsequents_pages: int = 25
+num_rows_first_page: int = 18
+num_rows_subsequents_pages: int = 30
 invoice_total: float = 0
 now = datetime.date.today()
 invoice_number: int = now.year * 12 + now.month - 1
 page_count: int = 0
 no_table_borders = False
 no_table_borders = True
+
 
 # def Paragraph_wr(text: str, *args, **kwargs):
 #     """This is just a wrapper for the Paragraph function that prevents the text from being the null string "".
@@ -107,7 +108,7 @@ def field_and_filler(user_blob: typing.Dict, table: Table, fieldname: str):
     :param Table table: The table to be modified.
     """
     table.add(Paragraph(str(user_blob[fieldname])))
-    #table.add(Paragraph(" "))
+    # table.add(Paragraph(" "))
     return
 
 
@@ -120,15 +121,15 @@ def build_billto_table(user_blob: dict) -> FixedColumnWidthTable:
     """
     table = FixedColumnWidthTable(number_of_rows=5, number_of_columns=1)
     table.add(Paragraph("BILL TO", font="Helvetica-Bold"))
-    #table.add(Paragraph(" ", font="Helvetica-Bold"))
+    # table.add(Paragraph(" ", font="Helvetica-Bold"))
 
     field_ids = ["fullname", "billaddress_line1", "billaddress_line2"]
     list(map(lambda fieldname: field_and_filler(user_blob, table, fieldname), field_ids))
 
     table.add(Paragraph("%s, %s" % (user_blob["billaddress_city"], user_blob["billaddress_zip"])))  # BILLING
-    #table.add(Paragraph(" "))  # SHIPPING
-    #table.add(Paragraph(" "))  # BILLING
-    #table.add(Paragraph(" "))  # SHIPPING
+    # table.add(Paragraph(" "))  # SHIPPING
+    # table.add(Paragraph(" "))  # BILLING
+    # table.add(Paragraph(" "))  # SHIPPING
     table.set_padding_on_all_cells(Decimal(2), Decimal(2), Decimal(2), Decimal(2))
     if no_table_borders: table.no_borders()
     return table
@@ -139,14 +140,18 @@ class Charge:
     This class represents a charge line.
     """
 
-    def __init__(self, name: str, quantity: float, rate: float, amount: float):
+    def __init__(self, name: str, quantity: float, rate: float,
+                 amount: float, type: str, last4: str, timestamp: float):
         self.name: str = name
         # assert quantity >= 0
         self.quantity: float = quantity
         # assert rate >= 0
-        self.price_per_sku: float = rate
+        self.rate: float = rate
         # assert amount >= 0
         self.amount: float = amount
+        self.type = type
+        self.last4 = last4
+        self.timestamp = timestamp
 
 
 def format_float_val_as_currency(v):
@@ -154,7 +159,6 @@ def format_float_val_as_currency(v):
         return "     -${:10.2f}".format(v)
     else:
         return "     ${:10.2f}".format(-v)
-
 
 
 def build_charge_table(charges: typing.List[Charge], page_number: int) -> FlexibleColumnWidthTable:
@@ -167,12 +171,22 @@ def build_charge_table(charges: typing.List[Charge], page_number: int) -> Flexib
     global invoice_total
     num_rows = len(charges)
     table = FlexibleColumnWidthTable(number_of_rows=(num_rows + 3), number_of_columns=4)
+    table_header_padding_top = 4
+    table_header_padding_bottom = 5
+    table_header_padding_left = 3
+    table_header_padding_right = 3
+    item_font_size = Decimal(11)
 
     for h in ["Item", "Quantity", "Rate", "Amount"]:
         table.add(
             TableCell(
-                Paragraph(h, font_color=X11Color("White")),  # vertical_alignment=Alignment.MIDDLE),
-                background_color=HexColor("0b3954"), padding_top=Decimal(8), padding_bottom=Decimal(8)
+                Paragraph(h, font_color=X11Color("White"),
+                          padding_top=Decimal(table_header_padding_top),
+                          padding_bottom=Decimal(table_header_padding_bottom),
+                          padding_left=Decimal(table_header_padding_left),
+                          padding_right=Decimal(table_header_padding_right),
+                          vertical_alignment=Alignment.TOP),
+                background_color=HexColor("0b3954")
             )
         )
 
@@ -180,14 +194,25 @@ def build_charge_table(charges: typing.List[Charge], page_number: int) -> Flexib
     even_color = HexColor("FFFFFF")
     for row_number, item in enumerate(charges):
         c = even_color if row_number % 2 == 0 else odd_color
-        table.add(TableCell(Paragraph(item.name, font="Helvetica-Bold"), background_color=c))
-        table.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
-                                      horizontal_alignment=Alignment.RIGHT), background_color=c))
-        table.add(TableCell(Paragraph(format_float_val_as_currency(item.price_per_sku),  # font="Helvetica-Bold",
-                                      horizontal_alignment=Alignment.RIGHT), background_color=c))
+        table.add(TableCell(Paragraph(item.name, font="Helvetica-Bold", font_size=item_font_size), background_color=c))
+
+        if item.type == "payment":
+            table.add(TableCell(Paragraph(" ",  # font="Helvetica-Bold",
+                                          horizontal_alignment=Alignment.RIGHT, font_size=item_font_size),
+                                background_color=c))
+            table.add(TableCell(Paragraph(" ",  # font="Helvetica-Bold",
+                                          horizontal_alignment=Alignment.RIGHT, font_size=item_font_size),
+                                background_color=c))
+        else:
+            table.add(TableCell(Paragraph("     {:10.2f}".format(item.quantity),  # font="Helvetica-Bold",
+                                          horizontal_alignment=Alignment.RIGHT, font_size=item_font_size),
+                                background_color=c))
+            table.add(TableCell(Paragraph(format_float_val_as_currency(item.rate),  # font="Helvetica-Bold",
+                                          horizontal_alignment=Alignment.RIGHT, font_size=item_font_size),
+                                background_color=c))
         table.add(
             TableCell(Paragraph(format_float_val_as_currency(item.amount),  # font="Helvetica-Bold",
-                                horizontal_alignment=Alignment.RIGHT), background_color=c))
+                                horizontal_alignment=Alignment.RIGHT, font_size=item_font_size), background_color=c))
 
     if page_number == page_count:
         table.add(
@@ -196,7 +221,8 @@ def build_charge_table(charges: typing.List[Charge], page_number: int) -> Flexib
 
         table.add(
             TableCell(Paragraph("Total", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT), col_span=3, ))
-        table.add(TableCell(Paragraph(format_float_val_as_currency(invoice_total), horizontal_alignment=Alignment.RIGHT)))
+        table.add(
+            TableCell(Paragraph(format_float_val_as_currency(invoice_total), horizontal_alignment=Alignment.RIGHT)))
     else:
         blank_row(table, 4, 2)
     table.set_padding_on_all_cells(Decimal(2), Decimal(5), Decimal(2), Decimal(5))
@@ -210,12 +236,25 @@ def build_charge_table(charges: typing.List[Charge], page_number: int) -> Flexib
 
 def product_row(charges):
     """Makes a single row with charge information in it."""
-    description = charges["description"] if "description" in charges else "Add Credit"
+
+    type = charges["type"]
+    is_credit = charges["is_credit"] if "is_credit" in charges else False
+    timestamp = charges["timestamp"]
+    last4 = charges["last4"] if "last4" in charges and charges["last4"] is not None else " "
+
+    def credit_or_auto_billing():
+        if is_credit:
+            return "Add Credit: *" + last4 + " : " + datetime.datetime.fromtimestamp(timestamp).strftime(
+                '%Y-%m-%d %H:%M')
+        return "Auto-Billing: *" + last4 + " : " + datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M')
+
+    description = charges[
+        "description"] if "description" in charges else credit_or_auto_billing()  # "Add Credit: *" + last4 + ":" + str(timestamp)
     amount = float(charges["amount"]) if "amount" in charges else 0.0
     quantity = float(charges["quantity"]) if "quantity" in charges else 1.0
     rate = float(charges["rate"]) if "rate" in charges else amount
 
-    return Charge(description, quantity, rate, amount)
+    return Charge(description, quantity, rate, amount, type, last4, timestamp)
 
 
 def product_rows(rows_invoice=None):
@@ -286,7 +325,6 @@ def generate_invoice_page(user_blob: typing.Dict,
 
     page_layout.add(Paragraph(" "))
 
-
     if page_number == 1:
         # Invoice information table
         page_layout.add(build_2nd_block_table())
@@ -296,8 +334,7 @@ def generate_invoice_page(user_blob: typing.Dict,
 
         # Billing and shipping information table
         page_layout.add(build_billto_table(user_blob))
-
-    page_layout.add(Paragraph(date_header_text + " "))
+        page_layout.add(Paragraph(date_header_text + " "))
 
     if len(rows_invoice) == 0:
         # If we don't handle this case the client crashes with no output.
@@ -309,28 +346,45 @@ def generate_invoice_page(user_blob: typing.Dict,
 
 
 def build_logo_and_invoice_num_table(page_number):
-    f = r'./vast.ai-logo.png'
-    logo_img = PIL.Image.open(f)
+    if page_number == 1:
+        invoice_number_font_size = Decimal(20)
+        invoice_word_font_size = Decimal(50)
+        logo_img_filename: str = r'./vast.ai-logo.png'
+        logo_img_width: int = 72
+        logo_img_height: int = 105
+    else:
+        invoice_number_font_size = Decimal(14)
+        invoice_word_font_size = Decimal(20)
+        logo_img_filename: str = r'./vast.ai-logo-50pct.png'
+        logo_img_width: int = 36
+        logo_img_height: int = 53
+
+    logo_img = PIL.Image.open(logo_img_filename)
     # add corporate logo
-    now = datetime.datetime.now()
+    # now = datetime.datetime.now()
     table_logo_and_invoice_num = FixedColumnWidthTable(number_of_rows=2, number_of_columns=4)
+
     table_logo_and_invoice_num.add(
         TableCell(
             Image(
                 logo_img,
-                width=Decimal(72),
-                height=Decimal(105),
+                width=Decimal(logo_img_width),
+                height=Decimal(logo_img_height),
             ), row_span=2)
     )
     table_logo_and_invoice_num.add(
         Paragraph("Page %d of %d" % (page_number, page_count), font="Helvetica", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
-    table_logo_and_invoice_num.add(Paragraph("Invoice", font="Helvetica", font_size=Decimal(50),
+
+    table_logo_and_invoice_num.add(Paragraph("Invoice", font="Helvetica", font_size=invoice_word_font_size,
                                              horizontal_alignment=Alignment.RIGHT))
+
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
     table_logo_and_invoice_num.add(Paragraph(" ", font="Helvetica-Bold", horizontal_alignment=Alignment.RIGHT))
+
     table_logo_and_invoice_num.add(Paragraph("# %d" % invoice_number, font="Helvetica",
-                                             font_size=Decimal(20), horizontal_alignment=Alignment.RIGHT))
+                                             font_size=invoice_number_font_size, horizontal_alignment=Alignment.RIGHT))
+
     # blank_row(table_logo_and_invoice_num, 4, 3)
     if no_table_borders: table_logo_and_invoice_num.no_borders()
     return table_logo_and_invoice_num
