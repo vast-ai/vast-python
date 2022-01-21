@@ -335,6 +335,7 @@ def parse_query(query_str, res=None):
 
     field_multiplier = {
         "cpu_ram": 1000,
+        "gpu_ram": 1000,
         "duration": 1.0 / (24.0 * 60.0 * 60.0),
     }
 
