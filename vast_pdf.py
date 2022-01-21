@@ -52,7 +52,7 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
     This information spans the page and is the second large block of
     text on the page.
 
-    :return Table:    a Table containing invoice information
+    :rtype Table:    a Table containing invoice information
     """
     global invoice_total, now
 
@@ -117,7 +117,7 @@ def build_billto_table(user_blob: dict) -> FixedColumnWidthTable:
     This function builds a Table containing billing and shipping information
     It spans the page and uses blank cells to pad the right side of the page
     :param Dict user_blob: A dict containing the user's info.
-    :return Table:    a Table containing shipping and billing information
+    :rtype Table:    a Table containing shipping and billing information
     """
     table = FixedColumnWidthTable(number_of_rows=5, number_of_columns=1)
     table.add(Paragraph("BILL TO", font="Helvetica-Bold"))
@@ -166,7 +166,7 @@ def build_charge_table(charges: typing.List[Charge], page_number: int) -> Flexib
     This function builds a Table containing itemized billing information
     :param:     List charges: the rows on the invoice
     :param      int page_number: The page we are on
-    :return:    a Table containing itemized billing information
+    :rtype:    a Table containing itemized billing information
     """
     global invoice_total
     num_rows = len(charges)

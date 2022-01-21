@@ -164,6 +164,7 @@ parser = apwrap()
 
 def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
     """Creates the endpoint URL for a given combination of parameters.
+
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     :param str subpath: added to end of URL to further specify endpoint.
     :param typing.Dict query_args: specifics such as API key and search parameters that complete the URL.
@@ -540,7 +541,7 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
 )
 def search__offers(args):
     """Creates a query based on search parameters as in the examples above.
-    
+
     :param argparse.Namespace args: should supply all the command-line options
     """
     field_alias = {
@@ -619,7 +620,7 @@ def ssh_url(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     return _ssh_url(args, "ssh://")
 
@@ -632,7 +633,7 @@ def scp_url(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     return _ssh_url(args, "scp://")
 
@@ -689,7 +690,7 @@ def show__invoices(args):
     of items. Default is to show everything for user's entire billing history.
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
     r = requests.get(req_url)
@@ -720,7 +721,7 @@ def show__user(args):
     Shows stats for logged-in user. Does not show API key.
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
     # req_url = "https://vast.ai/api/v0/users/current/?api_key=38d9223af02d6587452791106f1a0e4071a3872d05daa282608b0a080aadb7d7"
@@ -830,7 +831,7 @@ def generate__pdf_invoices(args):
     command.
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
     r_inv = requests.get(req_url_inv)
@@ -869,7 +870,7 @@ def list__machine(args):
 
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url = apiurl(args, "/machines/create_asks/")
     r = requests.put(req_url, json={'machine': args.id, 'price_gpu': args.price_gpu,
@@ -904,7 +905,7 @@ def unlist__machine(args):
     Removes machine from list of machines for rent.
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
     r = requests.delete(req_url)
@@ -927,7 +928,7 @@ def remove__defjob(args):
 
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url = apiurl(args, "/machines/{machine_id}/defjob/".format(machine_id=args.id));
     # print(req_url);
@@ -948,7 +949,7 @@ def set_ask(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     print("set asks!\n");
 
@@ -961,7 +962,7 @@ def start__instance(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.put(url, json={
@@ -988,7 +989,7 @@ def stop__instance(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.put(url, json={
@@ -1016,7 +1017,7 @@ def label__instance(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.put(url, json={
@@ -1068,7 +1069,7 @@ def set__defjob(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     req_url = apiurl(args, "/machines/create_bids/");
 
@@ -1173,7 +1174,9 @@ def create__instance(args: argparse.Namespace):
 )
 def change__bid(args: argparse.Namespace):
     """Alter the bid with id contained in args.
+
     :param argparse.Namespace args: should supply all the command-line options
+    :rtype int:
     """
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
     r = requests.put(url, json={
@@ -1196,7 +1199,7 @@ def set__min_bid(args):
     """
 
     :param argparse.Namespace args: should supply all the command-line options
-    :return:
+    :rtype:
     """
     url = apiurl(args, "/machines/{id}/minbid/".format(id=args.id))
     r = requests.put(url, json={
