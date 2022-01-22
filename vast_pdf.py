@@ -81,6 +81,7 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
 
 def blank_row(table: Table, col_num: int, row_num: int = 1) -> None:
     """Just a set of blank rows to act as filler.
+
     :param table: The table we want to modify
     :param int col_num: How many columns in the table?
     :param int row_num: How many blank rows do we need?
@@ -251,8 +252,7 @@ def build_charge_table(charges: typing.List[Charge], page_number: int)\
 
 
 def product_row(charge_fields) -> Charge:
-    """
-    Makes a single row with charge information in it.
+    """Makes a single row with charge information in it.
 
     :param charge_fields:
     :rtype Charge:
@@ -425,8 +425,7 @@ def build_logo_and_invoice_num_table(page_number) -> FixedColumnWidthTable:
 
 
 def compute_pages_needed(rows_invoice: typing.List[typing.Dict]) -> int:
-    """
-    Function to work out how many pages we need so that the page_count can be filled in at the top of every page.
+    """Function to work out how many pages we need so that the page_count can be filled in at the top of every page.
 
     :param typing.List[typing.Dict] rows_invoice: The list of dicts we use elsewhere.
     :rtype int:
@@ -438,8 +437,7 @@ def compute_pages_needed(rows_invoice: typing.List[typing.Dict]) -> int:
 
 
 def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
-    """
-    Map over a dict and translate any null string values into ' '.
+    """Map over a dict and translate any null string values into ' '.
     Leave everything else as is. This is needed because you cannot add TableCell
     objects with only a null string or the client crashes.
 
