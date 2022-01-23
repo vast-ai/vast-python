@@ -292,8 +292,31 @@ user_fields = (
 )
 
 
-def parse_query(query_str, res=None):
-    """"""
+def version_string_sort(a, b) -> int:
+    """
+    Accepts two version strings and decides whether a > b, a == b, or a < b.
+    This is meant as a sort function to be used for the driver versions in which only
+    the == operator currently works correctly. Not quite finished...
+
+    :param str a:
+    :param str b:
+    :return int:
+    """
+    a_parts = a.split(".")
+    b_parts = b.split(".")
+
+    return 0
+
+
+def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
+    """
+    Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
+    processes it into a dict of URL parameters to be sent to the server.
+
+    :param str query_str:
+    :param Dict res:
+    :return Dict:
+    """
     if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
