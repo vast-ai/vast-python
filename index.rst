@@ -5,8 +5,7 @@
 
 Welcome to Vast.ai's documentation!
 ===================================
-To regenerate after making changes cd to the main "``vast-python``"
-directory and run "``sphinx-build -c sphinx/config/ -b html . sphinx/build/``"
+
 
 .. toctree::
    :maxdepth: 2

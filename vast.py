@@ -446,12 +446,10 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
     of it.
 
-    :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields
-    tuple.
-    :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable
-    version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool
-    determining text justification. True = left justify, False = right justify. Here is an example showing the tuples
-    in action.
+    :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields tuple.
+
+    :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool determining text justification. True = left justify, False = right justify. Here is an example showing the tuples in action.
+
     :rtype None:
 
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)

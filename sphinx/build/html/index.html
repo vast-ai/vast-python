@@ -1,0 +1,842 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Welcome to Vast.ai’s documentation! &#8212; Vast.ai  documentation</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Vast.ai  documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-vast-ai-s-documentation">
+<h1>Welcome to Vast.ai’s documentation!<a class="headerlink" href="#welcome-to-vast-ai-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+<div class="section" id="modules">
+<h1>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-vast">
+<span id="vast"></span><h2>vast<a class="headerlink" href="#module-vast" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="vast.apiurl">
+<code class="descclassname">vast.</code><code class="descname">apiurl</code><span class="sig-paren">(</span><em>args: argparse.Namespace</em>, <em>subpath: str</em>, <em>query_args: Dict[KT</em>, <em>VT] = None</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/vast.html#apiurl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.apiurl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the endpoint URL for a given combination of parameters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – Namespace with many fields relevant to the endpoint.</li>
+<li><strong>subpath</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – added to end of URL to further specify endpoint.</li>
+<li><strong>query_args</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>typing.Dict</em></a>) – specifics such as API key and search parameters that complete the URL.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype str:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.change__bid">
+<code class="descclassname">vast.</code><code class="descname">change__bid</code><span class="sig-paren">(</span><em>args: argparse.Namespace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#change__bid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.change__bid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alter the bid with id contained in args.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype int:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.create__instance">
+<code class="descclassname">vast.</code><code class="descname">create__instance</code><span class="sig-paren">(</span><em>args: argparse.Namespace</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#create__instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.create__instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs the same action as pressing the “RENT” button on the website at <a class="reference external" href="https://vast.ai/console/create/">https://vast.ai/console/create/</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – Namespace with many fields relevant to the endpoint.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.deindent">
+<code class="descclassname">vast.</code><code class="descname">deindent</code><span class="sig-paren">(</span><em>message: str</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/vast.html#deindent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.deindent" title="Permalink to this definition">¶</a></dt>
+<dd><p>deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
+removes that many from the start of every line.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Message to deindent.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype str:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.destroy__instance">
+<code class="descclassname">vast.</code><code class="descname">destroy__instance</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#destroy__instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.destroy__instance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perfoms the same action as pressing the “DESTROY” button on the website at <a class="reference external" href="https://vast.ai/console/instances/">https://vast.ai/console/instances/</a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.display_table">
+<code class="descclassname">vast.</code><code class="descname">display_table</code><span class="sig-paren">(</span><em>rows: list</em>, <em>fields: Tuple</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/vast.html#display_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.display_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
+of it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rows</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – Each row is a dict with keys corresponding to the field names (first element) in the fields tuple.</li>
+<li><strong>fields</strong> (<em>Tuple</em>) – 5-tuple describing a field. First element is field name, second is human readable version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool determining text justification. True = left justify, False = right justify. Here is an example showing the tuples in action.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype None:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+<p>(“cpu_ram”, “RAM”, “{:0.1f}”, lambda x: x / 1000, False)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.filter_invoice_items">
+<code class="descclassname">vast.</code><code class="descname">filter_invoice_items</code><span class="sig-paren">(</span><em>args: argparse.Namespace, rows: List[T]</em><span class="sig-paren">)</span> &#x2192; Dict[KT, VT]<a class="reference internal" href="_modules/vast.html#filter_invoice_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.filter_invoice_items" title="Permalink to this definition">¶</a></dt>
+<dd><p>This applies various filters to the invoice items. Currently it filters on start and end date and applies the
+‘only_charge’ and ‘only_credits’ options.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</li>
+<li><strong>rows</strong> (<em>List</em>) – The rows of items in the invoice</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype List:</th><td class="field-body"><p class="first last">Returns the filtered list of rows.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.generate__pdf_invoices">
+<code class="descclassname">vast.</code><code class="descname">generate__pdf_invoices</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#generate__pdf_invoices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.generate__pdf_invoices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a PDF version of the data returned by the “show invoices” command. Takes the same command line args as that
+command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.label__instance">
+<code class="descclassname">vast.</code><code class="descname">label__instance</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#label__instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.label__instance" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.list__machine">
+<code class="descclassname">vast.</code><code class="descname">list__machine</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#list__machine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.list__machine" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.parse_query">
+<code class="descclassname">vast.</code><code class="descname">parse_query</code><span class="sig-paren">(</span><em>query_str: str</em>, <em>res: Dict[KT</em>, <em>VT] = None</em><span class="sig-paren">)</span> &#x2192; Dict[KT, VT]<a class="reference internal" href="_modules/vast.html#parse_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.parse_query" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
+processes it into a dict of URL parameters to be sent to the server.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>query_str</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </li>
+<li><strong>res</strong> (<em>Dict</em>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return Dict:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.remove__defjob">
+<code class="descclassname">vast.</code><code class="descname">remove__defjob</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#remove__defjob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.remove__defjob" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.scp_url">
+<code class="descclassname">vast.</code><code class="descname">scp_url</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#scp_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.scp_url" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.search__offers">
+<code class="descclassname">vast.</code><code class="descname">search__offers</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#search__offers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.search__offers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a query based on search parameters as in the examples above.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.set__api_key">
+<code class="descclassname">vast.</code><code class="descname">set__api_key</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set__api_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.set__api_key" title="Permalink to this definition">¶</a></dt>
+<dd><p>Caution: a bad API key will make it impossible to connect to the servers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.set__defjob">
+<code class="descclassname">vast.</code><code class="descname">set__defjob</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set__defjob"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.set__defjob" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.set__min_bid">
+<code class="descclassname">vast.</code><code class="descname">set__min_bid</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set__min_bid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.set__min_bid" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.set_ask">
+<code class="descclassname">vast.</code><code class="descname">set_ask</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set_ask"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.set_ask" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.show__instances">
+<code class="descclassname">vast.</code><code class="descname">show__instances</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__instances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.show__instances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows the stats on the machine the user is renting.
+:param argparse.Namespace args: should supply all the command-line options</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.show__invoices">
+<code class="descclassname">vast.</code><code class="descname">show__invoices</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__invoices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.show__invoices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show current payments and charges. Various options available to limit time range and type
+of items. Default is to show everything for user’s entire billing history.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.show__machines">
+<code class="descclassname">vast.</code><code class="descname">show__machines</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__machines"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.show__machines" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show the machines user is offering for rent.
+:param argparse.Namespace args: should supply all the command-line options</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.show__user">
+<code class="descclassname">vast.</code><code class="descname">show__user</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.show__user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shows stats for logged-in user. Does not show API key.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.ssh_url">
+<code class="descclassname">vast.</code><code class="descname">ssh_url</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#ssh_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.ssh_url" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.start__instance">
+<code class="descclassname">vast.</code><code class="descname">start__instance</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#start__instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.start__instance" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.stop__instance">
+<code class="descclassname">vast.</code><code class="descname">stop__instance</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#stop__instance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.stop__instance" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.unlist__machine">
+<code class="descclassname">vast.</code><code class="descname">unlist__machine</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#unlist__machine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.unlist__machine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes machine from list of machines for rent.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast.version_string_sort">
+<code class="descclassname">vast.</code><code class="descname">version_string_sort</code><span class="sig-paren">(</span><em>a</em>, <em>b</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/vast.html#version_string_sort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast.version_string_sort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accepts two version strings and decides whether a &gt; b, a == b, or a &lt; b.
+This is meant as a sort function to be used for the driver versions in which only
+the == operator currently works correctly. Not quite finished…</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>a</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </li>
+<li><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return int:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-vast_pdf">
+<span id="vast-pdf"></span><h2>vast_pdf<a class="headerlink" href="#module-vast_pdf" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="vast_pdf.Charge">
+<em class="property">class </em><code class="descclassname">vast_pdf.</code><code class="descname">Charge</code><span class="sig-paren">(</span><em>name: str</em>, <em>quantity: float</em>, <em>rate: float</em>, <em>amount: float</em>, <em>type: str</em>, <em>last4: str</em>, <em>timestamp: float</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast_pdf.html#Charge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.Charge" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class represents a charge line.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.blank_row">
+<code class="descclassname">vast_pdf.</code><code class="descname">blank_row</code><span class="sig-paren">(</span><em>table: borb.pdf.canvas.layout.table.table.Table</em>, <em>col_num: int</em>, <em>row_num: int = 1</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/vast_pdf.html#blank_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.blank_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Just a set of blank rows to act as filler.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>table</strong> – The table we want to modify</li>
+<li><strong>col_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – How many columns in the table?</li>
+<li><strong>row_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – How many blank rows do we need?</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype None:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.build_2nd_block_table">
+<code class="descclassname">vast_pdf.</code><code class="descname">build_2nd_block_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; borb.pdf.canvas.layout.table.fixed_column_width_table.FixedColumnWidthTable<a class="reference internal" href="_modules/vast_pdf.html#build_2nd_block_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.build_2nd_block_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function creates a Table containing invoice information.
+This information spans the page and is the second large block of
+text on the page.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name" colspan="2">Rtype FixedColumnWidthTable:</th></tr>
+<tr class="field-odd field"><td>&#160;</td><td class="field-body">a Table containing information such as the company address, payment terms, date, and sum of charge_fields/payments.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.build_billto_table">
+<code class="descclassname">vast_pdf.</code><code class="descname">build_billto_table</code><span class="sig-paren">(</span><em>user_blob: dict</em><span class="sig-paren">)</span> &#x2192; borb.pdf.canvas.layout.table.fixed_column_width_table.FixedColumnWidthTable<a class="reference internal" href="_modules/vast_pdf.html#build_billto_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.build_billto_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function builds a Table containing billing and shipping information
+It spans the page using a single wide column.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>user_blob</strong> (<em>Dict</em>) – A dict containing the user’s info.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype Table:</th><td class="field-body">a Table containing shipping and billing information</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.build_charge_table">
+<code class="descclassname">vast_pdf.</code><code class="descname">build_charge_table</code><span class="sig-paren">(</span><em>charges: List[vast_pdf.Charge], page_number: int</em><span class="sig-paren">)</span> &#x2192; borb.pdf.canvas.layout.table.flexible_column_width_table.FlexibleColumnWidthTable<a class="reference internal" href="_modules/vast_pdf.html#build_charge_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.build_charge_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function builds a Table containing itemized billing information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>charges</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><em>typing.List</em></a><em>[</em><a class="reference internal" href="#vast_pdf.Charge" title="vast_pdf.Charge"><em>Charge</em></a><em>]</em>) – the rows on the invoice</li>
+<li><strong>page_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Current page number.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Rtype FlexibleColumnWidthTable:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"><p class="first last">Borb Table containing the information.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.build_invoice_charges_table">
+<code class="descclassname">vast_pdf.</code><code class="descname">build_invoice_charges_table</code><span class="sig-paren">(</span><em>rows_invoice: List[Dict[KT, VT]], charges_per_page: int, page_number: int</em><span class="sig-paren">)</span> &#x2192; borb.pdf.canvas.layout.table.flexible_column_width_table.FlexibleColumnWidthTable<a class="reference internal" href="_modules/vast_pdf.html#build_invoice_charges_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.build_invoice_charges_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function creates a page of invoice charge_fields and depletes the list of charge_fields by the number it
+prints out. Essentially a pop function that removes multiple items at once.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>page_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – </li>
+<li><strong>rows_invoice</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><em>typing.List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>typing.Dict</em></a><em>]</em>) – List of rows in the invoice</li>
+<li><strong>charges_per_page</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – How many rows of charge_fields we put on this page.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Rtype FlexibleColumnWidthTable:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.build_logo_and_invoice_num_table">
+<code class="descclassname">vast_pdf.</code><code class="descname">build_logo_and_invoice_num_table</code><span class="sig-paren">(</span><em>page_number</em><span class="sig-paren">)</span> &#x2192; borb.pdf.canvas.layout.table.fixed_column_width_table.FixedColumnWidthTable<a class="reference internal" href="_modules/vast_pdf.html#build_logo_and_invoice_num_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.build_logo_and_invoice_num_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>At the top of every page is a table with our logo, the invoice number, and little text reading “page X of Y”.
+This function creates that table and returns it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>page_number</strong> – </td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Rtype FixedColumnWidthTable:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.compute_column_sum">
+<code class="descclassname">vast_pdf.</code><code class="descname">compute_column_sum</code><span class="sig-paren">(</span><em>rows_invoice: List[Dict[KT, VT]], column_name: str, values_are_negative: bool = False</em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/vast_pdf.html#compute_column_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.compute_column_sum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum over one of the columns in the invoice.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>rows_invoice</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><em>typing.List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>typing.Dict</em></a><em>]</em>) – List of rows in the invoice</li>
+<li><strong>column_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Name of column to sum over.</li>
+<li><strong>values_are_negative</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – are we summing values that are actually negative?</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.compute_pages_needed">
+<code class="descclassname">vast_pdf.</code><code class="descname">compute_pages_needed</code><span class="sig-paren">(</span><em>rows_invoice: List[Dict[KT, VT]]</em><span class="sig-paren">)</span> &#x2192; int<a class="reference internal" href="_modules/vast_pdf.html#compute_pages_needed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.compute_pages_needed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to work out how many pages we need so that the page_count can be filled in at the top of every page.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rows_invoice</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><em>typing.List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>typing.Dict</em></a><em>]</em>) – The list of dicts we use elsewhere.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype int:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.field_and_filler">
+<code class="descclassname">vast_pdf.</code><code class="descname">field_and_filler</code><span class="sig-paren">(</span><em>user_blob: Dict[KT, VT], table: borb.pdf.canvas.layout.table.table.Table, fieldname: str</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/vast_pdf.html#field_and_filler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.field_and_filler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a field to the table along with a filler cell to span the table.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>fieldname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </li>
+<li><strong>user_blob</strong> (<em>Dict</em>) – A dict containing the user’s info.</li>
+<li><strong>table</strong> (<em>Table</em>) – The table to be modified.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype None:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.format_float_val_as_currency">
+<code class="descclassname">vast_pdf.</code><code class="descname">format_float_val_as_currency</code><span class="sig-paren">(</span><em>v</em><span class="sig-paren">)</span> &#x2192; str<a class="reference internal" href="_modules/vast_pdf.html#format_float_val_as_currency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.format_float_val_as_currency" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a float value, format it as currency. Note that the sign is backwards due to the fact that the charge_fields in
+the data that comes back are positive numbers but are written as negative on the invoice. There’s also the fact
+that in our format string, if the value is actually negative it will print as “$-x.xx” instead of the correct
+“-$x.xx”. I don’t know if this can be fixed with format strings so we rely on this hack.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>v</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)"><em>float</em></a>) – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype str:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.generate_invoice">
+<code class="descclassname">vast_pdf.</code><code class="descname">generate_invoice</code><span class="sig-paren">(</span><em>user_blob: Dict[KT, VT], rows_invoice: List[Dict[KT, VT]], filter_data: Dict[KT, VT]</em><span class="sig-paren">)</span> &#x2192; None<a class="reference internal" href="_modules/vast_pdf.html#generate_invoice"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.generate_invoice" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the main function in this library. It calls everything else and makes the invoice page by page. The
+resulting invoice is written as a single PDF file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filter_data</strong> – Parameters for client side filter.</li>
+<li><strong>user_blob</strong> – info about the user</li>
+<li><strong>rows_invoice</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><em>typing.List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>typing.Dict</em></a><em>]</em>) – The list of dicts we use elsewhere.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype None:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.generate_invoice_page">
+<code class="descclassname">vast_pdf.</code><code class="descname">generate_invoice_page</code><span class="sig-paren">(</span><em>user_blob: Dict[KT, VT], rows_invoice: List[Dict[KT, VT]], page_number: int, date_header_text: str = ''</em><span class="sig-paren">)</span> &#x2192; borb.pdf.page.page.Page<a class="reference internal" href="_modules/vast_pdf.html#generate_invoice_page"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.generate_invoice_page" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a single page of the invoice.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>date_header_text</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </li>
+<li><strong>user_blob</strong> (<em>Dict</em>) – Dict of info about the user</li>
+<li><strong>rows_invoice</strong> (<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.List" title="(in Python v3.10)"><em>typing.List</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Dict" title="(in Python v3.10)"><em>typing.Dict</em></a><em>]</em>) – List of rows in the invoice</li>
+<li><strong>page_number</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – The page number for this page.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype Page:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.product_row">
+<code class="descclassname">vast_pdf.</code><code class="descname">product_row</code><span class="sig-paren">(</span><em>charge_fields</em><span class="sig-paren">)</span> &#x2192; vast_pdf.Charge<a class="reference internal" href="_modules/vast_pdf.html#product_row"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.product_row" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes a single row with charge information in it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>charge_fields</strong> – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype Charge:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.product_rows">
+<code class="descclassname">vast_pdf.</code><code class="descname">product_rows</code><span class="sig-paren">(</span><em>rows_invoice</em><span class="sig-paren">)</span> &#x2192; List[vast_pdf.Charge]<a class="reference internal" href="_modules/vast_pdf.html#product_rows"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.product_rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>Maps a list of invoice dicts to a list of Charge objects using product_row function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>rows_invoice</strong> – </td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Rtype typing.List[Charge]:</th></tr>
+<tr class="field-even field"><td>&#160;</td><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="vast_pdf.translate_null_strings_to_blanks">
+<code class="descclassname">vast_pdf.</code><code class="descname">translate_null_strings_to_blanks</code><span class="sig-paren">(</span><em>d: Dict[KT, VT]</em><span class="sig-paren">)</span> &#x2192; Dict[KT, VT]<a class="reference internal" href="_modules/vast_pdf.html#translate_null_strings_to_blanks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#vast_pdf.translate_null_strings_to_blanks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map over a dict and translate any null string values into ‘ ‘.
+Leave everything else as is. This is needed because you cannot add TableCell
+objects with only a null string or the client crashes.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>d</strong> (<em>Dict</em>) – dict of item values.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Rtype Dict:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to Vast.ai’s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+<li><a class="reference internal" href="#modules">Modules</a><ul>
+<li><a class="reference internal" href="#module-vast">vast</a></li>
+<li><a class="reference internal" href="#module-vast_pdf">vast_pdf</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Vast.ai  documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022, Greg Propf, Jake Cannell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

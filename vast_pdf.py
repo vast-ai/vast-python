@@ -52,8 +52,7 @@ def build_2nd_block_table() -> FixedColumnWidthTable:
     This information spans the page and is the second large block of
     text on the page.
 
-    :rtype FixedColumnWidthTable: a Table containing information such as the company address, payment terms, date,
-    and sum of charge_fields/payments.
+    :rtype FixedColumnWidthTable: a Table containing information such as the company address, payment terms, date, and sum of charge_fields/payments.
     """
     global invoice_total, now
 

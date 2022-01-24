@@ -22,3 +22,13 @@ though they can certainly be hosted on one. You can view them by just going
 directly to the main HTML file itself at `./sphinx/build/html/index.html`. The template
 file for the index page is `index.rst` located in this directory. You can
 change themes and many other parameters by editing `./sphinx/config/conf.py`
+
+The docs are now also here in Markdown format. To regenerate the Markdown docs you must
+install the [sphinx-markdown-builder](https://pypi.org/project/sphinx-markdown-builder/)
+using `pip3 install sphinx-markdown-builder`
+
+These are the links this documentation hosted here on Github.
+
+[HTML format documentation](sphinx/build/html/index.html 'HTML docs')
+
+[Markdown format documentation](sphinx/build/markdown/index.md 'Markdown docs')
