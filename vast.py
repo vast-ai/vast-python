@@ -11,7 +11,7 @@ import time
 import typing
 from datetime import date
 
-# import dateutil
+
 import dateutil
 from dateutil import parser
 import requests
@@ -20,8 +20,11 @@ import getpass
 try:
     import vast_pdf
 except ImportError:
-    print(
-        "Please install the Borb PDF library if you need to generate PDF invoices.\nUse the command 'pip3 install borb' to do this.")
+    print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
+    you do not need this feature you can ignore this message. To get the library you should download the vast-python 
+    github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
+    directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
+    package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
 # from vast_pdf import main
 
@@ -795,11 +798,13 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     if args.only_charges:
         type_txt = "Only showing charges."
         selector_flag = "only_charges"
+
         def type_filter_fn(row):
             return True if row["type"] == "charge" else False
     elif args.only_credits:
         type_txt = "Only showing credits."
         selector_flag = "only_credits"
+
         def type_filter_fn(row):
             return True if row["type"] == "payment" else False
     else:

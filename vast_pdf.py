@@ -12,18 +12,23 @@ from decimal import Decimal
 import typing
 
 import PIL.Image
-from borb.pdf.canvas.color.color import HexColor, X11Color
-from borb.pdf.canvas.layout.image.image import Image
-from borb.pdf.canvas.layout.layout_element import Alignment
-from borb.pdf.canvas.layout.page_layout.multi_column_layout import SingleColumnLayout
-from borb.pdf.canvas.layout.page_layout.page_layout import PageLayout
-from borb.pdf.canvas.layout.table.fixed_column_width_table import FixedColumnWidthTable
-from borb.pdf.canvas.layout.table.flexible_column_width_table import FlexibleColumnWidthTable
-from borb.pdf.canvas.layout.table.table import Table, TableCell
-from borb.pdf.canvas.layout.text.paragraph import Paragraph
-from borb.pdf.document import Document
-from borb.pdf.page.page import Page
-from borb.pdf.pdf import PDF
+
+try:
+    from borb.pdf.canvas.color.color import HexColor, X11Color
+    from borb.pdf.canvas.layout.image.image import Image
+    from borb.pdf.canvas.layout.layout_element import Alignment
+    from borb.pdf.canvas.layout.page_layout.multi_column_layout import SingleColumnLayout
+    from borb.pdf.canvas.layout.page_layout.page_layout import PageLayout
+    from borb.pdf.canvas.layout.table.fixed_column_width_table import FixedColumnWidthTable
+    from borb.pdf.canvas.layout.table.flexible_column_width_table import FlexibleColumnWidthTable
+    from borb.pdf.canvas.layout.table.table import Table, TableCell
+    from borb.pdf.canvas.layout.text.paragraph import Paragraph
+    from borb.pdf.document import Document
+    from borb.pdf.page.page import Page
+    from borb.pdf.pdf import PDF
+except ImportError:
+    print("""\nERROR: This library depends on a Python package called Borb to make the PDF files. To install this 
+    package do 'pip3 install borb'.\n""")
 
 ## Globals
 num_rows_first_page: int = 18
