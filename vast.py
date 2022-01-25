@@ -455,8 +455,7 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
 
     :rtype None:
 
-    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)
-
+    Example of 5-tuple: ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)
     """
     header = [name for _, name, _, _, _ in fields]
     out_rows = [header]

@@ -108,7 +108,7 @@ of it.
 * **Rtype None**
 
 
-(“cpu_ram”, “RAM”, “{:0.1f}”, lambda x: x / 1000, False)
+Example of 5-tuple: (“cpu_ram”, “RAM”, “{:0.1f}”, lambda x: x / 1000, False)
 
 
 ### vast.filter_invoice_items(args: argparse.Namespace, rows: List[T])
