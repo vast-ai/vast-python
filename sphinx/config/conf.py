@@ -49,9 +49,12 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
-   # 'recommonmark',
-   # 'sphinx_markdown_tables'
-   # 'readthedocs_ext.readthedocs'
+    'sphinxarg.ext',
+    'sphinxcontrib.autoprogram',
+    'sphinx_argparse_cli'
+    # 'recommonmark',
+    # 'sphinx_markdown_tables'
+    # 'readthedocs_ext.readthedocs'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

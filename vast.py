@@ -26,7 +26,7 @@ except ImportError:
     directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
     package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
-# from vast_pdf import main
+
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -195,7 +195,7 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
 
 def deindent(message: str) -> str:
     """
-    deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
+    Deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
     removes that many from the start of every line.
 
     :param str message: Message to deindent.

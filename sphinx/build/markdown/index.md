@@ -2,25 +2,12 @@
 sphinx-quickstart on Thu Jan 20 12:32:40 2022.
 You can adapt this file completely to your liking, but it should at least
 contain the root `toctree` directive. -->
-# Welcome to Vast.ai’s documentation!
-
-# Indices and tables
-
-
-* [Index](genindex.md)
-
-
-* [Module Index](py-modindex.md)
-
-
-* [Search Page](search.md)
-
 # Modules
 
 ## vast
 
 
-### vast.apiurl(args: argparse.Namespace, subpath: str, query_args: Dict[KT, VT] = None)
+### vast.apiurl(args: [argparse.Namespace](https://docs.python.org/3/library/argparse.html#argparse.Namespace), subpath: [str](https://docs.python.org/3/library/stdtypes.html#str), query_args: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)] = None)
 Creates the endpoint URL for a given combination of parameters.
 
 
@@ -33,7 +20,7 @@ Creates the endpoint URL for a given combination of parameters.
     * **subpath** ([*str*](https://docs.python.org/3/library/stdtypes.html#str)) – added to end of URL to further specify endpoint.
 
 
-    * **query_args** ([*typing.Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)) – specifics such as API key and search parameters that complete the URL.
+    * **query_args** ([*Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)) – specifics such as API key and search parameters that complete the URL.
 
 
 
@@ -41,7 +28,7 @@ Creates the endpoint URL for a given combination of parameters.
 
 
 
-### vast.change__bid(args: argparse.Namespace)
+### vast.change__bid(args: [argparse.Namespace](https://docs.python.org/3/library/argparse.html#argparse.Namespace))
 Alter the bid with id contained in args.
 
 
@@ -55,7 +42,7 @@ Alter the bid with id contained in args.
 
 
 
-### vast.create__instance(args: argparse.Namespace)
+### vast.create__instance(args: [argparse.Namespace](https://docs.python.org/3/library/argparse.html#argparse.Namespace))
 Performs the same action as pressing the “RENT” button on the website at [https://vast.ai/console/create/](https://vast.ai/console/create/).
 
 
@@ -65,8 +52,8 @@ Performs the same action as pressing the “RENT” button on the website at [ht
 
 
 
-### vast.deindent(message: str)
-deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
+### vast.deindent(message: [str](https://docs.python.org/3/library/stdtypes.html#str))
+Deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
 removes that many from the start of every line.
 
 
@@ -90,7 +77,7 @@ Perfoms the same action as pressing the “DESTROY” button on the website at [
 
 
 
-### vast.display_table(rows: list, fields: Tuple)
+### vast.display_table(rows: [list](https://docs.python.org/3/library/stdtypes.html#list), fields: [Tuple](https://docs.python.org/3/library/typing.html#typing.Tuple))
 Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
 of it.
 
@@ -111,7 +98,7 @@ of it.
 Example of 5-tuple: (“cpu_ram”, “RAM”, “{:0.1f}”, lambda x: x / 1000, False)
 
 
-### vast.filter_invoice_items(args: argparse.Namespace, rows: List[T])
+### vast.filter_invoice_items(args: [argparse.Namespace](https://docs.python.org/3/library/argparse.html#argparse.Namespace), rows: [List](https://docs.python.org/3/library/typing.html#typing.List))
 This applies various filters to the invoice items. Currently it filters on start and end date and applies the
 ‘only_charge’ and ‘only_credits’ options.
 
@@ -174,7 +161,7 @@ command.
     
 
 
-### vast.parse_query(query_str: str, res: Dict[KT, VT] = None)
+### vast.parse_query(query_str: [str](https://docs.python.org/3/library/stdtypes.html#str), res: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)] = None)
 Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
 processes it into a dict of URL parameters to be sent to the server.
 
@@ -395,11 +382,11 @@ the == operator currently works correctly. Not quite finished…
 ## vast_pdf
 
 
-### _class_ vast_pdf.Charge(name: str, quantity: float, rate: float, amount: float, type: str, last4: str, timestamp: float)
+### _class_ vast_pdf.Charge(name: [str](https://docs.python.org/3/library/stdtypes.html#str), quantity: [float](https://docs.python.org/3/library/functions.html#float), rate: [float](https://docs.python.org/3/library/functions.html#float), amount: [float](https://docs.python.org/3/library/functions.html#float), type: [str](https://docs.python.org/3/library/stdtypes.html#str), last4: [str](https://docs.python.org/3/library/stdtypes.html#str), timestamp: [float](https://docs.python.org/3/library/functions.html#float))
 This class represents a charge line.
 
 
-### vast_pdf.blank_row(table: borb.pdf.canvas.layout.table.table.Table, col_num: int, row_num: int = 1)
+### vast_pdf.blank_row(table: borb.pdf.canvas.layout.table.table.Table, col_num: [int](https://docs.python.org/3/library/functions.html#int), row_num: [int](https://docs.python.org/3/library/functions.html#int) = 1)
 Just a set of blank rows to act as filler.
 
 
@@ -432,7 +419,7 @@ text on the page.
 
 
 
-### vast_pdf.build_billto_table(user_blob: dict)
+### vast_pdf.build_billto_table(user_blob: [dict](https://docs.python.org/3/library/stdtypes.html#dict))
 This function builds a Table containing billing and shipping information
 It spans the page using a single wide column.
 
@@ -449,14 +436,14 @@ It spans the page using a single wide column.
 
 
 
-### vast_pdf.build_charge_table(charges: List[vast_pdf.Charge], page_number: int)
+### vast_pdf.build_charge_table(charges: [List](https://docs.python.org/3/library/typing.html#typing.List)[vast_pdf.Charge], page_number: [int](https://docs.python.org/3/library/functions.html#int))
 This function builds a Table containing itemized billing information
 
 
 * **Parameters**
 
     
-    * **charges** ([*typing.List*](https://docs.python.org/3/library/typing.html#typing.List)*[**Charge**]*) – the rows on the invoice
+    * **charges** ([*List*](https://docs.python.org/3/library/typing.html#typing.List)*[**Charge**]*) – the rows on the invoice
 
 
     * **page_number** ([*int*](https://docs.python.org/3/library/functions.html#int)) – Current page number.
@@ -469,7 +456,7 @@ This function builds a Table containing itemized billing information
 
 
 
-### vast_pdf.build_invoice_charges_table(rows_invoice: List[Dict[KT, VT]], charges_per_page: int, page_number: int)
+### vast_pdf.build_invoice_charges_table(rows_invoice: [List](https://docs.python.org/3/library/typing.html#typing.List)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)], charges_per_page: [int](https://docs.python.org/3/library/functions.html#int), page_number: [int](https://docs.python.org/3/library/functions.html#int))
 This function creates a page of invoice charge_fields and depletes the list of charge_fields by the number it
 prints out. Essentially a pop function that removes multiple items at once.
 
@@ -480,7 +467,7 @@ prints out. Essentially a pop function that removes multiple items at once.
     * **page_number** ([*int*](https://docs.python.org/3/library/functions.html#int)) – 
 
 
-    * **rows_invoice** ([*typing.List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*typing.Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – List of rows in the invoice
+    * **rows_invoice** ([*List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – List of rows in the invoice
 
 
     * **charges_per_page** ([*int*](https://docs.python.org/3/library/functions.html#int)) – How many rows of charge_fields we put on this page.
@@ -506,14 +493,14 @@ This function creates that table and returns it.
 
 
 
-### vast_pdf.compute_column_sum(rows_invoice: List[Dict[KT, VT]], column_name: str, values_are_negative: bool = False)
+### vast_pdf.compute_column_sum(rows_invoice: [List](https://docs.python.org/3/library/typing.html#typing.List)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)], column_name: [str](https://docs.python.org/3/library/stdtypes.html#str), values_are_negative: [bool](https://docs.python.org/3/library/functions.html#bool) = False)
 Sum over one of the columns in the invoice.
 
 
 * **Parameters**
 
     
-    * **rows_invoice** ([*typing.List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*typing.Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – List of rows in the invoice
+    * **rows_invoice** ([*List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – List of rows in the invoice
 
 
     * **column_name** ([*str*](https://docs.python.org/3/library/stdtypes.html#str)) – Name of column to sum over.
@@ -529,13 +516,13 @@ Sum over one of the columns in the invoice.
 
 
 
-### vast_pdf.compute_pages_needed(rows_invoice: List[Dict[KT, VT]])
+### vast_pdf.compute_pages_needed(rows_invoice: [List](https://docs.python.org/3/library/typing.html#typing.List)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)])
 Function to work out how many pages we need so that the page_count can be filled in at the top of every page.
 
 
 * **Parameters**
 
-    **rows_invoice** ([*typing.List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*typing.Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – The list of dicts we use elsewhere.
+    **rows_invoice** ([*List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – The list of dicts we use elsewhere.
 
 
 
@@ -543,7 +530,7 @@ Function to work out how many pages we need so that the page_count can be filled
 
 
 
-### vast_pdf.field_and_filler(user_blob: Dict[KT, VT], table: borb.pdf.canvas.layout.table.table.Table, fieldname: str)
+### vast_pdf.field_and_filler(user_blob: [Dict](https://docs.python.org/3/library/typing.html#typing.Dict), table: borb.pdf.canvas.layout.table.table.Table, fieldname: [str](https://docs.python.org/3/library/stdtypes.html#str))
 Adds a field to the table along with a filler cell to span the table.
 
 
@@ -581,7 +568,7 @@ that in our format string, if the value is actually negative it will print as �
 
 
 
-### vast_pdf.generate_invoice(user_blob: Dict[KT, VT], rows_invoice: List[Dict[KT, VT]], filter_data: Dict[KT, VT])
+### vast_pdf.generate_invoice(user_blob: [Dict](https://docs.python.org/3/library/typing.html#typing.Dict), rows_invoice: [List](https://docs.python.org/3/library/typing.html#typing.List)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)], filter_data: [Dict](https://docs.python.org/3/library/typing.html#typing.Dict))
 This is the main function in this library. It calls everything else and makes the invoice page by page. The
 resulting invoice is written as a single PDF file.
 
@@ -595,7 +582,7 @@ resulting invoice is written as a single PDF file.
     * **user_blob** – info about the user
 
 
-    * **rows_invoice** ([*typing.List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*typing.Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – The list of dicts we use elsewhere.
+    * **rows_invoice** ([*List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – The list of dicts we use elsewhere.
 
 
 
@@ -603,7 +590,7 @@ resulting invoice is written as a single PDF file.
 
 
 
-### vast_pdf.generate_invoice_page(user_blob: Dict[KT, VT], rows_invoice: List[Dict[KT, VT]], page_number: int, date_header_text: str = '')
+### vast_pdf.generate_invoice_page(user_blob: [Dict](https://docs.python.org/3/library/typing.html#typing.Dict), rows_invoice: [List](https://docs.python.org/3/library/typing.html#typing.List)[[Dict](https://docs.python.org/3/library/typing.html#typing.Dict)], page_number: [int](https://docs.python.org/3/library/functions.html#int), date_header_text: [str](https://docs.python.org/3/library/stdtypes.html#str) = '')
 Makes a single page of the invoice.
 
 
@@ -616,7 +603,7 @@ Makes a single page of the invoice.
     * **user_blob** (*Dict*) – Dict of info about the user
 
 
-    * **rows_invoice** ([*typing.List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*typing.Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – List of rows in the invoice
+    * **rows_invoice** ([*List*](https://docs.python.org/3/library/typing.html#typing.List)*[*[*Dict*](https://docs.python.org/3/library/typing.html#typing.Dict)*]*) – List of rows in the invoice
 
 
     * **page_number** ([*int*](https://docs.python.org/3/library/functions.html#int)) – The page number for this page.
@@ -655,7 +642,7 @@ Maps a list of invoice dicts to a list of Charge objects using product_row funct
 
 
 
-### vast_pdf.translate_null_strings_to_blanks(d: Dict[KT, VT])
+### vast_pdf.translate_null_strings_to_blanks(d: [Dict](https://docs.python.org/3/library/typing.html#typing.Dict))
 Map over a dict and translate any null string values into ‘ ‘.
 Leave everything else as is. This is needed because you cannot add TableCell
 objects with only a null string or the client crashes.
