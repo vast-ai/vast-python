@@ -17,8 +17,9 @@ import re
 import sys
 
 filename = sys.argv[1]
-with open(filename, "r") as fh:
-    source_code = fh.read()
+markdown_fname = sys.argv[2]
+# with open(filename, "r") as fh:
+#     source_code = fh.read()
 
 
 test_text = """
@@ -58,27 +59,54 @@ def whobobobob(g,h,j):
 
 """
 
+def build_cli_arg_dict(fname):
+    with open(fname, "r") as fh:
+        source_code = fh.read()
+    cli_arguments_block = re.compile(r'@parser.command\((.*?)\)\ndef ([a-z0-9_]+)', re.DOTALL)
+    # m = cli_arguments_block.findall(source_code)
+    cli_data = dict()
+    for match in cli_arguments_block.finditer(source_code):
+        cli_args, function_name = match.groups()
+        # print ("\n\nCLI STUFF: " + cli_args)
+        print("FUNCTION NAME: " + function_name)
+        cli_data[function_name] = cli_args
+    return cli_data
+
+
+def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
+    with open(markdown_fname, "r") as fh:
+        markdown_code = fh.read()
+    for (func_name, cli_args_block) in cli_data.items():
+        print(f"FUNC NAME: {func_name}, CLI_BLOCK: {cli_args_block}")
 
 
 # Example: re.compile(r"^(.+)\n((?:\n.+)+)", re.MULTILINE) -- https://stackoverflow.com/questions/587345/regular-expression-matching-a-multiline-block-of-text
 
 #cli_regex = re.compile(r"^@parser.command\($.+\)$def ([a-z0-9]_)+", re.MULTILINE)
 
-cli_regex_simple = re.compile(r'@parser.command\((.*?)\)\ndef ([a-z0-9_]+)',  re.DOTALL)
+#cli_regex_simple = re.compile(r'@parser.command\((.*?)\)\ndef ([a-z0-9_]+)',  re.DOTALL)
 
-m = cli_regex_simple.findall(test_text_simple)
+#m = cli_regex_simple.findall(test_text_simple)
 
 
 #match = re.search(r'parser.commandA.*A', test_text_simple, re.DOTALL)
 
 #match.group(0)
-cli_data = dict()
+# cli_data = dict()
+#
+# for match in cli_regex_simple.finditer(source_code):
+#      cli_args, function_name = match.groups()
+#      #print ("\n\nCLI STUFF: " + cli_args)
+#      print ("FUNCTION NAME: " + function_name)
+#      cli_data[function_name] = cli_args
+#
 
-for match in cli_regex_simple.finditer(source_code):
-     cli_args, function_name = match.groups()
-     #print ("\n\nCLI STUFF: " + cli_args)
-     print ("FUNCTION NAME: " + function_name)
-     cli_data[function_name] = cli_args
+# print ("DONE")
 
-print ("DONE")
-print (repr(cli_data))
+cli_data = build_cli_arg_dict(filename)
+num_funcs = len(cli_data)
+print(f"There are {num_funcs} functions in {filename}")
+print(repr(cli_data))
+print("Now we read the markdown file...")
+interpolate_cli_args_into_markdown(markdown_fname, cli_data)
+print("DONE!")
