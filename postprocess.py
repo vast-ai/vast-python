@@ -7,8 +7,8 @@
 # It captures these and associates each with a dict key corresponding to the function name. These
 # blocks are then further parsed into structured data representing the command-line options for
 # each command. Other parts of this script will scan a markdown or html file to determine where the
-# function is documented in the file. It then inserts the CL arg docs into that part of the file.
-# It's called 'postprocess' because it operates on the files produces by Sphinx that would normally
+# function is documented in the file. It will then insert the CL arg docs into that part of the file.
+# It's called 'postprocess' because it operates on the files produced by Sphinx that would normally
 # be regarded as complete. Ideally this would be integrated into the autodoc workflow but I cannot
 # get any of the sphinx modules that are supposed to handle this to work. This is my workaround,
 # sacrificing elegance in order to get the job done.
