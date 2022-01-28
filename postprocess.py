@@ -18,46 +18,29 @@ import sys
 
 filename = sys.argv[1]
 markdown_fname = sys.argv[2]
-# with open(filename, "r") as fh:
-#     source_code = fh.read()
 
 
-test_text = """
-@parser.command(
-Some args and stuff here,
-Some args and stuff here,
-Some args and stuff here,
-Some args and stuff here,
-)
-def some__command():
-"""
+def parse_cli_block(block):
+    cli_arg_dict = dict()
+    arg_block_re = re.compile(r'argument\((.*?)\)', re.DOTALL)
+    epilog_match = re.search(r'deindent\("""(.*?)"""\)', block, re.DOTALL)
+    usage_match = re.search(r'usage="(.+?)"', block)
 
-test_text_simple = """
-@parser.command(
-fdfsdf
-sdfsdf
-sfsf
-)
-def foo_bar(a,b,d):
-    blah
-    blaj
-    
+    args = []
+    for match in arg_block_re.finditer(block):
+        arg_contents = match.groups()
+        args.append(arg_contents)
 
-@parser.command(
-454354543
-gqqqqqqqqqqqqqqqq
-rrrrrrrrrrrrrrrr
-yyyyyyyyyyy
-uuuuuuuuuuuuuuu
-)
-def whobobobob(g,h,j):
-    blah
-    blaj
+    if epilog_match is not None and len(epilog_match.groups()) > 0:
+        cli_arg_dict["epilog"] = epilog_match.group(1)
 
+    cli_arg_dict["args"] = args
 
+    if usage_match is not None and len(usage_match.groups()) > 0:
+        cli_arg_dict["usage"] = usage_match.groups(1)
 
+    return cli_arg_dict
 
-"""
 
 def build_cli_arg_dict(fname):
     with open(fname, "r") as fh:
@@ -69,7 +52,7 @@ def build_cli_arg_dict(fname):
         cli_args, function_name = match.groups()
         # print ("\n\nCLI STUFF: " + cli_args)
         print("FUNCTION NAME: " + function_name)
-        cli_data[function_name] = cli_args
+        cli_data[function_name] = parse_cli_block(cli_args)
     return cli_data
 
 
@@ -79,29 +62,6 @@ def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
     for (func_name, cli_args_block) in cli_data.items():
         print(f"FUNC NAME: {func_name}, CLI_BLOCK: {cli_args_block}")
 
-
-# Example: re.compile(r"^(.+)\n((?:\n.+)+)", re.MULTILINE) -- https://stackoverflow.com/questions/587345/regular-expression-matching-a-multiline-block-of-text
-
-#cli_regex = re.compile(r"^@parser.command\($.+\)$def ([a-z0-9]_)+", re.MULTILINE)
-
-#cli_regex_simple = re.compile(r'@parser.command\((.*?)\)\ndef ([a-z0-9_]+)',  re.DOTALL)
-
-#m = cli_regex_simple.findall(test_text_simple)
-
-
-#match = re.search(r'parser.commandA.*A', test_text_simple, re.DOTALL)
-
-#match.group(0)
-# cli_data = dict()
-#
-# for match in cli_regex_simple.finditer(source_code):
-#      cli_args, function_name = match.groups()
-#      #print ("\n\nCLI STUFF: " + cli_args)
-#      print ("FUNCTION NAME: " + function_name)
-#      cli_data[function_name] = cli_args
-#
-
-# print ("DONE")
 
 cli_data = build_cli_arg_dict(filename)
 num_funcs = len(cli_data)
