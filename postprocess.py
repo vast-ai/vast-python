@@ -20,9 +20,34 @@ filename = sys.argv[1]
 markdown_fname = sys.argv[2]
 
 
+def generate_markdown_from_cli_args(cli_dict_for_command):
+    """
+    Turn the dict into a simple text representation of the cli args and options.
+
+    :param cli_dict_for_command:
+    :return str:
+    """
+    text = ""
+    if "usage" in cli_dict_for_command:
+        text += "usage: " + str(cli_dict_for_command["usage"])
+    if "epilog" in cli_dict_for_command:
+        text += cli_dict_for_command["epilog"] + "\n"
+    if "args" in cli_dict_for_command:
+        for arg in cli_dict_for_command["args"]:
+            text += f"* {arg}\n"
+    return "\n\n" + text
+
+
 def parse_cli_block(block):
+    """
+    Goes through the contents of a @parser.command block and extracts
+    the components, returning them as a dict.
+
+    :param str block:
+    :return Dict:
+    """
     cli_arg_dict = dict()
-    arg_block_re = re.compile(r'argument\((.*?)\)', re.DOTALL)
+    arg_block_re = re.compile(r'argument\((.*?)\),', re.DOTALL)
     epilog_match = re.search(r'deindent\("""(.*?)"""\)', block, re.DOTALL)
     usage_match = re.search(r'usage="(.+?)"', block)
 
@@ -42,7 +67,14 @@ def parse_cli_block(block):
     return cli_arg_dict
 
 
-def build_cli_arg_dict(fname):
+def build_cli_dict(fname):
+    """
+    Scans a source code file and builds a dict with a key for each function. The corresponding value is the
+    processed @parser.command block for that function.
+
+    :param fname:
+    :return Dict:
+    """
     with open(fname, "r") as fh:
         source_code = fh.read()
     cli_arguments_block = re.compile(r'@parser.command\((.*?)\)\ndef ([a-z0-9_]+)', re.DOTALL)
@@ -57,16 +89,38 @@ def build_cli_arg_dict(fname):
 
 
 def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
+    """
+    Iterates through a dict containing the structured cli data for each function. Locates the point in the markdown
+    file where each function is documented and inserts our cli docs just before the docs on that function's argument
+    list. Returns the modified docs.
+
+    :param str markdown_fname:
+    :param Dict cli_data:
+    :return str:
+    """
     with open(markdown_fname, "r") as fh:
         markdown_code = fh.read()
     for (func_name, cli_args_block) in cli_data.items():
         print(f"FUNC NAME: {func_name}, CLI_BLOCK: {cli_args_block}")
+        pattern = "### vast\." + func_name + "(.*?)\* \*\*Parameters\*\*"
+        repl_text = f"### vast.{func_name}" + r'\1' + generate_markdown_from_cli_args(
+            cli_args_block) + r"\n* **Parameters**"
+        markdown_code_with_cli = re.sub(pattern, repl_text, markdown_code, flags=re.DOTALL)
+        markdown_code = markdown_code_with_cli
+    return markdown_code
 
 
-cli_data = build_cli_arg_dict(filename)
-num_funcs = len(cli_data)
+cli_dict = build_cli_dict(filename)
+num_funcs = len(cli_dict)
 print(f"There are {num_funcs} functions in {filename}")
-print(repr(cli_data))
+print(repr(cli_dict))
+print("Here is the 'search offers' cli text:\n\n")
+generate_markdown_from_cli_args(cli_dict["search__offers"])
 print("Now we read the markdown file...")
-interpolate_cli_args_into_markdown(markdown_fname, cli_data)
+markdown_code_processed = interpolate_cli_args_into_markdown(markdown_fname, cli_dict)
+
+markdown_fname_components = markdown_fname.split(".")
+markdown_output_fname = markdown_fname_components[0] + "-processed.md"
+with open(markdown_output_fname, "w") as fh:
+    fh.write(markdown_code_processed)
 print("DONE!")
