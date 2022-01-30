@@ -29,12 +29,12 @@ def generate_markdown_from_cli_args(cli_dict_for_command):
     """
     text = ""
     if "usage" in cli_dict_for_command:
-        text += "usage: " + str(cli_dict_for_command["usage"])
+        text += "\nusage: " + str(cli_dict_for_command["usage"])
     if "epilog" in cli_dict_for_command:
-        text += cli_dict_for_command["epilog"] + "\n"
+        text += "\n" + cli_dict_for_command["epilog"]
     if "args" in cli_dict_for_command:
         for arg in cli_dict_for_command["args"]:
-            text += f"* {arg}\n"
+            text += f"\n* {arg}"
     return "\n\n" + text
 
 
