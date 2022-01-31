@@ -15,6 +15,7 @@
 ####################################################################################################
 import re
 import sys
+import subprocess
 
 filename = sys.argv[1]
 markdown_fname = sys.argv[2]
@@ -27,14 +28,25 @@ def generate_markdown_from_cli_args(cli_dict_for_command):
     :param cli_dict_for_command:
     :return str:
     """
+
+    # def arg_md(opt, long_opt, default, help):
+    #     return f"*) {opt}, {long_opt}, {help}\n"
+
     text = ""
+    # eval_output = ""
     if "usage" in cli_dict_for_command:
         text += "\nusage: " + str(cli_dict_for_command["usage"])
     if "epilog" in cli_dict_for_command:
         text += "\n" + cli_dict_for_command["epilog"]
     if "args" in cli_dict_for_command:
+        text += "\n\n#### Command Line Options\n"
         for arg in cli_dict_for_command["args"]:
-            text += f"\n* {arg}"
+            text += f"\n* {arg[0]}"
+            # eval_cmd = f"arg_md({arg[0]})"
+            # eval_output = eval(eval_cmd) + "\n"
+            # print("EVAL_OUT: " + eval_output)
+
+    # eval(eval_text)
     return "\n\n" + text
 
 
@@ -67,6 +79,11 @@ def parse_cli_block(block):
     return cli_arg_dict
 
 
+def underscores_to_dashes(s):
+    ttable = s.maketrans("_", "-")
+    return s.translate(ttable)
+
+
 def build_cli_dict(fname):
     """
     Scans a source code file and builds a dict with a key for each function. The corresponding value is the
@@ -82,9 +99,17 @@ def build_cli_dict(fname):
     cli_data = dict()
     for match in cli_arguments_block.finditer(source_code):
         cli_args, function_name = match.groups()
-        # print ("\n\nCLI STUFF: " + cli_args)
-        print("FUNCTION NAME: " + function_name)
+        # print("\n\nCLI STUFF: " + cli_args)
+        # cmd_components = function_name.split("__")
+        # if len(cmd_components) == 2:
+        #     [cmd, cmd_target] = cmd_components
+        #     cmd_target = underscores_to_dashes(cmd_target)
+        #     help_result = subprocess.run(["./vast.py", cmd, cmd_target, "--help"], stdout=subprocess.PIPE)
+        #     help_result_text = help_result.stdout.decode('utf-8')
+        # print("FUNCTION NAME: " + function_name)
+        # cli_data[function_name] = help_result_text
         cli_data[function_name] = parse_cli_block(cli_args)
+
     return cli_data
 
 
@@ -104,7 +129,7 @@ def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
         print(f"FUNC NAME: {func_name}, CLI_BLOCK: {cli_args_block}")
         pattern = "### vast\." + func_name + "(.*?)\* \*\*Parameters\*\*"
         repl_text = f"### vast.{func_name}" + r'\1' + generate_markdown_from_cli_args(
-            cli_args_block) + r"\n* **Parameters**"
+            cli_args_block) + r"\n\n\n#### Calling Parameters"
         markdown_code_with_cli = re.sub(pattern, repl_text, markdown_code, flags=re.DOTALL)
         markdown_code = markdown_code_with_cli
     return markdown_code
@@ -113,9 +138,9 @@ def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
 cli_dict = build_cli_dict(filename)
 num_funcs = len(cli_dict)
 print(f"There are {num_funcs} functions in {filename}")
-print(repr(cli_dict))
-print("Here is the 'search offers' cli text:\n\n")
-generate_markdown_from_cli_args(cli_dict["search__offers"])
+#print(repr(cli_dict))
+#print("Here is the 'search offers' cli text:\n\n")
+#generate_markdown_from_cli_args(cli_dict["search__offers"])
 print("Now we read the markdown file...")
 markdown_code_processed = interpolate_cli_args_into_markdown(markdown_fname, cli_dict)
 

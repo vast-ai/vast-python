@@ -86,9 +86,14 @@ usage: ('vast change bid id [--price PRICE]',)
         Change the current bid price of instance id to PRICE.
         If PRICE is not specified, then a winning bid price is used as the default.
     
-* ('"id", help="id of instance type to change bid", type=int',)
-* ('"--price", help="per machine bid price in $/hour", type=float',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of instance type to change bid", type=int
+* "--price", help="per machine bid price in $/hour", type=float
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -106,31 +111,36 @@ Performs the same action as pressing the “RENT” button on the website at [ht
 
 
 usage: ('vast create instance id [OPTIONS] [--args ...]',)
-* ('"id", help="id of instance type to launch", type=int',)
-* ('"--price", help="per machine bid price in $/hour", type=float',)
-* ('"--disk", help="size of local disk partition in GB", type=float, default=10',)
-* ('"--image", help="docker container image to launch", type=str',)
-* ('"--label", help="label to set on the instance", type=str',)
-* ('"--onstart", help="filename to use as onstart script", type=str',)
-* ('"--onstart-cmd", help="contents of onstart script as single argument", type=str',)
-* ('"--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"',)
-* ('"--jupyter-dir",
-             help="For runtype \'jupyter\', directory in instance to use to launch jupyter. Defaults to image\'s working directory.",
-             type=str',)
-* ('"--jupyter-lab", help="For runtype \'jupyter\', Launch instance with jupyter lab.", action="store_true"',)
-* ('"--lang-utf8",
+
+#### Command Line Options
+
+* "id", help="id of instance type to launch", type=int
+* "--price", help="per machine bid price in $/hour", type=float
+* "--disk", help="size of local disk partition in GB", type=float, default=10
+* "--image", help="docker container image to launch", type=str
+* "--label", help="label to set on the instance", type=str
+* "--onstart", help="filename to use as onstart script", type=str
+* "--onstart-cmd", help="contents of onstart script as single argument", type=str
+* "--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"
+* "--jupyter-dir",
+             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
+             type=str
+* "--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"
+* "--lang-utf8",
              help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
-             action="store_true"',)
-* ('"--python-utf8", help="Workaround for images with locale problems: set python\'s locale to C.UTF-8.",
-             action="store_true"',)
-* ('"--extra", help=argparse.SUPPRESS',)
-* ('"--args", nargs=argparse.REMAINDER,
-             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."',)
-* ('"--create-from",
+             action="store_true"
+* "--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
+             action="store_true"
+* "--extra", help=argparse.SUPPRESS
+* "--args", nargs=argparse.REMAINDER,
+             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."
+* "--create-from",
              help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
-             type=str',)
-* ('"--force", help="Skip sanity checks when creating from an existing instance", action="store_true"',)
-* **Parameters**
+             type=str
+* "--force", help="Skip sanity checks when creating from an existing instance", action="store_true"
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – Namespace with many fields relevant to the endpoint.
 
@@ -159,8 +169,13 @@ Perfoms the same action as pressing the “DESTROY” button on the website at [
 
 
 usage: ('vast destroy instance id [-h] [--api-key API_KEY] [--raw]',)
-* ('"id", help="id of instance to delete", type=int',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of instance to delete", type=int
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -217,12 +232,17 @@ command.
 
 
 usage: ('vast generate pdf_invoice [OPTIONS]',)
-* ('"-q", "--quiet", action="store_true", help="only display numeric ids"',)
-* ('"-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str',)
-* ('"-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str',)
-* ('"-c", "--only_charges", action="store_true", help="Show only charge items."',)
-* ('"-p", "--only_credits", action="store_true", help="Show only credit items."',)
-* **Parameters**
+
+#### Command Line Options
+
+* "-q", "--quiet", action="store_true", help="only display numeric ids"
+* "-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str
+* "-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str
+* "-c", "--only_charges", action="store_true", help="Show only charge items."
+* "-p", "--only_credits", action="store_true", help="Show only credit items."
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -239,9 +259,14 @@ usage: ('vast generate pdf_invoice [OPTIONS]',)
 
 
 usage: ('vast label instance <id> <label>',)
-* ('"id", help="id of instance to label", type=int',)
-* ('"label", help="label to set", type=str',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of instance to label", type=int
+* "label", help="label to set", type=str
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -258,15 +283,20 @@ usage: ('vast label instance <id> <label>',)
 
 
 usage: ('vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]',)
-* ('"id", help="id of machine to list", type=int',)
-* ('"-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float',)
-* ('"-s", "--price_disk",
-             help="storage price in $/GB/month (price for inactive instances',)
-* ('"-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float',)
-* ('"-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float',)
-* ('"-m", "--min_chunk", help="minimum amount of gpus", type=int',)
-* ('"-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of machine to list", type=int
+* "-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float
+* "-s", "--price_disk",
+             help="storage price in $/GB/month (price for inactive instances
+* "-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float
+* "-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float
+* "-m", "--min_chunk", help="minimum amount of gpus", type=int
+* "-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -301,8 +331,13 @@ processes it into a dict of URL parameters to be sent to the server.
 
 
 
-* ('"id", help="id of machine to remove default instance from", type=int',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of machine to remove default instance from", type=int
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -319,8 +354,13 @@ processes it into a dict of URL parameters to be sent to the server.
 
 
 usage: ('vast scp-url',)
-* ('"--id", help="id of instance", type=int',)
-* **Parameters**
+
+#### Command Line Options
+
+* "--id", help="id of instance", type=int
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -395,23 +435,28 @@ usage: ('vast search offers [--help] [--api-key API_KEY] [--raw] <query>',)
             total_flops:            float     total TFLOPs from all GPUs
             verified:               bool      is the machine verified
     
-* ('"-t", "--type", default="on-demand",
-             help="Show \'bid\'(interruptible) or \'on-demand\' offers. default: on-demand"',)
-* ('"-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"',)
-* ('"-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"',)
-* ('"-d", "--on-demand", dest="type", const="on-demand", action="store_const",
-             help="Alias for --type=on-demand"',)
-* ('"-n", "--no-default", action="store_true", help="Disable default query"',)
-* ('"--disable-bundling", action="store_true",
-             help="Show identical offers. This request is more heavily rate limited."',)
-* ('"--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"',)
-* ('"-o", "--order", type=str,
-             help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o \'num_gpus,total_flops-\'.  default=\'score-\'",
-             default=\'score-\'',)
-* ('"query",
-             help="Query to search for. default: \'external=false rentable=true verified=true\', pass -n to ignore default",
-             nargs="*", default=None',)
-* **Parameters**
+
+#### Command Line Options
+
+* "-t", "--type", default="on-demand",
+             help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"
+* "-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"
+* "-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"
+* "-d", "--on-demand", dest="type", const="on-demand", action="store_const",
+             help="Alias for --type=on-demand"
+* "-n", "--no-default", action="store_true", help="Disable default query"
+* "--disable-bundling", action="store_true",
+             help="Show identical offers. This request is more heavily rate limited."
+* "--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"
+* "-o", "--order", type=str,
+             help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
+             default='score-'
+* "query",
+             help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
+             nargs="*", default=None
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -425,8 +470,13 @@ Caution: a bad API key will make it impossible to connect to the servers.
 
 
 usage: ('vast set api-key APIKEY',)
-* ('"new_api_key", help="Api key to set as currently logged in user"',)
-* **Parameters**
+
+#### Command Line Options
+
+* "new_api_key", help="Api key to set as currently logged in user"
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -438,13 +488,18 @@ usage: ('vast set api-key APIKEY',)
 
 
 usage: ('vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]',)
-* ('"id", help="id of machine to launch default instance on", type=int',)
-* ('"--price_gpu", help="per gpu rental price in $/hour", type=float',)
-* ('"--price_inetu", help="price for internet upload bandwidth in $/GB", type=float',)
-* ('"--price_inetd", help="price for internet download bandwidth in $/GB", type=float',)
-* ('"--image", help="docker container image to launch", type=str',)
-* ('"--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of machine to launch default instance on", type=int
+* "--price_gpu", help="per gpu rental price in $/hour", type=float
+* "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float
+* "--price_inetd", help="price for internet download bandwidth in $/GB", type=float
+* "--image", help="docker container image to launch", type=str
+* "--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -464,9 +519,14 @@ usage: ('vast set min_bid id [--price PRICE]',)
 
         Change the current min bid price of machine id to PRICE.
     
-* ('"id", help="id of machine to set min bid price for", type=int',)
-* ('"--price", help="per gpu min bid price in $/hour", type=float',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of machine to set min bid price for", type=int
+* "--price", help="per gpu min bid price in $/hour", type=float
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -505,15 +565,11 @@ of items. Default is to show everything for user’s entire billing history.
 
 usage: ('vast show instances [--api-key API_KEY] [--raw]',)
 
+#### Command Line Options
 
 
-usage: ('vast show invoices [OPTIONS]',)
-* ('"-q", "--quiet", action="store_true", help="only display numeric ids"',)
-* ('"-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str',)
-* ('"-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str',)
-* ('"-c", "--only_charges", action="store_true", help="Show only charge items."',)
-* ('"-p", "--only_credits", action="store_true", help="Show only credit items."',)
-* **Parameters**
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -537,13 +593,13 @@ Shows stats for logged-in user. Does not show API key.
 
 
 usage: ('vast show machines [OPTIONS]',)
-* ('"-q", "--quiet", action="store_true", help="only display numeric ids"',)
+
+#### Command Line Options
+
+* "-q", "--quiet", action="store_true", help="only display numeric ids"
 
 
-
-usage: ('vast show user[OPTIONS]',)
-* ('"-q", "--quiet", action="store_true", help="display information about user"',)
-* **Parameters**
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -560,8 +616,13 @@ usage: ('vast show user[OPTIONS]',)
 
 
 usage: ('vast ssh-url',)
-* ('"--id", help="id of instance", type=int',)
-* **Parameters**
+
+#### Command Line Options
+
+* "--id", help="id of instance", type=int
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -577,9 +638,18 @@ usage: ('vast ssh-url',)
 
 
 
-usage: ('vast start instance <id> [--raw]',)
-* ('"id", help="id of instance to start/restart", type=int',)
-* **Parameters**
+usage: ('vast show invoices [OPTIONS]',)
+
+#### Command Line Options
+
+* "-q", "--quiet", action="store_true", help="only display numeric ids"
+* "-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str
+* "-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str
+* "-c", "--only_charges", action="store_true", help="Show only charge items."
+* "-p", "--only_credits", action="store_true", help="Show only credit items."
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -595,9 +665,14 @@ usage: ('vast start instance <id> [--raw]',)
 
 
 
-usage: ('vast stop instance [--raw] <id>',)
-* ('"id", help="id of instance to stop", type=int',)
-* **Parameters**
+usage: ('vast show user[OPTIONS]',)
+
+#### Command Line Options
+
+* "-q", "--quiet", action="store_true", help="display information about user"
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -616,8 +691,13 @@ Removes machine from list of machines for rent.
 
 
 usage: ('vast unlist machine <id>',)
-* ('"id", help="id of machine to unlist", type=int',)
-* **Parameters**
+
+#### Command Line Options
+
+* "id", help="id of machine to unlist", type=int
+
+
+#### Calling Parameters
 
     **args** ([*argparse.Namespace*](https://docs.python.org/3/library/argparse.html#argparse.Namespace)) – should supply all the command-line options
 
@@ -634,7 +714,17 @@ This is meant as a sort function to be used for the driver versions in which onl
 the == operator currently works correctly. Not quite finished…
 
 
-* **Parameters**
+
+
+
+usage: ('vast start instance <id> [--raw]',)
+
+#### Command Line Options
+
+* "id", help="id of instance to start/restart", type=int
+
+
+#### Calling Parameters
 
     
     * **a** ([*str*](https://docs.python.org/3/library/stdtypes.html#str)) – 
@@ -658,7 +748,17 @@ This class represents a charge line.
 Just a set of blank rows to act as filler.
 
 
-* **Parameters**
+
+
+
+usage: ('vast stop instance [--raw] <id>',)
+
+#### Command Line Options
+
+* "id", help="id of instance to stop", type=int
+
+
+#### Calling Parameters
 
     
     * **table** – The table we want to modify
