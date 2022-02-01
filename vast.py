@@ -623,8 +623,11 @@ def search__offers(args):
     usage="vast show instances [--api-key API_KEY] [--raw]",
 )
 def show__instances(args):
-    """Shows the stats on the machine the user is renting.
+    """
+    Shows the stats on the machine the user is renting.
+
     :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
     """
     req_url = apiurl(args, "/instances", {"owner": "me"});
     r = requests.get(req_url);
@@ -682,8 +685,11 @@ def _ssh_url(args, protocol):
     usage="vast show machines [OPTIONS]",
 )
 def show__machines(args):
-    """Show the machines user is offering for rent.
+    """
+    Show the machines user is offering for rent.
+
     :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
     """
     req_url = apiurl(args, "/machines", {"owner": "me"});
     r = requests.get(req_url);

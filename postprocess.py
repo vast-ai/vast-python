@@ -21,6 +21,39 @@ script_name = sys.argv[1]
 docs_fname = sys.argv[2]
 
 
+
+def generate_html_from_cli_args(cli_dict_for_command):
+    """
+    Turn the dict into an html representation of the cli args and options.
+
+    :param cli_dict_for_command:
+    :return str:
+    """
+
+    # def arg_md(opt, long_opt, default, help):
+    #     return f"*) {opt}, {long_opt}, {help}\n"
+
+    text = ""
+    # eval_output = ""
+    if "usage" in cli_dict_for_command:
+        text += "\n<em>usage: " + str(cli_dict_for_command["usage"]) + "</em><br>\n"
+    if "epilog" in cli_dict_for_command:
+        pass
+        # text += "\n" + cli_dict_for_command["epilog"]
+    if "args" in cli_dict_for_command:
+        # text += "\n\n<h4>Command Line Options</h4>\n"
+        text += "<ul>\n"
+        for arg in cli_dict_for_command["args"]:
+            text += f"<li>{arg[0]}</li>\n"
+            # eval_cmd = f"arg_md({arg[0]})"
+            # eval_output = eval(eval_cmd) + "\n"
+            # print("EVAL_OUT: " + eval_output)
+        text += "</ul>\n"
+    # eval(eval_text)
+    return "\n\n" + text
+
+
+
 def generate_markdown_from_cli_args(cli_dict_for_command):
     """
     Turn the dict into a simple text representation of the cli args and options.
@@ -157,17 +190,23 @@ def interpolate_cli_args_into_html(docs_fname: str, cli_data: dict):
         #print(f"FUNC NAME: {func_name}, CLI_BLOCK: {cli_args_block}")
 
         pattern = f'<span class="pre">vast\.</span></span><span class="sig-name descname"><span class="pre">{func_name}</span>'\
-                  + f'(.*?)<dt class="field-odd">Parameters</dt>'
+                  + f'(.*?)<dl class="field-list simple">'
 
         # pattern = "### vast\." + func_name + "(.*?)\* \*\*Parameters\*\*"
 
         repl_text = f'<span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">{func_name}</span>'\
-                  + r'\1 <h3>Command Line Arguments</h3><pre>' + generate_markdown_from_cli_args(cli_args_block) + '</pre><dt class="field-odd">CALLING Parameters</dt>'
+                    + r'\1' \
+                    + r'<dt class="field-odd">Command Line Parameters</dt>'\
+                    + r'<dd class="field-odd"><p>' + generate_html_from_cli_args(cli_args_block)\
+                    + r'</p></dd><dl class="field-list simple">'
+
+                    # # '<dl class="field-list simple">'\
+
 
         # repl_text = f"### vast.{func_name}" + r'\1' + generate_markdown_from_cli_args(
         #    cli_args_block) + r"\n\n\n#### Calling Parameters"
-        markdown_code_with_cli = re.sub(pattern, repl_text, html_code, flags=re.DOTALL)
-        html_code = markdown_code_with_cli
+        html_code = re.sub(pattern, repl_text, html_code, flags=re.DOTALL)
+        # html_code = markdown_code_with_cli
     return html_code
 
 

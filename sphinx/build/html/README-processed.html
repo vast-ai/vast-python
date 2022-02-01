@@ -103,20 +103,16 @@ are not being generated. We are looking into this.</p>
 <dt class="sig sig-object py" id="vast.change__bid">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">change__bid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><span class="pre">argparse.Namespace</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#change__bid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.change__bid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alter the bid with id contained in args.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast change bid id [--price PRICE]',)
-
-        Change the current bid price of instance id to PRICE.
-        If PRICE is not specified, then a winning bid price is used as the default.
-    
-
-#### Command Line Options
-
-* "id", help="id of instance type to change bid", type=int
-* "--price", help="per machine bid price in $/hour", type=float</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast change bid id [--price PRICE]',)</em><br>
+<ul>
+<li>"id", help="id of instance type to change bid", type=int</li>
+<li>"--price", help="per machine bid price in $/hour", type=float</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Rtype int</dt>
@@ -128,38 +124,38 @@ usage: ('vast change bid id [--price PRICE]',)
 <dt class="sig sig-object py" id="vast.create__instance">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">create__instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><span class="pre">argparse.Namespace</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#create__instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.create__instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the same action as pressing the “RENT” button on the website at <a class="reference external" href="https://vast.ai/console/create/">https://vast.ai/console/create/</a>.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast create instance id [OPTIONS] [--args ...]',)
-
-#### Command Line Options
-
-* "id", help="id of instance type to launch", type=int
-* "--price", help="per machine bid price in $/hour", type=float
-* "--disk", help="size of local disk partition in GB", type=float, default=10
-* "--image", help="docker container image to launch", type=str
-* "--label", help="label to set on the instance", type=str
-* "--onstart", help="filename to use as onstart script", type=str
-* "--onstart-cmd", help="contents of onstart script as single argument", type=str
-* "--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"
-* "--jupyter-dir",
+<em>usage: ('vast create instance id [OPTIONS] [--args ...]',)</em><br>
+<ul>
+<li>"id", help="id of instance type to launch", type=int</li>
+<li>"--price", help="per machine bid price in $/hour", type=float</li>
+<li>"--disk", help="size of local disk partition in GB", type=float, default=10</li>
+<li>"--image", help="docker container image to launch", type=str</li>
+<li>"--label", help="label to set on the instance", type=str</li>
+<li>"--onstart", help="filename to use as onstart script", type=str</li>
+<li>"--onstart-cmd", help="contents of onstart script as single argument", type=str</li>
+<li>"--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"</li>
+<li>"--jupyter-dir",
              help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
-             type=str
-* "--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"
-* "--lang-utf8",
+             type=str</li>
+<li>"--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"</li>
+<li>"--lang-utf8",
              help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
-             action="store_true"
-* "--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
-             action="store_true"
-* "--extra", help=argparse.SUPPRESS
-* "--args", nargs=argparse.REMAINDER,
-             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."
-* "--create-from",
+             action="store_true"</li>
+<li>"--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
+             action="store_true"</li>
+<li>"--extra", help=argparse.SUPPRESS</li>
+<li>"--args", nargs=argparse.REMAINDER,
+             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."</li>
+<li>"--create-from",
              help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
-             type=str
-* "--force", help="Skip sanity checks when creating from an existing instance", action="store_true"</pre><dt class="field-odd">CALLING Parameters</dt>
+             type=str</li>
+<li>"--force", help="Skip sanity checks when creating from an existing instance", action="store_true"</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – Namespace with many fields relevant to the endpoint.</p>
 </dd>
 </dl>
@@ -183,15 +179,15 @@ removes that many from the start of every line.</p>
 <dt class="sig sig-object py" id="vast.destroy__instance">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">destroy__instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#destroy__instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.destroy__instance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Perfoms the same action as pressing the “DESTROY” button on the website at <a class="reference external" href="https://vast.ai/console/instances/">https://vast.ai/console/instances/</a>.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast destroy instance id [-h] [--api-key API_KEY] [--raw]',)
-
-#### Command Line Options
-
-* "id", help="id of instance to delete", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast destroy instance id [-h] [--api-key API_KEY] [--raw]',)</em><br>
+<ul>
+<li>"id", help="id of instance to delete", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 </dl>
@@ -238,19 +234,19 @@ of it.</p>
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">generate__pdf_invoices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#generate__pdf_invoices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.generate__pdf_invoices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Makes a PDF version of the data returned by the “show invoices” command. Takes the same command line args as that
 command.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast generate pdf_invoices [OPTIONS]',)
-
-#### Command Line Options
-
-* "-q", "--quiet", action="store_true", help="only display numeric ids"
-* "-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str
-* "-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str
-* "-c", "--only_charges", action="store_true", help="Show only charge items."
-* "-p", "--only_credits", action="store_true", help="Show only credit items."</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast generate pdf_invoices [OPTIONS]',)</em><br>
+<ul>
+<li>"-q", "--quiet", action="store_true", help="only display numeric ids"</li>
+<li>"-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str</li>
+<li>"-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str</li>
+<li>"-c", "--only_charges", action="store_true", help="Show only charge items."</li>
+<li>"-p", "--only_credits", action="store_true", help="Show only credit items."</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -262,16 +258,16 @@ usage: ('vast generate pdf_invoices [OPTIONS]',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.label__instance">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">label__instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#label__instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.label__instance" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast label instance <id> <label>',)
-
-#### Command Line Options
-
-* "id", help="id of instance to label", type=int
-* "label", help="label to set", type=str</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast label instance <id> <label>',)</em><br>
+<ul>
+<li>"id", help="id of instance to label", type=int</li>
+<li>"label", help="label to set", type=str</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -283,22 +279,22 @@ usage: ('vast label instance <id> <label>',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.list__machine">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">list__machine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#list__machine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.list__machine" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]',)
-
-#### Command Line Options
-
-* "id", help="id of machine to list", type=int
-* "-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float
-* "-s", "--price_disk",
-             help="storage price in $/GB/month (price for inactive instances
-* "-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float
-* "-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float
-* "-m", "--min_chunk", help="minimum amount of gpus", type=int
-* "-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]',)</em><br>
+<ul>
+<li>"id", help="id of machine to list", type=int</li>
+<li>"-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float</li>
+<li>"-s", "--price_disk",
+             help="storage price in $/GB/month (price for inactive instances</li>
+<li>"-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float</li>
+<li>"-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float</li>
+<li>"-m", "--min_chunk", help="minimum amount of gpus", type=int</li>
+<li>"-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -327,14 +323,13 @@ processes it into a dict of URL parameters to be sent to the server.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.remove__defjob">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">remove__defjob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#remove__defjob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.remove__defjob" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
-
-
-#### Command Line Options
-
-* "id", help="id of machine to remove default instance from", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<ul>
+<li>"id", help="id of machine to remove default instance from", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -346,15 +341,15 @@ processes it into a dict of URL parameters to be sent to the server.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.scp_url">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">scp_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#scp_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.scp_url" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast scp-url',)
-
-#### Command Line Options
-
-* "--id", help="id of instance", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast scp-url',)</em><br>
+<ul>
+<li>"--id", help="id of instance", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -367,86 +362,30 @@ usage: ('vast scp-url',)
 <dt class="sig sig-object py" id="vast.search__offers">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">search__offers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#search__offers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.search__offers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a query based on search parameters as in the examples above.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast search offers [--help] [--api-key API_KEY] [--raw] <query>',)
-
-        Query syntax:
-        
-            query = comparison comparison...
-            comparison = field op value
-            field = <name of a field>
-            op = one of: <, <=, ==, !=, >=, >, in, notin
-            value = <bool, int, float, etc> | 'any'
-        
-        note: to pass '>' and '<' on the command line, make sure to use quotes
-
-           
-        Examples:
-        
-            ./vast search offers 'compute_cap > 610 total_flops < 5'
-            ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
-            ./vast search offers 'rentable = any'
-       
-        Available fields:
-            
-              Name                  Type       Description
-
-            compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
-            cpu_cores:              int       # virtual cpus
-            cpu_cores_effective:    float     # virtual cpus you get
-            cpu_ram:                float     system RAM in gigabytes
-            cuda_vers:              float     cuda version
-            disk_bw:                float     disk read bandwidth, in MB/s
-            disk_space:             float     disk storage space, in GB
-            dlperf:                 float     DL-perf score  (see FAQ for explanation)
-            dlperf_usd:             float     DL-perf/$
-            dph:                    float     $/hour rental cost
-            driver_version          string    driver version in use on a host.
-            duration:               float     max rental duration in days
-            external:               bool      show external offers
-            flops_usd:              float     TFLOPs/$
-            gpu_mem_bw:             float     GPU memory bandwidth in GB/s
-            gpu_ram:                float     GPU RAM in GB
-            gpu_frac:               float     Ratio of GPUs in the offer to gpus in the system
-            has_avx:                bool      CPU supports AVX instruction set.
-            id:                     int       instance unique ID
-            inet_down:              float     internet download speed in Mb/s
-            inet_down_cost:         float     internet download bandwidth cost in $/GB
-            inet_up:                float     internet upload speed in Mb/s
-            inet_up_cost:           float     internet upload bandwidth cost in $/GB
-            min_bid:                float     current minimum bid price in $/hr for interruptible
-            num_gpus:               int       # of GPUs
-            pci_gen:                float     PCIE generation
-            pcie_bw:                float     PCIE bandwidth (CPU to GPU)
-            reliability:            float     machine reliability score (see FAQ for explanation)
-            rentable:               bool      is the instance currently rentable
-            rented:                 bool      is the instance currently rented
-            storage_cost:           float     storage cost in $/GB/month
-            total_flops:            float     total TFLOPs from all GPUs
-            verified:               bool      is the machine verified
-    
-
-#### Command Line Options
-
-* "-t", "--type", default="on-demand",
-             help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"
-* "-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"
-* "-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"
-* "-d", "--on-demand", dest="type", const="on-demand", action="store_const",
-             help="Alias for --type=on-demand"
-* "-n", "--no-default", action="store_true", help="Disable default query"
-* "--disable-bundling", action="store_true",
-             help="Show identical offers. This request is more heavily rate limited."
-* "--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"
-* "-o", "--order", type=str,
+<em>usage: ('vast search offers [--help] [--api-key API_KEY] [--raw] <query>',)</em><br>
+<ul>
+<li>"-t", "--type", default="on-demand",
+             help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"</li>
+<li>"-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"</li>
+<li>"-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"</li>
+<li>"-d", "--on-demand", dest="type", const="on-demand", action="store_const",
+             help="Alias for --type=on-demand"</li>
+<li>"-n", "--no-default", action="store_true", help="Disable default query"</li>
+<li>"--disable-bundling", action="store_true",
+             help="Show identical offers. This request is more heavily rate limited."</li>
+<li>"--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"</li>
+<li>"-o", "--order", type=str,
              help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
-             default='score-'
-* "query",
+             default='score-'</li>
+<li>"query",
              help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
-             nargs="*", default=None</pre><dt class="field-odd">CALLING Parameters</dt>
+             nargs="*", default=None</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 </dl>
@@ -456,15 +395,15 @@ usage: ('vast search offers [--help] [--api-key API_KEY] [--raw] <query>',)
 <dt class="sig sig-object py" id="vast.set__api_key">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">set__api_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set__api_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.set__api_key" title="Permalink to this definition">¶</a></dt>
 <dd><p>Caution: a bad API key will make it impossible to connect to the servers.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast set api-key APIKEY',)
-
-#### Command Line Options
-
-* "new_api_key", help="Api key to set as currently logged in user"</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast set api-key APIKEY',)</em><br>
+<ul>
+<li>"new_api_key", help="Api key to set as currently logged in user"</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 </dl>
@@ -473,20 +412,20 @@ usage: ('vast set api-key APIKEY',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.set__defjob">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">set__defjob</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set__defjob"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.set__defjob" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]',)
-
-#### Command Line Options
-
-* "id", help="id of machine to launch default instance on", type=int
-* "--price_gpu", help="per gpu rental price in $/hour", type=float
-* "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float
-* "--price_inetd", help="price for internet download bandwidth in $/GB", type=float
-* "--image", help="docker container image to launch", type=str
-* "--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]',)</em><br>
+<ul>
+<li>"id", help="id of machine to launch default instance on", type=int</li>
+<li>"--price_gpu", help="per gpu rental price in $/hour", type=float</li>
+<li>"--price_inetu", help="price for internet upload bandwidth in $/GB", type=float</li>
+<li>"--price_inetd", help="price for internet download bandwidth in $/GB", type=float</li>
+<li>"--image", help="docker container image to launch", type=str</li>
+<li>"--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -498,19 +437,16 @@ usage: ('vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.set__min_bid">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">set__min_bid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#set__min_bid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.set__min_bid" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast set min_bid id [--price PRICE]',)
-
-        Change the current min bid price of machine id to PRICE.
-    
-
-#### Command Line Options
-
-* "id", help="id of machine to set min bid price for", type=int
-* "--price", help="per gpu min bid price in $/hour", type=float</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast set min_bid id [--price PRICE]',)</em><br>
+<ul>
+<li>"id", help="id of machine to set min bid price for", type=int</li>
+<li>"--price", help="per gpu min bid price in $/hour", type=float</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -535,8 +471,21 @@ usage: ('vast set min_bid id [--price PRICE]',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.show__instances">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">show__instances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__instances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.show__instances" title="Permalink to this definition">¶</a></dt>
-<dd><p>Shows the stats on the machine the user is renting.
-:param argparse.Namespace args: should supply all the command-line options</p>
+<dd><p>Shows the stats on the machine the user is renting.</p>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
+
+
+<em>usage: ('vast show instances [--api-key API_KEY] [--raw]',)</em><br>
+<ul>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -544,14 +493,19 @@ usage: ('vast set min_bid id [--price PRICE]',)
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">show__invoices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__invoices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.show__invoices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Show current payments and charges. Various options available to limit time range and type
 of items. Default is to show everything for user’s entire billing history.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast show instances [--api-key API_KEY] [--raw]',)
-
-#### Command Line Options
-</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast show invoices [OPTIONS]',)</em><br>
+<ul>
+<li>"-q", "--quiet", action="store_true", help="only display numeric ids"</li>
+<li>"-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str</li>
+<li>"-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str</li>
+<li>"-c", "--only_charges", action="store_true", help="Show only charge items."</li>
+<li>"-p", "--only_credits", action="store_true", help="Show only credit items."</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -563,23 +517,37 @@ usage: ('vast show instances [--api-key API_KEY] [--raw]',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.show__machines">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">show__machines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__machines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.show__machines" title="Permalink to this definition">¶</a></dt>
-<dd><p>Show the machines user is offering for rent.
-:param argparse.Namespace args: should supply all the command-line options</p>
+<dd><p>Show the machines user is offering for rent.</p>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
+
+
+<em>usage: ('vast show machines [OPTIONS]',)</em><br>
+<ul>
+<li>"-q", "--quiet", action="store_true", help="only display numeric ids"</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.show__user">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">show__user</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#show__user"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.show__user" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shows stats for logged-in user. Does not show API key.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast show machines [OPTIONS]',)
-
-#### Command Line Options
-
-* "-q", "--quiet", action="store_true", help="only display numeric ids"</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast show user[OPTIONS]',)</em><br>
+<ul>
+<li>"-q", "--quiet", action="store_true", help="display information about user"</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -591,15 +559,15 @@ usage: ('vast show machines [OPTIONS]',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.ssh_url">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">ssh_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#ssh_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.ssh_url" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast ssh-url',)
-
-#### Command Line Options
-
-* "--id", help="id of instance", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast ssh-url',)</em><br>
+<ul>
+<li>"--id", help="id of instance", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -611,19 +579,15 @@ usage: ('vast ssh-url',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.start__instance">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">start__instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#start__instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.start__instance" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast show invoices [OPTIONS]',)
-
-#### Command Line Options
-
-* "-q", "--quiet", action="store_true", help="only display numeric ids"
-* "-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str
-* "-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str
-* "-c", "--only_charges", action="store_true", help="Show only charge items."
-* "-p", "--only_credits", action="store_true", help="Show only credit items."</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast start instance <id> [--raw]',)</em><br>
+<ul>
+<li>"id", help="id of instance to start/restart", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -635,15 +599,15 @@ usage: ('vast show invoices [OPTIONS]',)
 <dl class="py function">
 <dt class="sig sig-object py" id="vast.stop__instance">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">stop__instance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#stop__instance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.stop__instance" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dd><dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast show user[OPTIONS]',)
-
-#### Command Line Options
-
-* "-q", "--quiet", action="store_true", help="display information about user"</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast stop instance [--raw] <id>',)</em><br>
+<ul>
+<li>"id", help="id of instance to stop", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -656,15 +620,15 @@ usage: ('vast show user[OPTIONS]',)
 <dt class="sig sig-object py" id="vast.unlist__machine">
 <span class="sig-prename descclassname"><span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">unlist__machine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/vast.html#unlist__machine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast.unlist__machine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Removes machine from list of machines for rent.</p>
-<dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
+<dt class="field-odd">Command Line Parameters</dt><dd class="field-odd"><p>
 
 
-usage: ('vast unlist machine <id>',)
-
-#### Command Line Options
-
-* "id", help="id of machine to unlist", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<em>usage: ('vast unlist machine <id>',)</em><br>
+<ul>
+<li>"id", help="id of machine to unlist", type=int</li>
+</ul>
+</p></dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>args</strong> (<a class="reference external" href="https://docs.python.org/3/library/argparse.html#argparse.Namespace" title="(in Python v3.10)"><em>argparse.Namespace</em></a>) – should supply all the command-line options</p>
 </dd>
 <dt class="field-even">Return type</dt>
@@ -680,14 +644,7 @@ usage: ('vast unlist machine <id>',)
 This is meant as a sort function to be used for the driver versions in which only
 the == operator currently works correctly. Not quite finished…</p>
 <dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
-
-
-usage: ('vast start instance <id> [--raw]',)
-
-#### Command Line Options
-
-* "id", help="id of instance to start/restart", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>a</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </p></li>
 <li><p><strong>b</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – </p></li>
@@ -712,14 +669,7 @@ usage: ('vast start instance <id> [--raw]',)
 <span class="sig-prename descclassname"><span class="pre">vast_pdf.</span></span><span class="sig-name descname"><span class="pre">blank_row</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">borb.pdf.canvas.layout.table.table.Table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.10)"><span class="pre">None</span></a></span></span><a class="reference internal" href="_modules/vast_pdf.html#blank_row"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#vast_pdf.blank_row" title="Permalink to this definition">¶</a></dt>
 <dd><p>Just a set of blank rows to act as filler.</p>
 <dl class="field-list simple">
- <h3>Command Line Arguments</h3><pre>
-
-
-usage: ('vast stop instance [--raw] <id>',)
-
-#### Command Line Options
-
-* "id", help="id of instance to stop", type=int</pre><dt class="field-odd">CALLING Parameters</dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>table</strong> – The table we want to modify</p></li>
 <li><p><strong>col_num</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – How many columns in the table?</p></li>
