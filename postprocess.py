@@ -17,8 +17,8 @@ import re
 import sys
 import subprocess
 
-filename = sys.argv[1]
-markdown_fname = sys.argv[2]
+script_name = sys.argv[1]
+docs_fname = sys.argv[2]
 
 
 def generate_markdown_from_cli_args(cli_dict_for_command):
@@ -113,6 +113,12 @@ def build_cli_dict(fname):
     return cli_data
 
 
+def get_processed_doc_fname_and_doc_type(fname):
+    fname_components = fname.split(".")
+    output_fname = fname_components[0] + "-processed." + fname_components[1]
+    return [output_fname, fname_components[1]]
+
+
 def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
     """
     Iterates through a dict containing the structured cli data for each function. Locates the point in the markdown
@@ -135,17 +141,51 @@ def interpolate_cli_args_into_markdown(markdown_fname: str, cli_data: dict):
     return markdown_code
 
 
-cli_dict = build_cli_dict(filename)
-num_funcs = len(cli_dict)
-print(f"There are {num_funcs} functions in {filename}")
-#print(repr(cli_dict))
-#print("Here is the 'search offers' cli text:\n\n")
-#generate_markdown_from_cli_args(cli_dict["search__offers"])
-print("Now we read the markdown file...")
-markdown_code_processed = interpolate_cli_args_into_markdown(markdown_fname, cli_dict)
+def interpolate_cli_args_into_html(docs_fname: str, cli_data: dict):
+    """
+    Iterates through a dict containing the structured cli data for each function. Locates the point in the markdown
+    file where each function is documented and inserts our cli docs just before the docs on that function's argument
+    list. Returns the modified docs.
 
-markdown_fname_components = markdown_fname.split(".")
-markdown_output_fname = markdown_fname_components[0] + "-processed.md"
-with open(markdown_output_fname, "w") as fh:
-    fh.write(markdown_code_processed)
+    :param str docs_fname:
+    :param Dict cli_data:
+    :return str:
+    """
+    with open(docs_fname, "r") as fh:
+        html_code = fh.read()
+    for (func_name, cli_args_block) in cli_data.items():
+        #print(f"FUNC NAME: {func_name}, CLI_BLOCK: {cli_args_block}")
+
+        pattern = f'<span class="pre">vast\.</span></span><span class="sig-name descname"><span class="pre">{func_name}</span>'\
+                  + f'(.*?)<dt class="field-odd">Parameters</dt>'
+
+        # pattern = "### vast\." + func_name + "(.*?)\* \*\*Parameters\*\*"
+
+        repl_text = f'<span class="pre">vast.</span></span><span class="sig-name descname"><span class="pre">{func_name}</span>'\
+                  + r'\1 <h3>Command Line Arguments</h3><pre>' + generate_markdown_from_cli_args(cli_args_block) + '</pre><dt class="field-odd">CALLING Parameters</dt>'
+
+        # repl_text = f"### vast.{func_name}" + r'\1' + generate_markdown_from_cli_args(
+        #    cli_args_block) + r"\n\n\n#### Calling Parameters"
+        markdown_code_with_cli = re.sub(pattern, repl_text, html_code, flags=re.DOTALL)
+        html_code = markdown_code_with_cli
+    return html_code
+
+
+
+
+cli_dict = build_cli_dict(script_name)
+num_funcs = len(cli_dict)
+print(f"There are {num_funcs} functions in {script_name}")
+
+[output_fname, output_type] = get_processed_doc_fname_and_doc_type(docs_fname)
+
+if output_type == "html":
+    processed_docs = interpolate_cli_args_into_html(docs_fname, cli_dict)
+else:
+    processed_docs = interpolate_cli_args_into_markdown(docs_fname, cli_dict)
+
+# markdown_fname_components = docs_fname.split(".")
+# markdown_output_fname = markdown_fname_components[0] + "-processed.md"
+with open(output_fname, "w") as fh:
+    fh.write(processed_docs)
 print("DONE!")

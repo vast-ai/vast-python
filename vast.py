@@ -849,7 +849,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vast generate pdf_invoice [OPTIONS]",
+    usage="vast generate pdf_invoices [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     """
