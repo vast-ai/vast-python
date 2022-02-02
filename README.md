@@ -64,10 +64,214 @@ optional arguments:
                         ~/.vast_api_key
 
 ```
+```
+usage: vast change bid id [--price PRICE]
 
-## Individual commands and options
+positional arguments:
+  id                 id of instance type to change bid
 
+optional arguments:
+  -h, --help         show this help message and exit
+  --price PRICE      per machine bid price in $/hour
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
 
+Change the current bid price of instance id to PRICE.
+If PRICE is not specified, then a winning bid price is used as the default.
+
+```
+---
+```
+usage: 
+login via the command line is no longer supported.
+go to https://vast.ai/console/cli in a web browser to get your api key, then run:
+
+    vast set api-key YOUR_API_KEY_HERE
+
+positional arguments:
+  ignored
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
+usage: vast create instance id [OPTIONS] [--args ...]
+
+positional arguments:
+  id                    id of instance type to launch
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --price PRICE         per machine bid price in $/hour
+  --disk DISK           size of local disk partition in GB
+  --image IMAGE         docker container image to launch
+  --label LABEL         label to set on the instance
+  --onstart ONSTART     filename to use as onstart script
+  --onstart-cmd ONSTART_CMD
+                        contents of onstart script as single argument
+  --jupyter             Launch as a jupyter instance instead of an ssh
+                        instance.
+  --jupyter-dir JUPYTER_DIR
+                        For runtype 'jupyter', directory in instance to use to
+                        launch jupyter. Defaults to image's working directory.
+  --jupyter-lab         For runtype 'jupyter', Launch instance with jupyter
+                        lab.
+  --lang-utf8           Workaround for images with locale problems: install
+                        and generate locales before instance launch, and set
+                        locale to C.UTF-8.
+  --python-utf8         Workaround for images with locale problems: set
+                        python's locale to C.UTF-8.
+  --args ...            DEPRECATED: list of arguments passed to container
+                        launch. Onstart is recommended for this purpose.
+  --create-from CREATE_FROM
+                        Existing instance id to use as basis for new instance.
+                        Instance configuration should usually be identical, as
+                        only the difference from the base image is copied.
+  --force               Skip sanity checks when creating from an existing
+                        instance
+  --url URL             server REST api url
+  --raw                 output machine-readable json
+  --api-key API_KEY     api key. defaults to using the one stored in
+                        ~/.vast_api_key
+
+```
+---
+```
+usage: vast destroy instance id [-h] [--api-key API_KEY] [--raw]
+
+positional arguments:
+  id                 id of instance to delete
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
+usage: vast generate pdf_invoices [OPTIONS]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -q, --quiet           only display numeric ids
+  -s START_DATE, --start_date START_DATE
+                        start date and time for report. Many formats accepted
+                        (optional)
+  -e END_DATE, --end_date END_DATE
+                        end date and time for report. Many formats accepted
+                        (optional)
+  -c, --only_charges    Show only charge items.
+  -p, --only_credits    Show only credit items.
+  --url URL             server REST api url
+  --raw                 output machine-readable json
+  --api-key API_KEY     api key. defaults to using the one stored in
+                        ~/.vast_api_key
+
+```
+---
+```
+usage: vast label instance <id> <label>
+
+positional arguments:
+  id                 id of instance to label
+  label              label to set
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
+usage: vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
+
+positional arguments:
+  id                    id of machine to list
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g PRICE_GPU, --price_gpu PRICE_GPU
+                        per gpu rental price in $/hour (price for active
+                        instances)
+  -s PRICE_DISK, --price_disk PRICE_DISK
+                        storage price in $/GB/month (price for inactive
+                        instances), default: $0.15/GB/month
+  -u PRICE_INETU, --price_inetu PRICE_INETU
+                        price for internet upload bandwidth in $/GB
+  -d PRICE_INETD, --price_inetd PRICE_INETD
+                        price for internet download bandwidth in $/GB
+  -m MIN_CHUNK, --min_chunk MIN_CHUNK
+                        minimum amount of gpus
+  -e END_DATE, --end_date END_DATE
+                        unix timestamp of the available until date (optional)
+  --url URL             server REST api url
+  --raw                 output machine-readable json
+  --api-key API_KEY     api key. defaults to using the one stored in
+                        ~/.vast_api_key
+
+```
+---
+```
+usage: 
+login via the command line is no longer supported.
+go to https://vast.ai/console/cli in a web browser to get your api key, then run:
+
+    vast set api-key YOUR_API_KEY_HERE
+
+positional arguments:
+  ignored
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
+usage: vast.py remove defjob [-h] [--url URL] [--raw] [--api-key API_KEY] id
+
+positional arguments:
+  id                 id of machine to remove default instance from
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
+usage: vast scp-url
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --id ID            id of instance
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
 ```
 usage: vast search offers [--help] [--api-key API_KEY] [--raw] <query>
 
@@ -154,49 +358,66 @@ Available fields:
 ```
 ---
 ```
+usage: vast set api-key APIKEY
+
+positional arguments:
+  new_api_key        Api key to set as currently logged in user
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
+usage: vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
+
+positional arguments:
+  id                    id of machine to launch default instance on
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --price_gpu PRICE_GPU
+                        per gpu rental price in $/hour
+  --price_inetu PRICE_INETU
+                        price for internet upload bandwidth in $/GB
+  --price_inetd PRICE_INETD
+                        price for internet download bandwidth in $/GB
+  --image IMAGE         docker container image to launch
+  --args ...            list of arguments passed to container launch
+  --url URL             server REST api url
+  --raw                 output machine-readable json
+  --api-key API_KEY     api key. defaults to using the one stored in
+                        ~/.vast_api_key
+
+```
+---
+```
+usage: vast set min_bid id [--price PRICE]
+
+positional arguments:
+  id                 id of machine to set min bid price for
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --price PRICE      per gpu min bid price in $/hour
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+Change the current min bid price of machine id to PRICE.
+
+```
+---
+```
 usage: vast show instances [--api-key API_KEY] [--raw]
 
 optional arguments:
   -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: vast ssh-url
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --id ID            id of instance
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: vast scp-url
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --id ID            id of instance
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: vast show machines [OPTIONS]
-
-optional arguments:
-  -h, --help         show this help message and exit
-  -q, --quiet        only display numeric ids
   --url URL          server REST api url
   --raw              output machine-readable json
   --api-key API_KEY  api key. defaults to using the one stored in
@@ -226,6 +447,19 @@ optional arguments:
 ```
 ---
 ```
+usage: vast show machines [OPTIONS]
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -q, --quiet        only display numeric ids
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+```
 usage: vast show user[OPTIONS]
 
 optional arguments:
@@ -239,78 +473,11 @@ optional arguments:
 ```
 ---
 ```
-usage: vast generate pdf_invoices [OPTIONS]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -q, --quiet           only display numeric ids
-  -s START_DATE, --start_date START_DATE
-                        start date and time for report. Many formats accepted
-                        (optional)
-  -e END_DATE, --end_date END_DATE
-                        end date and time for report. Many formats accepted
-                        (optional)
-  -c, --only_charges    Show only charge items.
-  -p, --only_credits    Show only credit items.
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-```
-usage: vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
-
-positional arguments:
-  id                    id of machine to list
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -g PRICE_GPU, --price_gpu PRICE_GPU
-                        per gpu rental price in $/hour (price for active
-                        instances)
-  -s PRICE_DISK, --price_disk PRICE_DISK
-                        storage price in $/GB/month (price for inactive
-                        instances), default: $0.15/GB/month
-  -u PRICE_INETU, --price_inetu PRICE_INETU
-                        price for internet upload bandwidth in $/GB
-  -d PRICE_INETD, --price_inetd PRICE_INETD
-                        price for internet download bandwidth in $/GB
-  -m MIN_CHUNK, --min_chunk MIN_CHUNK
-                        minimum amount of gpus
-  -e END_DATE, --end_date END_DATE
-                        unix timestamp of the available until date (optional)
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-```
-usage: vast unlist machine <id>
-
-positional arguments:
-  id                 id of machine to unlist
+usage: vast ssh-url
 
 optional arguments:
   -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: vast.py remove defjob [-h] [--url URL] [--raw] [--api-key API_KEY] id
-
-positional arguments:
-  id                 id of machine to remove default instance from
-
-optional arguments:
-  -h, --help         show this help message and exit
+  --id ID            id of instance
   --url URL          server REST api url
   --raw              output machine-readable json
   --api-key API_KEY  api key. defaults to using the one stored in
@@ -349,181 +516,10 @@ optional arguments:
 ```
 ---
 ```
-usage: vast label instance <id> <label>
+usage: vast unlist machine <id>
 
 positional arguments:
-  id                 id of instance to label
-  label              label to set
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: vast destroy instance id [-h] [--api-key API_KEY] [--raw]
-
-positional arguments:
-  id                 id of instance to delete
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
-
-positional arguments:
-  id                    id of machine to launch default instance on
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --price_gpu PRICE_GPU
-                        per gpu rental price in $/hour
-  --price_inetu PRICE_INETU
-                        price for internet upload bandwidth in $/GB
-  --price_inetd PRICE_INETD
-                        price for internet download bandwidth in $/GB
-  --image IMAGE         docker container image to launch
-  --args ...            list of arguments passed to container launch
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-```
-usage: vast create instance id [OPTIONS] [--args ...]
-
-positional arguments:
-  id                    id of instance type to launch
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --price PRICE         per machine bid price in $/hour
-  --disk DISK           size of local disk partition in GB
-  --image IMAGE         docker container image to launch
-  --label LABEL         label to set on the instance
-  --onstart ONSTART     filename to use as onstart script
-  --onstart-cmd ONSTART_CMD
-                        contents of onstart script as single argument
-  --jupyter             Launch as a jupyter instance instead of an ssh
-                        instance.
-  --jupyter-dir JUPYTER_DIR
-                        For runtype 'jupyter', directory in instance to use to
-                        launch jupyter. Defaults to image's working directory.
-  --jupyter-lab         For runtype 'jupyter', Launch instance with jupyter
-                        lab.
-  --lang-utf8           Workaround for images with locale problems: install
-                        and generate locales before instance launch, and set
-                        locale to C.UTF-8.
-  --python-utf8         Workaround for images with locale problems: set
-                        python's locale to C.UTF-8.
-  --args ...            DEPRECATED: list of arguments passed to container
-                        launch. Onstart is recommended for this purpose.
-  --create-from CREATE_FROM
-                        Existing instance id to use as basis for new instance.
-                        Instance configuration should usually be identical, as
-                        only the difference from the base image is copied.
-  --force               Skip sanity checks when creating from an existing
-                        instance
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-```
-usage: vast change bid id [--price PRICE]
-
-positional arguments:
-  id                 id of instance type to change bid
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --price PRICE      per machine bid price in $/hour
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-Change the current bid price of instance id to PRICE.
-If PRICE is not specified, then a winning bid price is used as the default.
-
-```
----
-```
-usage: vast set min_bid id [--price PRICE]
-
-positional arguments:
-  id                 id of machine to set min bid price for
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --price PRICE      per gpu min bid price in $/hour
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-Change the current min bid price of machine id to PRICE.
-
-```
----
-```
-usage: vast set api-key APIKEY
-
-positional arguments:
-  new_api_key        Api key to set as currently logged in user
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: 
-login via the command line is no longer supported.
-go to https://vast.ai/console/cli in a web browser to get your api key, then run:
-
-    vast set api-key YOUR_API_KEY_HERE
-
-positional arguments:
-  ignored
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-```
-usage: 
-login via the command line is no longer supported.
-go to https://vast.ai/console/cli in a web browser to get your api key, then run:
-
-    vast set api-key YOUR_API_KEY_HERE
-
-positional arguments:
-  ignored
+  id                 id of machine to unlist
 
 optional arguments:
   -h, --help         show this help message and exit

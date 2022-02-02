@@ -26,9 +26,12 @@ def run_cmd_and_capture_output(verb: str, obj: str = None) -> str:
 
 def run_help_for_commands(lines):
     help_text = ""
+    lines.sort()
+    i = 1
     for line in lines:
         command_parts = re.split(r"\s+", line.strip())
-        print(command_parts)
+        print(f"{i}: {command_parts}")
+        i += 1
         num_command_parts = len(command_parts)
         if num_command_parts == 2:
             cmd_output = run_cmd_and_capture_output(command_parts[0], command_parts[1])
@@ -44,7 +47,7 @@ def run_help_for_commands(lines):
 main_help_text = run_cmd_and_capture_output("", "")
 main_help_text_lines = main_help_text.split("\n")
 main_help_text = f"```\n{main_help_text}\n```\n"
-command_help_text = run_help_for_commands(main_help_text_lines[5:28])
+command_help_text = run_help_for_commands(main_help_text_lines[5:27])
 
 with open("commands.md", "w") as fh:
     fh.write(main_help_text)
