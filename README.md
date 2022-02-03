@@ -289,7 +289,7 @@ optional arguments:
 Note: there is a small utility script called `watcher.sh` in this repository that may be
 of interest if you are working on development of the `generate pdf-invoices` command. It detects
 when the files in the current directory change and re-runs the generate command. If you are
-running a PDF viewier like `evince` you will see the changes in the viewer window
+running a PDF viewer like `evince` you will see the changes in the viewer window
 automatically after the generate command finishes rebuilding the invoice.
 
 
