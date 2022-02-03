@@ -1,22 +1,108 @@
 # Welcome to Vast.ai’s documentation!
 
-# vast-python
+## Overview
+This repository contains the open source python command line interface for vast.ai.
+This CLI has all of the main functionality of the vast.ai website GUI and uses the
+same underlying REST API. Most of the functionality is self-contained in the single
+script file `vast.py`, although the invoice generating commands
+require installing an additional second script called `vast_pdf.py`.
 
-Super basic git repo so interested folks can pull request.
-More to follow. There are a few additional files here that may
-be of use to developers of the project.
+## Quickstart
 
+The quickest way to get started is to download the `vast.py` script using the `wget` command.
 
-* mypi.ini : config file for the mypy static type checker.
+```wget https://raw.githubusercontent.com/vast-ai/vast-python/master/vast.py; chmod +x vast.py;```
 
-* make-archive.sh : Shell script to build the tarball that ships to customers. I’ve gotten rid of the venv directory for now.
+You can verify that the script is working by doing `./vast.py --help`. You should see a list of the available
+commands. In order to proceed further you will need to login to the vast.ai website and get your api-key.
+Go to [https://vast.ai/console/cli/](https://vast.ai/console/cli/). Copy the command under 
+the heading "Login / Set API Key" and run it. The command will be something like
 
-* watcher.sh : A little shell script to help development of the PDF invoices.
-    It basically just uses the watch command to watch the directory
-    using ls. When anything changes it dies. Then the script regenerates
-    the PDF. This is all done in a “while true” construct that loops forever.
-    You’ll need to hit Ctrl-C *twice* to kill it. The first one only kills
-    the watch command within the script.
+```./vast.py set api-key xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx```
+
+Note that if the script is named "vast" in this command and your
+script is named "vast.py" you will need to change the name of the script in the
+command you run. The `set api-key` command saves your api-key in a hidden file in
+your home directory. Do not share your api-key with anyone as it authenticates
+your other vast commands to your account.
+
+## Usage
+
+To see how the API works you can use it to find machines for rent. `vast.py search offers`. In this
+form the command will show all available offers. To get more specific results try narrowing the search.
+There is a large online help page on how to do this. Bring up the help by doing `vast.py search offers --help`.
+There are many parameters that can be used to filter the results. The search command supports
+all of the filters and sort options that the website GUI uses. To find Turing GPU instances
+(compute capability 7.0 or higher):
+
+```./vast.py search offers 'compute_cap > 700 '```
+
+To find instances with a reliability score >= 0.99 and at least 4 gpus, ordering by num of gpus
+descending:
+
+```./vast.py search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'```
+
+The output of this command at the time of this writing is
+```
+ID       CUDA  Num  Model        PCIE_BW  vCPUs     RAM  Storage  $/hr     DLPerf  DLP/$  Nvidia Driver Version  Net_up  Net_down  R      Max_Days  machine_id
+1596177  11.4  10x  GTX_1080     5.5      48.0    257.9  4628     2.0000   73.0    36.5   470.63.01              653.3   854.5     99.5   -         638
+2459430  11.5   8x  RTX_A5000    9.1      128.0   515.8  3094     4.0000   209.4   52.3   495.46                 1844.2  2669.6    99.7   12.0      4384
+2459380  11.4   8x  RTX_3070     6.3      12.0     64.0  710      1.4200   67.2    47.3   470.86                 0.0     0.0       99.8   -         4102
+2456624  11.4   8x  RTX_2080_Ti  10.7     32.0    257.9  1653     2.8000   126.4   45.2   470.82.00              14.6    214.2     99.8   28.7      3047
+2456622  11.4   8x  RTX_2080_Ti  10.8     32.0    128.9  1651     2.8000   127.1   45.4   470.82.00              14.9    214.7     99.1   28.7      1569
+2456600  11.5   8x  RTX_2080_Ti  10.9     48.0    256.6  1704     2.4000   125.5   52.3   495.29.05              169.0   169.8     99.7   25.7      4058
+2455617  11.2   8x  RTX_3090     21.7     64.0    515.8  6165     6.4000   261.1   40.8   460.67                 477.6   707.2     99.8   28.7      2980
+2454397  11.2   8x  A100_SXM4    22.4     128.0  2064.1  21568    13.2000  300.1   22.7   460.106.00             708.7   1119.8    99.2   -         4762
+2405590  11.4   8x  RTX_2080_Ti  11.2     48.0    257.9  1629     3.8000   125.5   33.0   470.82.00              389.4   608.8     100.0  1.8       2776
+2364579  11.4   8x  A100_PCIE    18.5     128.0   515.8  4813     14.8000  278.8   18.8   470.74                 472.4   699.0     99.9   28.7      3459
+2281839  11.2   8x  Tesla_V100   11.8     72.0    483.1  1171     5.6000   193.6   34.6   460.67                 493.0   697.8     100.0  28.7      2744
+2281832  11.2   8x  A100_PCIE    17.7     64.0    515.9  5821     14.8000  276.7   18.7   460.91.03              478.2   655.5     99.9   28.7      2901
+2452630  11.4   7x  RTX_3090     6.3      28.0     64.0  61       3.5000   165.5   47.3   470.86                 84.6    84.4      99.3   3.8       4420
+2342561  11.4   7x  RTX_3090     6.1      96.0    257.6  1664     4.5500   149.2   32.8   470.82.00              476.9   671.7     99.4   1.7       4202
+2237983  11.4   7x  RTX_3090     12.5     32.0    257.6  3228     3.1500   204.5   64.9   470.86                 194.4   183.8     99.1   -         4207
+2459511  11.4   6x  RTX_3090     6.2      -       128.8  812      2.8200   150.2   53.2   470.94                 374.4   271.4     99.0   6.7       3129
+2448342  11.5   6x  RTX_A6000    12.4     64.0    515.7  6695     3.6000   169.8   47.2   495.29.05              668.6   1082.6    99.6   -         3624
+2437565  11.4   6x  RTX_3090     23.0     16.0    128.8  1676     5.4000   196.8   36.5   470.94                 34.1    131.5     99.4   -         4238
+2332973  11.2   6x  RTX_3090     11.9     48.0    193.3  1671     3.3000   180.3   54.6   460.84                 582.1   737.6     99.9   25.6      3552
+2459459  11.5   4x  RTX_3090     23.1     32.0    257.8  1363     2.0000   131.2   65.6   495.46                 1954.7  2725.8    99.6   12.0      3059
+2459428  11.5   4x  RTX_A5000    24.6     64.0    515.8  1547     2.0000   104.9   52.4   495.46                 1844.2  2669.6    99.7   12.0      4384
+2459368  11.4   4x  RTX_3090     25.3     48.0     64.2  133      1.3967   130.5   93.4   470.86                 0.0     0.0       99.4   -         4637
+2458968  11.6   4x  RTX_3090     11.7     16.0    128.5  752      1.4000   79.8    57.0   510.39.01              797.8   842.7     99.9   4.0       2555
+2458878  11.6   4x  RTX_3090     11.6     36.0    128.5  1531     1.4000   81.9    58.5   510.39.01              757.1   807.6     99.9   4.0       3646
+2458845  11.6   4x  RTX_3090     3.1      12.0    128.5  369      1.4000   92.4    66.0   510.39.01              725.7   852.2     99.8   4.0       700
+2458838  11.6   4x  RTX_3090     5.7      48.0    128.9  624      1.4000   85.3    60.9   510.39.01              574.9   731.7     99.8   4.0       2217
+2454395  11.2   4x  A100_SXM4    22.9     64.0   2064.1  10784    6.6000   150.0   22.7   460.106.00             708.7   1119.8    99.2   -         4762
+2452632  11.4   4x  RTX_3090     6.3      16.0     64.0  35       2.0000   123.5   61.8   470.86                 84.6    84.4      99.3   3.8       4420
+2450275  11.4   4x  RTX_3080_Ti  12.5     32.0    128.7  817      1.8000   128.8   71.6   470.82.00              278.3   350.4     99.7   -         4260
+2449210  11.5   4x  RTX_3090     11.2     48.0    128.9  324      2.0000   89.7    44.9   495.29.05              688.3   775.4     99.8   -         2764
+2445175  11.4   4x  RTX_3090     11.9     32.0    257.6  1530     2.0000   135.4   67.7   470.86                 868.6   887.1     99.7   25.9      3055
+2444916  11.4   4x  RTX_3090     11.9     16.0    128.7  1576     1.4000   131.8   94.2   470.82.00              39.4    402.3     99.9   -         3759
+2437188  11.4   4x  Tesla_P100   11.7     24.0     95.2  2945     0.7200   44.8    62.2   470.82.00              10.9    76.2      99.5   0.1       3969
+2437179  11.4   4x  Tesla_P100   11.7     32.0    192.1  3070     0.7200   44.8    62.3   470.82.00              11.1    66.0      99.2   0.0       4159
+2431606  11.4   4x  RTX_3090     17.9     32.0    110.7  330      1.8400   134.3   73.0   470.82.01              584.6   813.4     99.7   4.4       4079
+2419191  11.4   4x  RTX_2080_Ti  6.3      32.0     64.4  837      2.0000   64.7    32.4   470.63.01              40.5    205.9     99.7   -         162
+2405589  11.4   4x  RTX_2080_Ti  10.8     24.0    257.9  815      1.9000   62.8    33.0   470.82.00              389.4   608.8     100.0  1.8       2776
+2392087  11.4   4x  RTX_A6000    10.8     32.0    515.9  1247     1.8000   64.5    35.8   470.94                 669.9   705.4     99.1   10.9      4782
+2377227  11.2   4x  RTX_3090     6.3      24.0     64.3  1638     2.0000   128.3   64.1   460.32.03              37.8    145.0     99.7   3.0       2672
+2349173  11.4   4x  RTX_3090     23.2     48.0    128.7  1475     2.0000   107.4   53.7   470.86                 33.2    84.2      99.8   47.3      3949
+2338635  11.4   4x  RTX_3090     23.0     32.0    128.5  3151     1.6000   108.8   68.0   470.86                 33.8    86.4      99.6   47.4      3948
+2303959  11.2   4x  RTX_3090     11.7     28.0    128.8  791      2.1200   131.3   61.9   460.32.03              519.7   570.7     99.5   -         3042
+2281830  11.2   4x  A100_PCIE    18.1     32.0    515.9  2910     7.4000   143.6   19.4   460.91.03              478.2   655.5     99.9   28.7      2901
+2193726  11.4   4x  RTX_3090     12.4     32.0    128.8  1646     3.6000   153.9   42.8   470.82.01              33.3    137.5     99.5   -         3434
+1737692  11.2   4x  RTX_3070     6.3      28.0    128.5  656      2.8000   37.5    13.4   460.91.03              452.6   703.2     99.6   -         3510
+```
+
+#### Launching Instances
+To create an instance of type 2459368 (using an ID from the search) with the vastai/tensorflow image
+and 32 GB of disk storage
+
+```./vast.py create instance 2459368 --image vastai/tensorflow --disk 32```
+
+## Install
+
+TO BE COMPLETED: This section will describe installing the vast_pdf.py library, Borb, and other
+python libs that may be needed...
+
 
 ## Commands
 
@@ -64,6 +150,9 @@ optional arguments:
                         ~/.vast_api_key
 
 ```
+
+#### Change bid
+
 ```
 usage: vast change bid id [--price PRICE]
 
@@ -530,3 +619,20 @@ optional arguments:
 
 ```
 ---
+
+### Misc
+
+There are a few additional files here that may
+be of use to developers of the project.
+
+
+* mypi.ini : config file for the mypy static type checker.
+
+* make-archive.sh : Shell script to build the tarball that ships to customers. I’ve gotten rid of the venv directory for now.
+
+* watcher.sh : A little shell script to help development of the PDF invoices.
+    It basically just uses the watch command to watch the directory
+    using ls. When anything changes it dies. Then the script regenerates
+    the PDF. This is all done in a “while true” construct that loops forever.
+    You’ll need to hit Ctrl-C *twice* to kill it. The first one only kills
+    the watch command within the script.

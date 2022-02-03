@@ -754,7 +754,6 @@ def show__user(args):
     :rtype:
     """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
-    # req_url = "https://vast.ai/api/v0/users/current/?api_key=38d9223af02d6587452791106f1a0e4071a3872d05daa282608b0a080aadb7d7"
 
     r = requests.get(req_url);
     r.raise_for_status()

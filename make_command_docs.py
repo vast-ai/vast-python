@@ -12,6 +12,36 @@ import re
 import subprocess
 
 
+
+['change', 'bid']
+['create', 'account']
+['create', 'instance']
+['destroy', 'instance']
+['generate', 'pdf-invoices']
+['label', 'instance']
+['list', 'machine']
+['login']
+['remove', 'defjob']
+['scp-url']
+['search', 'offers']
+['set', 'api-key']
+['set', 'defjob']
+['set', 'min-bid']
+['show', 'instances']
+['show', 'invoices']
+['show', 'machines']
+['show', 'user']
+['ssh-url']
+['start', 'instance']
+['stop', 'instance']
+['unlist', 'machine']
+
+
+
+
+
+
+
 def run_cmd_and_capture_output(verb: str, obj: str = None) -> str:
     if verb:
         if obj:
