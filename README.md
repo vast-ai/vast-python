@@ -100,9 +100,12 @@ and 32 GB of disk storage
 
 ## Install
 
-TO BE COMPLETED: This section will describe installing the vast_pdf.py library, Borb, and other
-python libs that may be needed...
-
+If you followed the instructions in [Quickstart](#Quickstart) you have already installed the script that contains
+most of the CLI functionality. If you wish to print PDF format invoices you will need a few other
+things. First, you'll need the vast_pdf.py script. This can be found in this repository in the main
+directory at [vast_pdf.py](vast_pdf.py). This script should be present in the same directory as the
+`vast.py` script. It makes use of a third party library called Borb to create the PDF invoices. To install
+this run the command `pip3 install borb`
 
 ## Commands
 
@@ -150,8 +153,7 @@ optional arguments:
                         ~/.vast_api_key
 
 ```
-
-#### Change bid
+#### Change existing bid by id
 
 ```
 usage: vast change bid id [--price PRICE]
@@ -172,6 +174,8 @@ If PRICE is not specified, then a winning bid price is used as the default.
 
 ```
 ---
+#### Create account (command line account creation no longer supported)
+
 ```
 usage: 
 login via the command line is no longer supported.
@@ -191,6 +195,8 @@ optional arguments:
 
 ```
 ---
+#### Create instance
+
 ```
 usage: vast create instance id [OPTIONS] [--args ...]
 
@@ -233,6 +239,8 @@ optional arguments:
 
 ```
 ---
+#### Destroy instance
+
 ```
 usage: vast destroy instance id [-h] [--api-key API_KEY] [--raw]
 
@@ -248,6 +256,8 @@ optional arguments:
 
 ```
 ---
+#### Generate pdf-invoices
+
 ```
 usage: vast generate pdf_invoices [OPTIONS]
 
@@ -269,6 +279,8 @@ optional arguments:
 
 ```
 ---
+#### Label instance
+
 ```
 usage: vast label instance <id> <label>
 
@@ -285,6 +297,8 @@ optional arguments:
 
 ```
 ---
+#### List machine for rent
+
 ```
 usage: vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
 
@@ -314,6 +328,8 @@ optional arguments:
 
 ```
 ---
+#### Login (command line login no longer supported)
+
 ```
 usage: 
 login via the command line is no longer supported.
@@ -333,6 +349,8 @@ optional arguments:
 
 ```
 ---
+#### Remove default job
+
 ```
 usage: vast.py remove defjob [-h] [--url URL] [--raw] [--api-key API_KEY] id
 
@@ -348,6 +366,8 @@ optional arguments:
 
 ```
 ---
+#### scp-url
+
 ```
 usage: vast scp-url
 
@@ -361,6 +381,8 @@ optional arguments:
 
 ```
 ---
+#### Search offers
+
 ```
 usage: vast search offers [--help] [--api-key API_KEY] [--raw] <query>
 
@@ -446,6 +468,8 @@ Available fields:
 
 ```
 ---
+#### Set api-key
+
 ```
 usage: vast set api-key APIKEY
 
@@ -461,6 +485,8 @@ optional arguments:
 
 ```
 ---
+#### Set default job
+
 ```
 usage: vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
 
@@ -484,6 +510,8 @@ optional arguments:
 
 ```
 ---
+#### Set minimum bid
+
 ```
 usage: vast set min_bid id [--price PRICE]
 
@@ -502,6 +530,8 @@ Change the current min bid price of machine id to PRICE.
 
 ```
 ---
+#### Show instances we are renting
+
 ```
 usage: vast show instances [--api-key API_KEY] [--raw]
 
@@ -514,6 +544,8 @@ optional arguments:
 
 ```
 ---
+#### Show invoices
+
 ```
 usage: vast show invoices [OPTIONS]
 
@@ -535,6 +567,8 @@ optional arguments:
 
 ```
 ---
+#### Show machines we are offering for rent
+
 ```
 usage: vast show machines [OPTIONS]
 
@@ -548,6 +582,8 @@ optional arguments:
 
 ```
 ---
+#### Show user account information
+
 ```
 usage: vast show user[OPTIONS]
 
@@ -561,6 +597,8 @@ optional arguments:
 
 ```
 ---
+#### ssh-url
+
 ```
 usage: vast ssh-url
 
@@ -574,6 +612,8 @@ optional arguments:
 
 ```
 ---
+#### Start instance
+
 ```
 usage: vast start instance <id> [--raw]
 
@@ -589,6 +629,8 @@ optional arguments:
 
 ```
 ---
+#### Stop instance
+
 ```
 usage: vast stop instance [--raw] <id>
 
@@ -604,6 +646,8 @@ optional arguments:
 
 ```
 ---
+#### Unlist machine
+
 ```
 usage: vast unlist machine <id>
 
@@ -619,20 +663,3 @@ optional arguments:
 
 ```
 ---
-
-### Misc
-
-There are a few additional files here that may
-be of use to developers of the project.
-
-
-* mypi.ini : config file for the mypy static type checker.
-
-* make-archive.sh : Shell script to build the tarball that ships to customers. I’ve gotten rid of the venv directory for now.
-
-* watcher.sh : A little shell script to help development of the PDF invoices.
-    It basically just uses the watch command to watch the directory
-    using ls. When anything changes it dies. Then the script regenerates
-    the PDF. This is all done in a “while true” construct that loops forever.
-    You’ll need to hit Ctrl-C *twice* to kill it. The first one only kills
-    the watch command within the script.
