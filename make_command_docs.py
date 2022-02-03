@@ -10,6 +10,7 @@
 
 import re
 import subprocess
+import sys
 
 command_headings = dict()
 
@@ -37,9 +38,15 @@ command_headings[('stop', 'instance')] = "Stop instance"
 command_headings[('unlist', 'machine')] = "Unlist machine"
 
 
+def snip_lines_from_text(text: str, start_line: int, end_line: int, invert: bool = False):
+    text_lines = text.split("\n")
+    if invert:
+        return text_lines[:start_line] + text_lines[end_line:]
+    return text_lines[start_line:end_line]
 
 
-
+def make_lines_into_links(text_lines: list):
+    return "\n".join([re.sub(r"\s*(.+)\s*", r"[\1](#\1)  ", line) for line in text_lines])
 
 
 def run_cmd_and_capture_output(verb: str, obj: str = None) -> str:
@@ -77,10 +84,17 @@ def run_help_for_commands(lines):
 
 
 main_help_text = run_cmd_and_capture_output("", "")
-main_help_text_lines = main_help_text.split("\n")
+# command_index = make_lines_into_links(snip_lines_from_text(main_help_text, 4, 27)) + "\n\n"
+
+
+main_help_text = run_cmd_and_capture_output("", "")
+# main_help_text_lines = main_help_text.split("\n")
+command_help_text = run_help_for_commands(snip_lines_from_text(main_help_text, 5, 27))
+# main_help_text = "\n".join(snip_lines_from_text(main_help_text, 1, 27, True))
 main_help_text = f"```\n{main_help_text}\n```\n"
-command_help_text = run_help_for_commands(main_help_text_lines[5:27])
+
 
 with open("commands.md", "w") as fh:
+#    fh.write(command_index)
     fh.write(main_help_text)
     fh.write(command_help_text)

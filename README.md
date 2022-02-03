@@ -9,7 +9,10 @@ require installing an additional second script called `vast_pdf.py`.
 
 ## Quickstart
 
-The quickest way to get started is to download the `vast.py` script using the `wget` command.
+You should probably create a subdirectory in which to put this script and related files if you
+haven't already. You can call it whatever you like but I'll refer to it as "vid" for "Vast Install Directory".
+So just enter `mkdir vid` to create the directory. Once you've created the directory just change your working directory to it with `cd vid`. After you've
+done that the quickest way to get started is to download the `vast.py` script using the `wget` command.
 
 ```wget https://raw.githubusercontent.com/vast-ai/vast-python/master/vast.py; chmod +x vast.py;```
 
@@ -20,11 +23,11 @@ the heading "Login / Set API Key" and run it. The command will be something like
 
 ```./vast.py set api-key xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx```
 
-Note that if the script is named "vast" in this command and your
-script is named "vast.py" you will need to change the name of the script in the
-command you run. The `set api-key` command saves your api-key in a hidden file in
-your home directory. Do not share your api-key with anyone as it authenticates
-your other vast commands to your account.
+where the `xxxx...` is your api-key (a long hexadecimal number). Note that if the script is
+named "vast" in this command on the website and your installed script is named "vast.py"
+you will need to change the name of the script in the command you run. The `set api-key`
+command saves your api-key in a hidden file in your home directory. Do not share your
+api-key with anyone as it authenticates your other vast commands to your account.
 
 ## Usage
 
@@ -151,8 +154,12 @@ optional arguments:
   --raw                 output machine-readable json
   --api-key API_KEY     api key. defaults to using the one stored in
                         ~/.vast_api_key
-
 ```
+
+### Commands in Detail
+
+---
+
 #### Change existing bid by id
 
 ```
@@ -278,6 +285,14 @@ optional arguments:
                         ~/.vast_api_key
 
 ```
+
+Note: there is a small utility script called `watcher.sh` in this repository that may be
+of interest if you are working on development of the `generate pdf-invoices` command. It detects
+when the files in the current directory change and re-runs the generate command. If you are
+running a PDF viewier like `evince` you will see the changes in the viewer window
+automatically after the generate command finishes rebuilding the invoice.
+
+
 ---
 #### Label instance
 
