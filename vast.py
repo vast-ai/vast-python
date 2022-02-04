@@ -11,7 +11,7 @@ import time
 import typing
 from datetime import date
 
-# import dateutil
+
 import dateutil
 from dateutil import parser
 import requests
@@ -20,10 +20,13 @@ import getpass
 try:
     import vast_pdf
 except ImportError:
-    print(
-        "Please install the Borb PDF library if you need to generate PDF invoices.\nUse the command 'pip3 install borb' to do this.")
+    print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
+    you do not need this feature you can ignore this message. To get the library you should download the vast-python 
+    github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
+    directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
+    package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
-# from vast_pdf import main
+
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -192,7 +195,7 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
 
 def deindent(message: str) -> str:
     """
-    deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
+    Deindent a quoted string. Scans message and finds the smallest number of whitespace characters in any line and
     removes that many from the start of every line.
 
     :param str message: Message to deindent.
@@ -446,16 +449,13 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
     of it.
 
-    :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields
-    tuple.
-    :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable
-    version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool
-    determining text justification. True = left justify, False = right justify. Here is an example showing the tuples
-    in action.
+    :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields tuple.
+
+    :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool determining text justification. True = left justify, False = right justify. Here is an example showing the tuples in action.
+
     :rtype None:
 
-    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)
-
+    Example of 5-tuple: ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False)
     """
     header = [name for _, name, _, _, _ in fields]
     out_rows = [header]
@@ -623,8 +623,11 @@ def search__offers(args):
     usage="vast show instances [--api-key API_KEY] [--raw]",
 )
 def show__instances(args):
-    """Shows the stats on the machine the user is renting.
+    """
+    Shows the stats on the machine the user is renting.
+
     :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
     """
     req_url = apiurl(args, "/instances", {"owner": "me"});
     r = requests.get(req_url);
@@ -682,8 +685,11 @@ def _ssh_url(args, protocol):
     usage="vast show machines [OPTIONS]",
 )
 def show__machines(args):
-    """Show the machines user is offering for rent.
+    """
+    Show the machines user is offering for rent.
+
     :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
     """
     req_url = apiurl(args, "/machines", {"owner": "me"});
     r = requests.get(req_url);
@@ -748,7 +754,6 @@ def show__user(args):
     :rtype:
     """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
-    # req_url = "https://vast.ai/api/v0/users/current/?api_key=38d9223af02d6587452791106f1a0e4071a3872d05daa282608b0a080aadb7d7"
 
     r = requests.get(req_url);
     r.raise_for_status()
@@ -797,11 +802,13 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     if args.only_charges:
         type_txt = "Only showing charges."
         selector_flag = "only_charges"
+
         def type_filter_fn(row):
             return True if row["type"] == "charge" else False
     elif args.only_credits:
         type_txt = "Only showing credits."
         selector_flag = "only_credits"
+
         def type_filter_fn(row):
             return True if row["type"] == "payment" else False
     else:
@@ -847,7 +854,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vast generate pdf_invoice [OPTIONS]",
+    usage="vast generate pdf_invoices [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     """

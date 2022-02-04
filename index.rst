@@ -3,25 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Vast.ai's documentation!
-===================================
-To regenerate after making changes cd to the main "``vast-python``"
-directory and run "``sphinx-build -c sphinx/config/ -b html . sphinx/build/``"
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
-
 Modules
 ==================
 
@@ -31,6 +12,12 @@ vast
 
 .. automodule:: vast
    :members:
+
+
+
+.. argparse::
+   :filename: ./vast.py
+
 
 vast_pdf
 ------------------
