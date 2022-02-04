@@ -504,7 +504,7 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
     argument("query",
              help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
              nargs="*", default=None),
-    usage="vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
+    usage="vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
         
@@ -620,7 +620,7 @@ def search__offers(args):
 
 
 @parser.command(
-    usage="vast show instances [--api-key API_KEY] [--raw]",
+    usage="vast.py show instances [--api-key API_KEY] [--raw]",
 )
 def show__instances(args):
     """
@@ -641,7 +641,7 @@ def show__instances(args):
 
 @parser.command(
     argument("--id", help="id of instance", type=int),
-    usage="vast ssh-url",
+    usage="vast.py ssh-url",
 )
 def ssh_url(args):
     """
@@ -654,7 +654,7 @@ def ssh_url(args):
 
 @parser.command(
     argument("--id", help="id of instance", type=int),
-    usage="vast scp-url",
+    usage="vast.py scp-url",
 )
 def scp_url(args):
     """
@@ -682,7 +682,7 @@ def _ssh_url(args, protocol):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage="vast show machines [OPTIONS]",
+    usage="vast.py show machines [OPTIONS]",
 )
 def show__machines(args):
     """
@@ -712,7 +712,7 @@ def show__machines(args):
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vast show invoices [OPTIONS]",
+    usage="vast.py show invoices [OPTIONS]",
 )
 def show__invoices(args):
     """
@@ -744,7 +744,7 @@ def show__invoices(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
-    usage="vast show user[OPTIONS]",
+    usage="vast.py show user[OPTIONS]",
 )
 def show__user(args):
     """
@@ -854,7 +854,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vast generate pdf_invoices [OPTIONS]",
+    usage="vast.py generate pdf_invoices [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     """
@@ -894,7 +894,7 @@ def generate__pdf_invoices(args):
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
-    usage="vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    usage="vast.py list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
 )
 def list__machine(args):
     """
@@ -929,7 +929,7 @@ def list__machine(args):
 
 @parser.command(
     argument("id", help="id of machine to unlist", type=int),
-    usage="vast unlist machine <id>",
+    usage="vast.py unlist machine <id>",
 )
 def unlist__machine(args):
     """
@@ -987,7 +987,7 @@ def set_ask(args):
 
 @parser.command(
     argument("id", help="id of instance to start/restart", type=int),
-    usage="vast start instance <id> [--raw]",
+    usage="vast.py start instance <id> [--raw]",
 )
 def start__instance(args):
     """
@@ -1014,7 +1014,7 @@ def start__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to stop", type=int),
-    usage="vast stop instance [--raw] <id>",
+    usage="vast.py stop instance [--raw] <id>",
 )
 def stop__instance(args):
     """
@@ -1042,7 +1042,7 @@ def stop__instance(args):
 @parser.command(
     argument("id", help="id of instance to label", type=int),
     argument("label", help="label to set", type=str),
-    usage="vast label instance <id> <label>",
+    usage="vast.py label instance <id> <label>",
 )
 def label__instance(args):
     """
@@ -1065,7 +1065,7 @@ def label__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to delete", type=int),
-    usage="vast destroy instance id [-h] [--api-key API_KEY] [--raw]"
+    usage="vast.py destroy instance id [-h] [--api-key API_KEY] [--raw]"
 )
 def destroy__instance(args):
     """Perfoms the same action as pressing the "DESTROY" button on the website at https://vast.ai/console/instances/.
@@ -1094,7 +1094,7 @@ def destroy__instance(args):
     argument("--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("--image", help="docker container image to launch", type=str),
     argument("--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
-    usage="vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]"
+    usage="vast.py set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]"
 )
 def set__defjob(args):
     """
@@ -1147,7 +1147,7 @@ def set__defjob(args):
              help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
              type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="vast create instance id [OPTIONS] [--args ...]",
+    usage="vast.py create instance id [OPTIONS] [--args ...]",
 )
 def create__instance(args: argparse.Namespace):
     """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
@@ -1197,7 +1197,7 @@ def create__instance(args: argparse.Namespace):
 @parser.command(
     argument("id", help="id of instance type to change bid", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
-    usage="vast change bid id [--price PRICE]",
+    usage="vast.py change bid id [--price PRICE]",
     epilog=deindent("""
         Change the current bid price of instance id to PRICE.
         If PRICE is not specified, then a winning bid price is used as the default.
@@ -1221,7 +1221,7 @@ def change__bid(args: argparse.Namespace):
 @parser.command(
     argument("id", help="id of machine to set min bid price for", type=int),
     argument("--price", help="per gpu min bid price in $/hour", type=float),
-    usage="vast set min_bid id [--price PRICE]",
+    usage="vast.py set min_bid id [--price PRICE]",
     epilog=deindent("""
         Change the current min bid price of machine id to PRICE.
     """),
@@ -1243,7 +1243,7 @@ def set__min_bid(args):
 
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
-    usage="vast set api-key APIKEY",
+    usage="vast.py set api-key APIKEY",
 )
 def set__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.

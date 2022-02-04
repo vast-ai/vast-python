@@ -163,7 +163,7 @@ optional arguments:
 #### Change existing bid by id
 
 ```
-usage: vast change bid id [--price PRICE]
+usage: vast.py change bid id [--price PRICE]
 
 positional arguments:
   id                 id of instance type to change bid
@@ -205,7 +205,7 @@ optional arguments:
 #### Create instance
 
 ```
-usage: vast create instance id [OPTIONS] [--args ...]
+usage: vast.py create instance id [OPTIONS] [--args ...]
 
 positional arguments:
   id                    id of instance type to launch
@@ -249,7 +249,7 @@ optional arguments:
 #### Destroy instance
 
 ```
-usage: vast destroy instance id [-h] [--api-key API_KEY] [--raw]
+usage: vast.py destroy instance id [-h] [--api-key API_KEY] [--raw]
 
 positional arguments:
   id                 id of instance to delete
@@ -266,7 +266,7 @@ optional arguments:
 #### Generate pdf-invoices
 
 ```
-usage: vast generate pdf_invoices [OPTIONS]
+usage: vast.py generate pdf_invoices [OPTIONS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -285,19 +285,11 @@ optional arguments:
                         ~/.vast_api_key
 
 ```
-
-Note: there is a small utility script called `watcher.sh` in this repository that may be
-of interest if you are working on development of the `generate pdf-invoices` command. It detects
-when the files in the current directory change and re-runs the generate command. If you are
-running a PDF viewer like `evince` you will see the changes in the viewer window
-automatically after the generate command finishes rebuilding the invoice.
-
-
 ---
 #### Label instance
 
 ```
-usage: vast label instance <id> <label>
+usage: vast.py label instance <id> <label>
 
 positional arguments:
   id                 id of instance to label
@@ -315,7 +307,7 @@ optional arguments:
 #### List machine for rent
 
 ```
-usage: vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
+usage: vast.py list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
 
 positional arguments:
   id                    id of machine to list
@@ -384,7 +376,7 @@ optional arguments:
 #### scp-url
 
 ```
-usage: vast scp-url
+usage: vast.py scp-url
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -399,7 +391,7 @@ optional arguments:
 #### Search offers
 
 ```
-usage: vast search offers [--help] [--api-key API_KEY] [--raw] <query>
+usage: vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>
 
 positional arguments:
   query                 Query to search for. default: 'external=false
@@ -486,7 +478,7 @@ Available fields:
 #### Set api-key
 
 ```
-usage: vast set api-key APIKEY
+usage: vast.py set api-key APIKEY
 
 positional arguments:
   new_api_key        Api key to set as currently logged in user
@@ -503,7 +495,7 @@ optional arguments:
 #### Set default job
 
 ```
-usage: vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
+usage: vast.py set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
 
 positional arguments:
   id                    id of machine to launch default instance on
@@ -528,7 +520,7 @@ optional arguments:
 #### Set minimum bid
 
 ```
-usage: vast set min_bid id [--price PRICE]
+usage: vast.py set min_bid id [--price PRICE]
 
 positional arguments:
   id                 id of machine to set min bid price for
@@ -548,7 +540,7 @@ Change the current min bid price of machine id to PRICE.
 #### Show instances we are renting
 
 ```
-usage: vast show instances [--api-key API_KEY] [--raw]
+usage: vast.py show instances [--api-key API_KEY] [--raw]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -562,7 +554,7 @@ optional arguments:
 #### Show invoices
 
 ```
-usage: vast show invoices [OPTIONS]
+usage: vast.py show invoices [OPTIONS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -585,7 +577,7 @@ optional arguments:
 #### Show machines we are offering for rent
 
 ```
-usage: vast show machines [OPTIONS]
+usage: vast.py show machines [OPTIONS]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -600,7 +592,7 @@ optional arguments:
 #### Show user account information
 
 ```
-usage: vast show user[OPTIONS]
+usage: vast.py show user[OPTIONS]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -615,7 +607,7 @@ optional arguments:
 #### ssh-url
 
 ```
-usage: vast ssh-url
+usage: vast.py ssh-url
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -630,7 +622,7 @@ optional arguments:
 #### Start instance
 
 ```
-usage: vast start instance <id> [--raw]
+usage: vast.py start instance <id> [--raw]
 
 positional arguments:
   id                 id of instance to start/restart
@@ -647,7 +639,7 @@ optional arguments:
 #### Stop instance
 
 ```
-usage: vast stop instance [--raw] <id>
+usage: vast.py stop instance [--raw] <id>
 
 positional arguments:
   id                 id of instance to stop
@@ -664,7 +656,7 @@ optional arguments:
 #### Unlist machine
 
 ```
-usage: vast unlist machine <id>
+usage: vast.py unlist machine <id>
 
 positional arguments:
   id                 id of machine to unlist
