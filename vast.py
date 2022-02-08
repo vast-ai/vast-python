@@ -744,7 +744,7 @@ def show__invoices(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
-    usage="vast.py show user[OPTIONS]",
+    usage="vast.py show user [OPTIONS]",
 )
 def show__user(args):
     """
