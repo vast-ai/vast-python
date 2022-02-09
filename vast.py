@@ -11,22 +11,10 @@ import time
 import typing
 from datetime import date
 
-
 import dateutil
 from dateutil import parser
 import requests
 import getpass
-
-try:
-    import vast_pdf
-except ImportError:
-    print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
-    you do not need this feature you can ignore this message. To get the library you should download the vast-python 
-    github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
-    directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
-    package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
-
-
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -864,6 +852,16 @@ def generate__pdf_invoices(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
+
+    try:
+        import vast_pdf
+    except ImportError:
+        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
+        you do not need this feature you can ignore this message. To get the library you should download the vast-python 
+        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
+        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
+        package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
+
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
     r_inv = requests.get(req_url_inv)
     r_inv.raise_for_status()
