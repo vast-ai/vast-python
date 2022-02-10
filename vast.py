@@ -36,6 +36,9 @@ api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
 api_key_guard = object()
 
+class Object(object):
+    pass
+
 
 class argument(object):
     def __init__(self, *args, **kwargs):
@@ -151,6 +154,24 @@ class apwrap(object):
 
 
 parser = apwrap()
+
+def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
+    """Map over a dict and translate any null string values into ' '.
+    Leave everything else as is. This is needed because you cannot add TableCell
+    objects with only a null string or the client crashes.
+
+    :param Dict d: dict of item values.
+    :rtype Dict:
+    """
+
+    # Beware: locally defined function.
+    def translate_nulls(s):
+        if s == "":
+            return " "
+        return s
+
+    new_d = {k: translate_nulls(v) for k, v in d.items()}
+    return new_d
 
 
 def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
@@ -766,6 +787,23 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     :rtype List: Returns the filtered list of rows.
 
     """
+
+    try:
+        import vast_pdf
+    except ImportError:
+        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
+        you do not need this feature you can ignore this message. To get the library you should download the vast-python 
+        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
+        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
+        package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
+
+    try:
+        vast_pdf
+    except NameError:
+        vast_pdf = Object()
+        vast_pdf.invoice_number = -1
+
+
     selector_flag = ""
     end_timestamp: float = 9999999999
     start_timestamp: float = 0
@@ -826,6 +864,8 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     if end_date_txt:
         end_date_txt = "E:" + end_date_txt
 
+
+
     pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
                                       [str(vast_pdf.invoice_number),
                                        start_date_txt,
@@ -872,7 +912,7 @@ def generate__pdf_invoices(args):
     r = requests.get(req_url)
     r.raise_for_status()
     user_blob = r.json()
-    user_blob = vast_pdf.translate_null_strings_to_blanks(user_blob)
+    user_blob = translate_null_strings_to_blanks(user_blob)
 
     if args.raw:
         print(json.dumps(rows_inv, indent=1, sort_keys=True))
