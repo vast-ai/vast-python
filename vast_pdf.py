@@ -440,23 +440,7 @@ def compute_pages_needed(rows_invoice: typing.List[typing.Dict]) -> int:
     return page_count
 
 
-def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
-    """Map over a dict and translate any null string values into ' '.
-    Leave everything else as is. This is needed because you cannot add TableCell
-    objects with only a null string or the client crashes.
 
-    :param Dict d: dict of item values.
-    :rtype Dict:
-    """
-
-    # Beware: locally defined function.
-    def translate_nulls(s):
-        if s == "":
-            return " "
-        return s
-
-    new_d = {k: translate_nulls(v) for k, v in d.items()}
-    return new_d
 
 
 def generate_invoice(user_blob: typing.Dict,
