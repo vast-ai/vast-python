@@ -11,8 +11,6 @@ import time
 import typing
 from datetime import date
 
-import dateutil
-from dateutil import parser
 import requests
 import getpass
 
@@ -790,6 +788,9 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
 
     try:
         import vast_pdf
+        import dateutil
+        from dateutil import parser
+
     except ImportError:
         print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
         you do not need this feature you can ignore this message. To get the library you should download the vast-python 
