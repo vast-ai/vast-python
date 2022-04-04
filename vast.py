@@ -495,6 +495,29 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
 
 
 @parser.command(
+    argument("src", help="instance id:/path to source of object to copy.", type=str),
+    argument("dst", help="instance id:/path to target of copy operation.", type=str),
+    usage="vast.py copy src dst",
+    epilog=deindent("""
+        Copies a data object from a source instance to a target instance. Neither the source nor
+        the target needs to be the same as this host but you will need appropriate read and write
+        permissions to carry out the action. The format for both src and dst is instance_id:path.
+        An example of this command would be 'vast copy 11824:/data/test 12371:/temp'. This copies the
+        object called /data/test on instance 11824 to instance 12371's /temp path. If the instance_id
+        is omitted the local machine is assumed.
+    """),
+)
+def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
+    """
+    Transfer data from one instance to another.
+
+    @param src: Location of data object to be copied.
+    @param dst: Target to copy object to.
+    """
+    print(f"This command is not yet active. It will be in the near future.")
+    print(f"Would copy from '{args.src}' to '{args.dst}'")
+
+@parser.command(
     argument("-t", "--type", default="on-demand",
              help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
