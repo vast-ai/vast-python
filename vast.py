@@ -262,8 +262,8 @@ instance_fields = (
     ("inet_up", "Net up", "{:0.1f}", None, True),
     ("inet_down", "Net down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
-    ("label", "Label", "{}", None, True),
-    ("direct_port_count", "Direct Port Count", "{}", None, True)
+    ("label", "Label", "{}", None, True)
+
     # ("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
@@ -386,6 +386,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "cpu_cores_effective",
         "cpu_ram",
         "cuda_max_good",
+        "direct_port_count",
         "driver_version",
         "disk_bw",
         "disk_space",
@@ -419,7 +420,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "storage_cost",
         "total_flops",
         "verified",
-        "direct_port_count"
+
     };
 
     joined = "".join("".join(x) for x in opts)
