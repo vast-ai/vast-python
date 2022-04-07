@@ -806,8 +806,6 @@ def show__user(args):
 
     if args.raw:
         print(json.dumps(user_blob, indent=1, sort_keys=True))
-        print("Current: ", user_blob)
-        print("Raw mode")
     else:
         display_table([user_blob], user_fields)
 
