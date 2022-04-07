@@ -3,9 +3,11 @@
 ####################################################################################################
 # Title: make_command_docs.py; Author Greg Propf; Date 2022-02-01
 ####################################################################################################
-# This script runs the 'vast.py' command with the --help option to generate the list of commands
-# and then again for each command shown by help. It does some minimal formatting on the results
-# and produces a Markdown version of the commands and their options.
+# Usage: './make_command_docs' This script runs the 'vast.py' command
+# with the --help option to generate the list of commands and then again
+# for each command shown by help. It does some minimal formatting on
+# the results and produces a Markdown version of the commands and their
+# options.
 ####################################################################################################
 
 import re
@@ -14,6 +16,7 @@ import sys
 
 command_headings = dict()
 
+command_headings[('copy')] = "Copy data object from src to dst"
 command_headings[('change', 'bid')] = "Change existing bid by id"
 command_headings[('create', 'account')] = "Create account (command line account creation no longer supported)"
 command_headings[('create', 'instance')] = "Create instance"
@@ -49,9 +52,11 @@ def make_lines_into_links(text_lines: list):
     return "\n".join([re.sub(r"\s*(.+)\s*", r"[\1](#\1)  ", line) for line in text_lines])
 
 
-def run_cmd_and_capture_output(verb: str, obj: str = None) -> str:
+def run_cmd_and_capture_output(verb: str, obj: str = None, direct_obj: str = None) -> str:
     if verb:
-        if obj:
+        if direct_obj:
+            cmd_output = subprocess.run(["./vast.py", verb, obj, direct_obj, "--help"], stdout=subprocess.PIPE)
+        elif obj:
             cmd_output = subprocess.run(["./vast.py", verb, obj, "--help"], stdout=subprocess.PIPE)
         else:
             cmd_output = subprocess.run(["./vast.py", verb, "--help"], stdout=subprocess.PIPE)
@@ -70,16 +75,19 @@ def run_help_for_commands(lines):
         print(f"{i}: {command_parts}")
         i += 1
         num_command_parts = len(command_parts)
+        if num_command_parts == 0:
+            continue
+        if num_command_parts == 3:
+            cmd_output = run_cmd_and_capture_output(command_parts[0], command_parts[1], command_parts[2])
+            help_text += f"#### {command_headings[(command_parts[0], command_parts[1], command_parts[2])]}\n\n"
         if num_command_parts == 2:
             cmd_output = run_cmd_and_capture_output(command_parts[0], command_parts[1])
             help_text += f"#### {command_headings[(command_parts[0], command_parts[1])]}\n\n"
-            help_text += f"```\n{cmd_output}\n```\n---\n"
         elif num_command_parts == 1:
             cmd_output = run_cmd_and_capture_output(command_parts[0])
             help_text += f"#### {command_headings[(command_parts[0])]}\n\n"
-            help_text += f"```\n{cmd_output}\n```\n---\n"
-        else:
-            print("NO COMMAND PRESENT.")
+        help_text += f"```\n{cmd_output}\n```\n---\n"
+
     return help_text
 
 
@@ -89,7 +97,9 @@ main_help_text = run_cmd_and_capture_output("", "")
 
 main_help_text = run_cmd_and_capture_output("", "")
 # main_help_text_lines = main_help_text.split("\n")
-command_help_text = run_help_for_commands(snip_lines_from_text(main_help_text, 5, 27))
+snipped_help_text = snip_lines_from_text(main_help_text, 4, 28)
+#snipped_help_text = snipped_help_text.sort()
+command_help_text = run_help_for_commands(snipped_help_text)
 # main_help_text = "\n".join(snip_lines_from_text(main_help_text, 1, 27, True))
 main_help_text = f"```\n{main_help_text}\n```\n"
 
