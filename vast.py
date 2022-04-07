@@ -217,6 +217,7 @@ def deindent(message: str) -> str:
 
 # These are the fields that are displayed when a search is run
 displayable_fields = (
+    # ("bw_nvlink", "Bandwidth NVLink", "{}", None, True),
     ("id", "ID", "{}", None, True),
     ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
     ("num_gpus", "Num", "{}x", None, False),
@@ -234,7 +235,12 @@ displayable_fields = (
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
     ("machine_id", "machine_id", "{}", None, True),
+   #  ("direct_port_count", "Direct Port Count", "{}", None, True),
 )
+
+
+# Need to add bw_nvlink, machine_id, direct_port_count to output.
+
 
 # These fields are displayed when you do 'show instances'
 instance_fields = (
@@ -257,6 +263,7 @@ instance_fields = (
     ("inet_down", "Net down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("label", "Label", "{}", None, True),
+    ("direct_port_count", "Direct Port Count", "{}", None, True)
     # ("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
@@ -373,6 +380,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
     }
 
     fields = {
+        "bw_nvlink",
         "compute_cap",
         "cpu_cores",
         "cpu_cores_effective",
@@ -399,6 +407,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "inet_down_cost",
         "inet_up",
         "inet_up_cost",
+        "machine_id",
         "min_bid",
         "mobo_name",
         "num_gpus",
@@ -409,7 +418,8 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "rented",
         "storage_cost",
         "total_flops",
-        "verified"
+        "verified",
+        "direct_port_count"
     };
 
     joined = "".join("".join(x) for x in opts)
@@ -556,12 +566,14 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
         Available fields:
             
               Name                  Type       Description
-
+              
+            bw_nvlink               float     bandwidth NVLink               
             compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
             cpu_cores:              int       # virtual cpus
             cpu_cores_effective:    float     # virtual cpus you get
             cpu_ram:                float     system RAM in gigabytes
             cuda_vers:              float     cuda version
+            direct_port_count       int       open ports on host's router
             disk_bw:                float     disk read bandwidth, in MB/s
             disk_space:             float     disk storage space, in GB
             dlperf:                 float     DL-perf score  (see FAQ for explanation)
@@ -580,6 +592,7 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
             inet_down_cost:         float     internet download bandwidth cost in $/GB
             inet_up:                float     internet upload speed in Mb/s
             inet_up_cost:           float     internet upload bandwidth cost in $/GB
+            machine_id              int       machine id of instance
             min_bid:                float     current minimum bid price in $/hr for interruptible
             num_gpus:               int       # of GPUs
             pci_gen:                float     PCIE generation
