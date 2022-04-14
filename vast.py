@@ -528,6 +528,7 @@ def parse_vast_url(url_str):
         raise VRLException("Instance id must be an integer.")
 
     valid_unix_path_regex = re.compile('^(/)?([^/\0]+(/)?)+$')
+    # Got this regex from https://stackoverflow.com/questions/537772/what-is-the-most-correct-regular-expression-for-a-unix-file-path
     if valid_unix_path_regex.match(path) is None:
         raise VRLException("Path component of VRL is not a valid Unix style path.")
 
@@ -557,13 +558,11 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
     @param dst: Target to copy object to.
     """
 
+    url = apiurl(args, f"/commands/rsync/")
     (src_id, src_path) = parse_vast_url(args.src)
     (dst_id, dst_path) = parse_vast_url(args.dst)
 
-    url = apiurl(args, f"/instance/rsync/")
-    # url = apiurl(args, "/instances/rsync/{id}/".format(id=args.id))
-    #url = apiurl(args, "/instances/rsync/")
-    print(f"URL: {url}")
+
     req_json = {
         "client_id": "me",
         "src_id": src_id,
