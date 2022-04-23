@@ -505,6 +505,38 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
         print("  ".join(out))
 
 
+class VRLException(Exception):
+    pass
+
+def parse_vast_url(url_str):
+    """
+    Breaks up a vast-style url in the form instance_id:path and does
+    some basic sanity type-checking.
+
+    :param url_str:
+    :return:
+    """
+    url_parts = url_str.split(":", 2)
+    if len(url_parts) == 1:
+        raise VRLException("Invalid VRL (Vast resource locator).")
+    else:
+        (instance_id, path) = url_parts
+
+    try:
+        instance_id = int(instance_id)
+    except:
+        raise VRLException("Instance id must be an integer.")
+
+    valid_unix_path_regex = re.compile('^(/)?([^/\0]+(/)?)+$')
+    # Got this regex from https://stackoverflow.com/questions/537772/what-is-the-most-correct-regular-expression-for-a-unix-file-path
+    if valid_unix_path_regex.match(path) is None:
+        raise VRLException("Path component of VRL is not a valid Unix style path.")
+
+    return (instance_id, path)
+
+
+
+
 @parser.command(
     argument("src", help="instance id:/path to source of object to copy.", type=str),
     argument("dst", help="instance id:/path to target of copy operation.", type=str),
@@ -525,8 +557,41 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
     @param src: Location of data object to be copied.
     @param dst: Target to copy object to.
     """
-    print(f"This command is not yet active. It will be in the near future.")
-    print(f"Would copy from '{args.src}' to '{args.dst}'")
+
+    url = apiurl(args, f"/commands/rsync/")
+    (src_id, src_path) = parse_vast_url(args.src)
+    (dst_id, dst_path) = parse_vast_url(args.dst)
+
+
+    req_json = {
+        "client_id": "me",
+        "src_id": src_id,
+        "dst_id": dst_id,
+        "src_path": src_path,
+        "dst_path": dst_path,
+    }
+    r = requests.put(url, json=req_json)
+    r.raise_for_status()
+    print(f"Result of copy:{r.json()}")
+
+
+    #
+    # url = apiurl(args, "/instance/rsync/")
+    # print(f"URL: {url}")
+    # src = args.src
+    # dst = args.dst
+
+    #
+    # r = requests.put(url, {"owner": "me"}, json={})
+    # r.raise_for_status()
+    # if args.raw:
+    #     print(json.dumps(r.json(), indent=1))
+    # else:
+    #     print("Started. {}".format(r.json()))
+    #
+    #
+    # print(f"This command is not yet active. It will be in the near future.")
+    # print(f"Would copy from '{args.src}' to '{args.dst}'")
 
 @parser.command(
     argument("-t", "--type", default="on-demand",
@@ -798,7 +863,8 @@ def show__user(args):
     :rtype:
     """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
-
+    print(f"URL: {req_url}")
+    print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh\n")
     r = requests.get(req_url);
     r.raise_for_status()
     user_blob = r.json()
@@ -1177,7 +1243,7 @@ def set__defjob(args):
     :rtype:
     """
     req_url = apiurl(args, "/machines/create_bids/");
-
+    print(f"URL:{req_url}")
     r = requests.put(req_url, json=
     {'machine': args.id, 'price_gpu': args.price_gpu, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd,
      'image': args.image, 'args': args.args});
@@ -1284,6 +1350,7 @@ def change__bid(args: argparse.Namespace):
     :rtype int:
     """
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
+    print(f"URL: {url}")
     r = requests.put(url, json={
         "client_id": "me",
         "price": args.price,
