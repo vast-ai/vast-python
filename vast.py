@@ -846,7 +846,7 @@ def show__invoices(args):
 
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
-        print("Current: ", current_charges)
+        # print("Current: ", current_charges)
     else:
         print(filter_header)
         display_table(rows, invoice_fields)
