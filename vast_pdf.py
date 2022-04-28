@@ -10,7 +10,6 @@ import random
 from decimal import Decimal
 
 import typing
-
 import PIL.Image
 
 try:
