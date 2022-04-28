@@ -9,7 +9,7 @@ import argparse
 import os
 import time
 import typing
-from datetime import date
+from datetime import date, datetime
 
 import requests
 import getpass
@@ -152,6 +152,8 @@ class apwrap(object):
 
 
 parser = apwrap()
+now = date.today()
+invoice_number: int = now.year * 12 + now.month - 1
 
 def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     """Map over a dict and translate any null string values into ' '.
@@ -878,7 +880,7 @@ def show__user(args):
 
 def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
-    'only_charge' and 'only_credits' options.
+    'only_charge' and 'only_credits' options.invoice_number
 
     :param argparse.Namespace args: should supply all the command-line options
     :param List rows: The rows of items in the invoice
@@ -887,23 +889,23 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
 
     """
 
-    try:
-        import vast_pdf
-        import dateutil
-        from dateutil import parser
-
-    except ImportError:
-        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
-        you do not need this feature you can ignore this message. To get the library you should download the vast-python 
-        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
-        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
-        package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
-
-    try:
-        vast_pdf
-    except NameError:
-        vast_pdf = Object()
-        vast_pdf.invoice_number = -1
+    # try:
+    #     import vast_pdf
+    #     import dateutil
+    #     from dateutil import parser
+    #
+    # except ImportError:
+    #     print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
+    #     you do not need this feature you can ignore this message. To get the library you should download the vast-python
+    #     github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
+    #     directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
+    #     package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
+    #
+    # try:
+    #     vast_pdf
+    # except NameError:
+    #     vast_pdf = Object()
+    #     vast_pdf.invoice_number = -1
 
 
     selector_flag = ""
@@ -969,7 +971,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
 
 
     pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
-                                      [str(vast_pdf.invoice_number),
+                                      [str(invoice_number),
                                        start_date_txt,
                                        end_date_txt,
                                        selector_flag]))
