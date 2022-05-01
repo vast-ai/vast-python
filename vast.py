@@ -517,10 +517,10 @@ def parse_vast_url(url_str):
     :return:
     """
     url_parts = url_str.split(":", 2)
-    if len(url_parts) == 1:
-        raise VRLException("Invalid VRL (Vast resource locator).")
-    else:
+    if len(url_parts) == 2:
         (instance_id, path) = url_parts
+    else:
+        raise VRLException("Invalid VRL (Vast resource locator).")
 
     try:
         instance_id = int(instance_id)
@@ -529,8 +529,8 @@ def parse_vast_url(url_str):
 
     valid_unix_path_regex = re.compile('^(/)?([^/\0]+(/)?)+$')
     # Got this regex from https://stackoverflow.com/questions/537772/what-is-the-most-correct-regular-expression-for-a-unix-file-path
-    if valid_unix_path_regex.match(path) is None:
-        raise VRLException("Path component of VRL is not a valid Unix style path.")
+    if (path != "/") and (valid_unix_path_regex.match(path) is None):
+        raise VRLException(f"Path component: {path} of VRL is not a valid Unix style path.")
 
     return (instance_id, path)
 
@@ -613,27 +613,27 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
     usage="vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>",
     epilog=deindent("""
         Query syntax:
-        
+
             query = comparison comparison...
             comparison = field op value
             field = <name of a field>
             op = one of: <, <=, ==, !=, >=, >, in, notin
             value = <bool, int, float, etc> | 'any'
-        
+
         note: to pass '>' and '<' on the command line, make sure to use quotes
 
-           
+
         Examples:
-        
+
             ./vast search offers 'compute_cap > 610 total_flops < 5'
             ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
             ./vast search offers 'rentable = any'
-       
+
         Available fields:
-            
+
               Name                  Type       Description
-              
-            bw_nvlink               float     bandwidth NVLink               
+
+            bw_nvlink               float     bandwidth NVLink
             compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
             cpu_cores:              int       # virtual cpus
             cpu_cores_effective:    float     # virtual cpus you get
@@ -893,10 +893,10 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
         from dateutil import parser
 
     except ImportError:
-        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
-        you do not need this feature you can ignore this message. To get the library you should download the vast-python 
-        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
-        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
+        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
+        you do not need this feature you can ignore this message. To get the library you should download the vast-python
+        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
+        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
         package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
     try:
@@ -998,10 +998,10 @@ def generate__pdf_invoices(args):
     try:
         import vast_pdf
     except ImportError:
-        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If 
-        you do not need this feature you can ignore this message. To get the library you should download the vast-python 
-        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that 
-        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python 
+        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
+        you do not need this feature you can ignore this message. To get the library you should download the vast-python
+        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
+        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
         package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
