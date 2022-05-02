@@ -9,10 +9,12 @@ import argparse
 import os
 import time
 import typing
-from datetime import date
+from datetime import date, datetime
 
 import requests
 import getpass
+import subprocess
+from subprocess import PIPE
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -152,6 +154,8 @@ class apwrap(object):
 
 
 parser = apwrap()
+now = date.today()
+invoice_number: int = now.year * 12 + now.month - 1
 
 def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     """Map over a dict and translate any null string values into ' '.
@@ -516,16 +520,19 @@ def parse_vast_url(url_str):
     :param url_str:
     :return:
     """
-    url_parts = url_str.split(":", 2)
-    if len(url_parts) == 2:
-        (instance_id, path) = url_parts
-    else:
-        raise VRLException("Invalid VRL (Vast resource locator).")
 
-    try:
-        instance_id = int(instance_id)
-    except:
-        raise VRLException("Instance id must be an integer.")
+    instance_id = None
+    path = url_str
+    if (":" in url_str):
+        url_parts = url_str.split(":", 2)
+        if len(url_parts) == 2:
+            (instance_id, path) = url_parts
+        else:
+            raise VRLException("Invalid VRL (Vast resource locator).")
+        try:
+            instance_id = int(instance_id)
+        except:
+            raise VRLException("Instance id must be an integer.")
 
     valid_unix_path_regex = re.compile('^(/)?([^/\0]+(/)?)+$')
     # Got this regex from https://stackoverflow.com/questions/537772/what-is-the-most-correct-regular-expression-for-a-unix-file-path
@@ -538,19 +545,25 @@ def parse_vast_url(url_str):
 
 
 @parser.command(
-    argument("src", help="instance id:/path to source of object to copy.", type=str),
-    argument("dst", help="instance id:/path to target of copy operation.", type=str),
+    argument("src", help="instance_id:/path to source of object to copy.", type=str),
+    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     usage="vast.py copy src dst",
+    help=" Copy directories between instances and/or local",
     epilog=deindent("""
-        Copies a data object from a source instance to a target instance. Neither the source nor
-        the target needs to be the same as this host but you will need appropriate read and write
-        permissions to carry out the action. The format for both src and dst is instance_id:path.
-        An example of this command would be 'vast copy 11824:/data/test 12371:/temp'. This copies the
-        object called /data/test on instance 11824 to instance 12371's /temp path. If the instance_id
-        is omitted the local machine is assumed.
+        Copies a directory from a source location to a target location. Each of source and destination
+        directories can be either local or remote, subject to appropriate read and write
+        permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
+        Examples:
+         vast copy 11824:/data/test 12371:/temp
+         vast copy 11824:/data/test data/test
+         vast copy data/test 11824:/data/test
+
+        The first example copy syncs the directory '/tmp' in instance 12371 from the directory '/data/test' in instance 11824.
+        The second example copy syncs the relative directory 'data/test' on the local machine from '/data/test' in instance 11824.
+        The third example copy syncs the directory '/data/test' in instance 11824 from the relative directory 'data/test' on the local machine.
     """),
 )
-def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
+def copy(args: argparse.Namespace):
     """
     Transfer data from one instance to another.
 
@@ -561,7 +574,11 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
     url = apiurl(args, f"/commands/rsync/")
     (src_id, src_path) = parse_vast_url(args.src)
     (dst_id, dst_path) = parse_vast_url(args.dst)
+    if (src_id is None) and (dst_id is None):
+        print("invalid arguments")
+        return
 
+    print(f"copying {src_id}:{src_path} {dst_id}:{dst_path}")
 
     req_json = {
         "client_id": "me",
@@ -572,26 +589,41 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
     }
     r = requests.put(url, json=req_json)
     r.raise_for_status()
-    print(f"Result of copy:{r.json()}")
+    if (r.status_code == 200):
+        rj = r.json();
+        #print(json.dumps(rj, indent=1, sort_keys=True))
+        if (rj["success"]) and ((src_id is None) or (dst_id is None)):
+            result = None
+            result = subprocess.getoutput("echo $HOME")
+            homedir = result
+            #print(f"homedir: {homedir}")
+            remote_port = None
+            if (src_id is None):
+                #result = subprocess.run(f"mkdir -p {src_path}", shell=True)
+                remote_port = rj["dst_port"]
+                remote_addr = rj["dst_addr"]
+                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no' {src_path} vastai_kaalia@{remote_addr}::{dst_id}"
+                #print(cmd)
+                result = subprocess.run(cmd, shell=True)
+                #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", src_path, "vastai_kaalia@{remote_addr}::{dst_id}"], shell=True)
+            elif (dst_id is None):
+                result = subprocess.run(f"mkdir -p {dst_path}", shell=True)
+                remote_port = rj["src_port"]
+                remote_addr = rj["src_addr"]
+                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no' vastai_kaalia@{remote_addr}::{src_id} {dst_path}"
+                #print(cmd)
+                result = subprocess.run(cmd, shell=True)
+                #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", "vastai_kaalia@{remote_addr}::{src_id}", dst_path], shell=True)
+        else:
+            if (rj["success"]):
+                print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
+            else:
+                print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
-    #
-    # url = apiurl(args, "/instance/rsync/")
-    # print(f"URL: {url}")
-    # src = args.src
-    # dst = args.dst
-
-    #
-    # r = requests.put(url, {"owner": "me"}, json={})
-    # r.raise_for_status()
-    # if args.raw:
-    #     print(json.dumps(r.json(), indent=1))
-    # else:
-    #     print("Started. {}".format(r.json()))
-    #
-    #
-    # print(f"This command is not yet active. It will be in the near future.")
-    # print(f"Would copy from '{args.src}' to '{args.dst}'")
 
 @parser.command(
     argument("-t", "--type", default="on-demand",
@@ -611,6 +643,7 @@ def copy(args: argparse.Namespace): # FIXME: This is a dummy function for now.
              help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
              nargs="*", default=None),
     usage="vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for instance types using custom query",
     epilog=deindent("""
         Query syntax:
 
@@ -730,6 +763,7 @@ def search__offers(args):
 
 @parser.command(
     usage="vast.py show instances [--api-key API_KEY] [--raw]",
+    help="Display user's current instances"
 )
 def show__instances(args):
     """
@@ -751,6 +785,7 @@ def show__instances(args):
 @parser.command(
     argument("--id", help="id of instance", type=int),
     usage="vast.py ssh-url",
+    help="ssh url helper",
 )
 def ssh_url(args):
     """
@@ -764,6 +799,7 @@ def ssh_url(args):
 @parser.command(
     argument("--id", help="id of instance", type=int),
     usage="vast.py scp-url",
+    help="scp url helper",
 )
 def scp_url(args):
     """
@@ -792,6 +828,7 @@ def _ssh_url(args, protocol):
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage="vast.py show machines [OPTIONS]",
+    help="[Host] Show hosted machines",
 )
 def show__machines(args):
     """
@@ -822,6 +859,7 @@ def show__machines(args):
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
     usage="vast.py show invoices [OPTIONS]",
+    help="Get billing history reports",
 )
 def show__invoices(args):
     """
@@ -844,7 +882,7 @@ def show__invoices(args):
 
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
-        print("Current: ", current_charges)
+        # print("Current: ", current_charges)
     else:
         print(filter_header)
         display_table(rows, invoice_fields)
@@ -854,6 +892,7 @@ def show__invoices(args):
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
     usage="vast.py show user [OPTIONS]",
+    help="   Get current user data"
 )
 def show__user(args):
     """
@@ -878,7 +917,7 @@ def show__user(args):
 
 def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
-    'only_charge' and 'only_credits' options.
+    'only_charge' and 'only_credits' options.invoice_number
 
     :param argparse.Namespace args: should supply all the command-line options
     :param List rows: The rows of items in the invoice
@@ -969,7 +1008,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
 
 
     pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
-                                      [str(vast_pdf.invoice_number),
+                                      [str(invoice_number),
                                        start_date_txt,
                                        end_date_txt,
                                        selector_flag]))
@@ -1035,6 +1074,7 @@ def generate__pdf_invoices(args):
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
     usage="vast.py list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    help="[Host] list a machine for rent",
 )
 def list__machine(args):
     """
@@ -1070,6 +1110,7 @@ def list__machine(args):
 @parser.command(
     argument("id", help="id of machine to unlist", type=int),
     usage="vast.py unlist machine <id>",
+    help="[Host] Unlist a listed machine",
 )
 def unlist__machine(args):
     """
@@ -1093,6 +1134,7 @@ def unlist__machine(args):
 
 @parser.command(
     argument("id", help="id of machine to remove default instance from", type=int),
+    help="[Host] Delete default jobs",
 )
 def remove__defjob(args):
     """
@@ -1128,6 +1170,7 @@ def set_ask(args):
 @parser.command(
     argument("id", help="id of instance to start/restart", type=int),
     usage="vast.py start instance <id> [--raw]",
+    help="Start a stopped instance",
 )
 def start__instance(args):
     """
@@ -1155,6 +1198,7 @@ def start__instance(args):
 @parser.command(
     argument("id", help="id of instance to stop", type=int),
     usage="vast.py stop instance [--raw] <id>",
+    help="Stop a running instance",
 )
 def stop__instance(args):
     """
@@ -1183,6 +1227,7 @@ def stop__instance(args):
     argument("id", help="id of instance to label", type=int),
     argument("label", help="label to set", type=str),
     usage="vast.py label instance <id> <label>",
+    help="Assign a string label to an instance",
 )
 def label__instance(args):
     """
@@ -1205,7 +1250,8 @@ def label__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to delete", type=int),
-    usage="vast.py destroy instance id [-h] [--api-key API_KEY] [--raw]"
+    usage="vast.py destroy instance id [-h] [--api-key API_KEY] [--raw]",
+    help="Destroy an instance (irreversible, deletes data)",
 )
 def destroy__instance(args):
     """Perfoms the same action as pressing the "DESTROY" button on the website at https://vast.ai/console/instances/.
@@ -1234,7 +1280,8 @@ def destroy__instance(args):
     argument("--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("--image", help="docker container image to launch", type=str),
     argument("--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
-    usage="vast.py set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]"
+    usage="vast.py set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]",
+    help="[Host] Create default jobs for a machine",
 )
 def set__defjob(args):
     """
@@ -1288,6 +1335,7 @@ def set__defjob(args):
              type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     usage="vast.py create instance id [OPTIONS] [--args ...]",
+    help="Create a new instance",
 )
 def create__instance(args: argparse.Namespace):
     """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
@@ -1338,6 +1386,7 @@ def create__instance(args: argparse.Namespace):
     argument("id", help="id of instance type to change bid", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     usage="vast.py change bid id [--price PRICE]",
+    help="Change the bid price for a spot/interruptible instance",
     epilog=deindent("""
         Change the current bid price of instance id to PRICE.
         If PRICE is not specified, then a winning bid price is used as the default.
@@ -1363,6 +1412,7 @@ def change__bid(args: argparse.Namespace):
     argument("id", help="id of machine to set min bid price for", type=int),
     argument("--price", help="per gpu min bid price in $/hour", type=float),
     usage="vast.py set min_bid id [--price PRICE]",
+    help="[Host] Set the minimum bid/rental price for a machine",
     epilog=deindent("""
         Change the current min bid price of machine id to PRICE.
     """),
@@ -1385,6 +1435,7 @@ def set__min_bid(args):
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
     usage="vast.py set api-key APIKEY",
+    help="Set api-key (get your api-key from the console/CLI)",
 )
 def set__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.
