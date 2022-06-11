@@ -543,10 +543,10 @@ def parse_vast_url(url_str):
 
 
 
-
 @parser.command(
     argument("src", help="instance_id:/path to source of object to copy.", type=str),
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
+    argument("-i", "--identity", help="Location of ssh private key", type=str),
     usage="vast.py copy src dst",
     help=" Copy directories between instances and/or local",
     epilog=deindent("""
@@ -593,25 +593,24 @@ def copy(args: argparse.Namespace):
         rj = r.json();
         #print(json.dumps(rj, indent=1, sort_keys=True))
         if (rj["success"]) and ((src_id is None) or (dst_id is None)):
-            result = None
-            result = subprocess.getoutput("echo $HOME")
-            homedir = result
+            homedir = subprocess.getoutput("echo $HOME")
             #print(f"homedir: {homedir}")
             remote_port = None
+            identity = args.identity if (args.identity is not None) else f"{homedir}/.ssh/id_rsa"
             if (src_id is None):
                 #result = subprocess.run(f"mkdir -p {src_path}", shell=True)
                 remote_port = rj["dst_port"]
                 remote_addr = rj["dst_addr"]
-                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no' {src_path} vastai_kaalia@{remote_addr}::{dst_id}/{dst_path}"
-                #print(cmd)
+                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {identity} -p {remote_port} -o StrictHostKeyChecking=no' {src_path} vastai_kaalia@{remote_addr}::{dst_id}/{dst_path}"
+                print(cmd)
                 result = subprocess.run(cmd, shell=True)
                 #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", src_path, "vastai_kaalia@{remote_addr}::{dst_id}"], shell=True)
             elif (dst_id is None):
                 result = subprocess.run(f"mkdir -p {dst_path}", shell=True)
                 remote_port = rj["src_port"]
                 remote_addr = rj["src_addr"]
-                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no' vastai_kaalia@{remote_addr}::{src_id}/{src_path} {dst_path}"
-                #print(cmd)
+                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {identity} -p {remote_port} -o StrictHostKeyChecking=no' vastai_kaalia@{remote_addr}::{src_id}/{src_path} {dst_path}"
+                print(cmd)
                 result = subprocess.run(cmd, shell=True)
                 #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", "vastai_kaalia@{remote_addr}::{src_id}", dst_path], shell=True)
         else:
@@ -626,22 +625,15 @@ def copy(args: argparse.Namespace):
 
 
 @parser.command(
-    argument("-t", "--type", default="on-demand",
-             help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
+    argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
-    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const",
-             help="Alias for --type=on-demand"),
+    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
-    argument("--disable-bundling", action="store_true",
-             help="Show identical offers. This request is more heavily rate limited."),
+    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("-o", "--order", type=str,
-             help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
-             default='score-'),
-    argument("query",
-             help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
-             nargs="*", default=None),
+    argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
+    argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>",
     help="Search for instance types using custom query",
     epilog=deindent("""
