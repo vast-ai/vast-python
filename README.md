@@ -205,12 +205,12 @@ optional arguments:
 #### Create instance
 
 ```
-usage: vast.py create instance id [OPTIONS] [--args ...]
+usage: ./vast create instance id [OPTIONS] [--args ...]
 
 positional arguments:
   id                    id of instance type to launch
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --price PRICE         per machine bid price in $/hour
   --disk DISK           size of local disk partition in GB
@@ -226,9 +226,9 @@ optional arguments:
                         launch jupyter. Defaults to image's working directory.
   --jupyter-lab         For runtype 'jupyter', Launch instance with jupyter
                         lab.
-  --lang-utf8           Workaround for images with locale problems: install
-                        and generate locales before instance launch, and set
-                        locale to C.UTF-8.
+  --lang-utf8           Workaround for images with locale problems: install and
+                        generate locales before instance launch, and set locale
+                        to C.UTF-8.
   --python-utf8         Workaround for images with locale problems: set
                         python's locale to C.UTF-8.
   --args ...            DEPRECATED: list of arguments passed to container
@@ -237,6 +237,15 @@ optional arguments:
                         Existing instance id to use as basis for new instance.
                         Instance configuration should usually be identical, as
                         only the difference from the base image is copied.
+  --docker_login_repo DOCKER_LOGIN_REPO
+                        Docker repository for Docker login. Defaults to
+                        docker.io.
+  --docker_login_username DOCKER_LOGIN_USERNAME
+                        Username for Docker login. Must be used together with
+                        --docker_login_password
+  --docker_login_password DOCKER_LOGIN_PASSWORD
+                        Password for Docker login. Must be used together with
+                        --docker_login_username
   --force               Skip sanity checks when creating from an existing
                         instance
   --url URL             server REST api url
