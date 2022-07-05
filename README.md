@@ -237,15 +237,15 @@ options:
                         Existing instance id to use as basis for new instance.
                         Instance configuration should usually be identical, as
                         only the difference from the base image is copied.
-  --docker_login_repo DOCKER_LOGIN_REPO
+  --docker-login-repo DOCKER_LOGIN_REPO
                         Docker repository for Docker login. Defaults to
                         docker.io.
-  --docker_login_username DOCKER_LOGIN_USERNAME
+  --docker-login-username DOCKER_LOGIN_USERNAME
                         Username for Docker login. Must be used together with
-                        --docker_login_password
-  --docker_login_password DOCKER_LOGIN_PASSWORD
+                        --docker-login-password
+  --docker-login-password DOCKER_LOGIN_PASSWORD
                         Password for Docker login. Must be used together with
-                        --docker_login_username
+                        --docker-login-username
   --force               Skip sanity checks when creating from an existing
                         instance
   --url URL             server REST api url
