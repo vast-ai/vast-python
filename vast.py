@@ -1389,6 +1389,16 @@ def set__defjob(args):
     argument("--create-from",
              help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
              type=str),
+    argument("--docker_login_repo",
+             help="Docker repository for Docker login. Defaults to docker.io.",
+             type=str,
+             default="docker.io"),
+    argument("--docker_login_username",
+            help="Username for Docker login. Must be used together with --docker_login_password",
+            type=str),
+    argument("--docker_login_password",
+            help="Password for Docker login. Must be used together with --docker_login_username",
+            type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     usage="./vast create instance id [OPTIONS] [--args ...]",
     help="Create a new instance",
@@ -1412,6 +1422,14 @@ def create__instance(args: argparse.Namespace):
         return 1
     if args.jupyter:
         runtype = 'jupyter'
+    
+    image_login = None
+    if args.docker_login_username or args.docker_login_password:
+        if not args.docker_login_username or not args.docker_login_password:
+            print("Error: Either both or none of docker_login_username and docker_login_password must be provided",
+                  file=sys.stderr)
+            return 1
+        image_login = f"-u {args.docker_login_username} -p {args.docker_login_password} {args.docker_login_repo}"
 
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
     r = requests.put(url, json={
@@ -1429,7 +1447,8 @@ def create__instance(args: argparse.Namespace):
         "use_jupyter_lab": args.jupyter_lab,
         "jupyter_dir": args.jupyter_dir,
         "create_from": args.create_from,
-        "force": args.force
+        "force": args.force,
+        "image_login": image_login,
     })
     r.raise_for_status()
     if args.raw:
