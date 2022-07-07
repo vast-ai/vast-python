@@ -1162,6 +1162,31 @@ def set_ask(args):
 
 
 @parser.command(
+    argument("id", help="id of instance to reboot", type=int),
+    usage="./vast reboot instance <id> [--raw]",
+    help="Reboot (stop/start) an instance",
+)
+def reboot__instance(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
+    r = requests.put(url, json={})
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Rebooting instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
     argument("id", help="id of instance to start/restart", type=int),
     usage="./vast start instance <id> [--raw]",
     help="Start a stopped instance",
