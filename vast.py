@@ -1390,33 +1390,64 @@ def set__defjob(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+def parse_env(envs):
+    result = {}
+    if (envs is None):
+        return result
+    env  = envs.split(' ')
+    prev = None
+    for e in env:
+        if (prev is None):
+          if ((e == "-e") or (e == "-p")):
+              prev = e
+          else:
+              return result
+        else:
+          if (prev == "-p"):
+            if set(e).issubset(set("0123456789:")):
+                result["-p " + e] = "1"
+            else:
+                return result
+          elif (prev == "-e"):
+            e = e.strip(" '\"")
+            if set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
+                kv = e.split('=')
+                result[kv[0]] = kv[1]
+            else:
+                return result
+          prev = None
+    return result
+
+
+#print(parse_env("-e TYZ=BM3828 -e BOB=UTC -p 10831:22 -p 8080:8080"))
+
 @parser.command(
     argument("id", help="id of instance type to launch", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
+    argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
     argument("--label", help="label to set on the instance", type=str),
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
     argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--jupyter-dir",
-             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
-             type=str),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
     argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
-    argument("--lang-utf8",
-             help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
-             action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
-             action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
     argument("--extra", help=argparse.SUPPRESS),
-    argument("--args", nargs=argparse.REMAINDER,
-             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
-    argument("--create-from",
-             help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
-             type=str),
+    argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
+    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
+    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     usage="./vast create instance id [OPTIONS] [--args ...]",
     help="Create a new instance",
+    epilog=deindent("""
+        Examples:
+        vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
+    """),
 )
 def create__instance(args: argparse.Namespace):
     """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
@@ -1432,23 +1463,28 @@ def create__instance(args: argparse.Namespace):
     if args.jupyter_dir or args.jupyter_lab:
         args.jupyter = True
     if args.jupyter and runtype == 'args':
-        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.",
-              file=sys.stderr)
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
         return 1
+
     if args.jupyter:
-        runtype = 'jupyter'
+        runtype = 'jupyter_direc ssh_direct ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
+
+    if args.ssh:
+        runtype = 'ssh_direct ssh_proxy' if args.direct else 'ssh_proxy'
 
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
         "image": args.image,
         "args": args.args,
+        "env" : parse_env(args.env),
         "price": args.price,
         "disk": args.disk,
         "label": args.label,
         "extra": args.extra,
         "onstart": args.onstart_cmd,
         "runtype": runtype,
+        "image_login": args.login,
         "python_utf8": args.python_utf8,
         "lang_utf8": args.lang_utf8,
         "use_jupyter_lab": args.jupyter_lab,
