@@ -155,7 +155,7 @@ class apwrap(object):
         return args
 
 
-parser = apwrap()
+parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
 now = date.today()
 invoice_number: int = now.year * 12 + now.month - 1
 
@@ -1590,8 +1590,8 @@ def login(args):
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
-    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base),
-                        type=str, required=False, default=api_key_guard)
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
+
 
     args = parser.parse_args()
     if args.api_key is api_key_guard:
