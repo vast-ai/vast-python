@@ -1447,6 +1447,7 @@ def parse_env(envs):
     epilog=deindent("""
         Examples:
         vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
+        vast create instance 344521 --image anthonytatowicz/eth-cuda-miner --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
     """),
 )
 def create__instance(args: argparse.Namespace):
