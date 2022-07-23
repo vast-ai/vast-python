@@ -156,8 +156,6 @@ class apwrap(object):
 
 
 parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
-now = date.today()
-invoice_number: int = now.year * 12 + now.month - 1
 
 def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     """Map over a dict and translate any null string values into ' '.
@@ -999,6 +997,8 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     if end_date_txt:
         end_date_txt = "E:" + end_date_txt
 
+    now = date.today()
+    invoice_number: int = now.year * 12 + now.month - 1
 
 
     pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
