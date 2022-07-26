@@ -31,7 +31,9 @@ try:
 except NameError:
     pass
 
-server_url_default = "https://vast.ai/api/v0"
+
+server_url_default = "https://vast.ai"
+#server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
 api_key_guard = object()
@@ -153,9 +155,7 @@ class apwrap(object):
         return args
 
 
-parser = apwrap()
-now = date.today()
-invoice_number: int = now.year * 12 + now.month - 1
+parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
 
 def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     """Map over a dict and translate any null string values into ' '.
@@ -197,11 +197,11 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         }
         '''
         # an_iterator = (<expression> for <l-expression> in <expression>)
-        return args.url + subpath + "?" + "&".join(
+        return args.url + "/api/v0" + subpath + "?" + "&".join(
             "{x}={y}".format(x=x, y=quote_plus(y if isinstance(y, str) else json.dumps(y))) for x, y in
             query_args.items())
     else:
-        return args.url + subpath
+        return args.url + "/api/v0" + subpath
 
 
 def deindent(message: str) -> str:
@@ -543,11 +543,11 @@ def parse_vast_url(url_str):
 
 
 
-
 @parser.command(
     argument("src", help="instance_id:/path to source of object to copy.", type=str),
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
-    usage="vast.py copy src dst",
+    argument("-i", "--identity", help="Location of ssh private key", type=str),
+    usage="./vast copy src dst",
     help=" Copy directories between instances and/or local",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
@@ -593,25 +593,24 @@ def copy(args: argparse.Namespace):
         rj = r.json();
         #print(json.dumps(rj, indent=1, sort_keys=True))
         if (rj["success"]) and ((src_id is None) or (dst_id is None)):
-            result = None
-            result = subprocess.getoutput("echo $HOME")
-            homedir = result
+            homedir = subprocess.getoutput("echo $HOME")
             #print(f"homedir: {homedir}")
             remote_port = None
+            identity = args.identity if (args.identity is not None) else f"{homedir}/.ssh/id_rsa"
             if (src_id is None):
                 #result = subprocess.run(f"mkdir -p {src_path}", shell=True)
                 remote_port = rj["dst_port"]
                 remote_addr = rj["dst_addr"]
-                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no' {src_path} vastai_kaalia@{remote_addr}::{dst_id}/{dst_path}"
-                #print(cmd)
+                cmd = f"sudo rsync -arz -v --progress --rsh=ssh -e 'sudo ssh -i {identity} -p {remote_port} -o StrictHostKeyChecking=no' {src_path} vastai_kaalia@{remote_addr}::{dst_id}/{dst_path}"
+                print(cmd)
                 result = subprocess.run(cmd, shell=True)
                 #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", src_path, "vastai_kaalia@{remote_addr}::{dst_id}"], shell=True)
             elif (dst_id is None):
                 result = subprocess.run(f"mkdir -p {dst_path}", shell=True)
                 remote_port = rj["src_port"]
                 remote_addr = rj["src_addr"]
-                cmd = f"sudo rsync -arz -v --progress -rsh=ssh -e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no' vastai_kaalia@{remote_addr}::{src_id}/{src_path} {dst_path}"
-                #print(cmd)
+                cmd = f"sudo rsync -arz -v --progress --rsh=ssh -e 'sudo ssh -i {identity} -p {remote_port} -o StrictHostKeyChecking=no' vastai_kaalia@{remote_addr}::{src_id}/{src_path} {dst_path}"
+                print(cmd)
                 result = subprocess.run(cmd, shell=True)
                 #result = subprocess.run(["sudo", "rsync" "-arz", "-v", "--progress", "-rsh=ssh", "-e 'sudo ssh -i {homedir}/.ssh/id_rsa -p {remote_port} -o StrictHostKeyChecking=no'", "vastai_kaalia@{remote_addr}::{src_id}", dst_path], shell=True)
         else:
@@ -626,23 +625,16 @@ def copy(args: argparse.Namespace):
 
 
 @parser.command(
-    argument("-t", "--type", default="on-demand",
-             help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
+    argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
-    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const",
-             help="Alias for --type=on-demand"),
+    argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
-    argument("--disable-bundling", action="store_true",
-             help="Show identical offers. This request is more heavily rate limited."),
+    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("-o", "--order", type=str,
-             help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'",
-             default='score-'),
-    argument("query",
-             help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default",
-             nargs="*", default=None),
-    usage="vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>",
+    argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
+    argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
+    usage="./vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     help="Search for instance types using custom query",
     epilog=deindent("""
         Query syntax:
@@ -762,7 +754,7 @@ def search__offers(args):
 
 
 @parser.command(
-    usage="vast.py show instances [--api-key API_KEY] [--raw]",
+    usage="./vast show instances [--api-key API_KEY] [--raw]",
     help="Display user's current instances"
 )
 def show__instances(args):
@@ -784,7 +776,7 @@ def show__instances(args):
 
 @parser.command(
     argument("--id", help="id of instance", type=int),
-    usage="vast.py ssh-url",
+    usage="./vast ssh-url",
     help="ssh url helper",
 )
 def ssh_url(args):
@@ -798,7 +790,7 @@ def ssh_url(args):
 
 @parser.command(
     argument("--id", help="id of instance", type=int),
-    usage="vast.py scp-url",
+    usage="./vast scp-url",
     help="scp url helper",
 )
 def scp_url(args):
@@ -827,7 +819,7 @@ def _ssh_url(args, protocol):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage="vast.py show machines [OPTIONS]",
+    usage="./vast show machines [OPTIONS]",
     help="[Host] Show hosted machines",
 )
 def show__machines(args):
@@ -858,7 +850,7 @@ def show__machines(args):
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vast.py show invoices [OPTIONS]",
+    usage="./vast show invoices [OPTIONS]",
     help="Get billing history reports",
 )
 def show__invoices(args):
@@ -891,7 +883,7 @@ def show__invoices(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
-    usage="vast.py show user [OPTIONS]",
+    usage="./vast show user [OPTIONS]",
     help="   Get current user data"
 )
 def show__user(args):
@@ -1005,6 +997,8 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     if end_date_txt:
         end_date_txt = "E:" + end_date_txt
 
+    now = date.today()
+    invoice_number: int = now.year * 12 + now.month - 1
 
 
     pdf_filename_fields = list(filter(lambda fld: False if fld == "" else True,
@@ -1023,7 +1017,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vast.py generate pdf_invoices [OPTIONS]",
+    usage="./vast generate pdf_invoices [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     """
@@ -1073,7 +1067,7 @@ def generate__pdf_invoices(args):
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
-    usage="vast.py list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    usage="./vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
     help="[Host] list a machine for rent",
 )
 def list__machine(args):
@@ -1109,7 +1103,7 @@ def list__machine(args):
 
 @parser.command(
     argument("id", help="id of machine to unlist", type=int),
-    usage="vast.py unlist machine <id>",
+    usage="./vast unlist machine <id>",
     help="[Host] Unlist a listed machine",
 )
 def unlist__machine(args):
@@ -1168,8 +1162,33 @@ def set_ask(args):
 
 
 @parser.command(
+    argument("id", help="id of instance to reboot", type=int),
+    usage="./vast reboot instance <id> [--raw]",
+    help="Reboot (stop/start) an instance",
+)
+def reboot__instance(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
+    r = requests.put(url, json={})
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Rebooting instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
     argument("id", help="id of instance to start/restart", type=int),
-    usage="vast.py start instance <id> [--raw]",
+    usage="./vast start instance <id> [--raw]",
     help="Start a stopped instance",
 )
 def start__instance(args):
@@ -1197,7 +1216,7 @@ def start__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to stop", type=int),
-    usage="vast.py stop instance [--raw] <id>",
+    usage="./vast stop instance [--raw] <id>",
     help="Stop a running instance",
 )
 def stop__instance(args):
@@ -1226,7 +1245,7 @@ def stop__instance(args):
 @parser.command(
     argument("id", help="id of instance to label", type=int),
     argument("label", help="label to set", type=str),
-    usage="vast.py label instance <id> <label>",
+    usage="./vast label instance <id> <label>",
     help="Assign a string label to an instance",
 )
 def label__instance(args):
@@ -1250,7 +1269,7 @@ def label__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to delete", type=int),
-    usage="vast.py destroy instance id [-h] [--api-key API_KEY] [--raw]",
+    usage="./vast destroy instance id [-h] [--api-key API_KEY] [--raw]",
     help="Destroy an instance (irreversible, deletes data)",
 )
 def destroy__instance(args):
@@ -1273,6 +1292,70 @@ def destroy__instance(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+
+
+@parser.command(
+    argument("ID", help="id of instance to execute on", type=int),
+    argument("COMMAND", help="command to execute",  type=str),
+    usage="./vast execute ID COMMAND",
+    help="Execute a (constrained) remote command on a machine",
+)
+def execute(args):
+    """Execute a (constrained) remote command on a machine.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
+    r = requests.put(url, json={"command": args.COMMAND} )
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Executing {args.command} on instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+
+@parser.command(
+    argument("INSTANCE_ID", help="id of instance", type=int),
+    argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
+    usage="./vast logs [OPTIONS] INSTANCE_ID",
+    help="Get the logs for an instance",
+)
+def logs(args):
+    """Get the logs for an instance
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
+    #url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.INSTANCE_ID))
+    json = {}
+    if (args.tail):
+        json['tail'] = args.tail
+    r = requests.put(url, json=json )
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        for i in range(0,30):
+            time.sleep(1)
+            url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+            print(f"waiting on logs for instance {args.INSTANCE_ID}")
+            r = requests.get(url);
+            if (r.status_code == 200):
+                print(r.text)
+                break
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+
 @parser.command(
     argument("id", help="id of machine to launch default instance on", type=int),
     argument("--price_gpu", help="per gpu rental price in $/hour", type=float),
@@ -1280,7 +1363,7 @@ def destroy__instance(args):
     argument("--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("--image", help="docker container image to launch", type=str),
     argument("--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
-    usage="vast.py set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]",
+    usage="./vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]",
     help="[Host] Create default jobs for a machine",
 )
 def set__defjob(args):
@@ -1291,9 +1374,7 @@ def set__defjob(args):
     """
     req_url = apiurl(args, "/machines/create_bids/");
     print(f"URL:{req_url}")
-    r = requests.put(req_url, json=
-    {'machine': args.id, 'price_gpu': args.price_gpu, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd,
-     'image': args.image, 'args': args.args});
+    r = requests.put(req_url, json={'machine': args.id, 'price_gpu': args.price_gpu, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd, 'image': args.image, 'args': args.args});
 
     if (r.status_code == 200):
 
@@ -1309,33 +1390,65 @@ def set__defjob(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+def parse_env(envs):
+    result = {}
+    if (envs is None):
+        return result
+    env  = envs.split(' ')
+    prev = None
+    for e in env:
+        if (prev is None):
+          if ((e == "-e") or (e == "-p")):
+              prev = e
+          else:
+              return result
+        else:
+          if (prev == "-p"):
+            if set(e).issubset(set("0123456789:")):
+                result["-p " + e] = "1"
+            else:
+                return result
+          elif (prev == "-e"):
+            e = e.strip(" '\"")
+            if set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
+                kv = e.split('=')
+                result[kv[0]] = kv[1]
+            else:
+                return result
+          prev = None
+    return result
+
+
+#print(parse_env("-e TYZ=BM3828 -e BOB=UTC -p 10831:22 -p 8080:8080"))
+
 @parser.command(
     argument("id", help="id of instance type to launch", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
+    argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
     argument("--label", help="label to set on the instance", type=str),
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
     argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--jupyter-dir",
-             help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.",
-             type=str),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
     argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
-    argument("--lang-utf8",
-             help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.",
-             action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.",
-             action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
     argument("--extra", help=argparse.SUPPRESS),
-    argument("--args", nargs=argparse.REMAINDER,
-             help="DEPRECATED: list of arguments passed to container launch. Onstart is recommended for this purpose."),
-    argument("--create-from",
-             help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.",
-             type=str),
+    argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
+    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
+    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="vast.py create instance id [OPTIONS] [--args ...]",
+    usage="./vast create instance id [OPTIONS] [--args ...]",
     help="Create a new instance",
+    epilog=deindent("""
+        Examples:
+        vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
+        vast create instance 344521 --image anthonytatowicz/eth-cuda-miner --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
+    """),
 )
 def create__instance(args: argparse.Namespace):
     """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
@@ -1351,23 +1464,28 @@ def create__instance(args: argparse.Namespace):
     if args.jupyter_dir or args.jupyter_lab:
         args.jupyter = True
     if args.jupyter and runtype == 'args':
-        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.",
-              file=sys.stderr)
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
         return 1
+
     if args.jupyter:
-        runtype = 'jupyter'
+        runtype = 'jupyter_direc ssh_direct ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
+
+    if args.ssh:
+        runtype = 'ssh_direct ssh_proxy' if args.direct else 'ssh_proxy'
 
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
         "image": args.image,
         "args": args.args,
+        "env" : parse_env(args.env),
         "price": args.price,
         "disk": args.disk,
         "label": args.label,
         "extra": args.extra,
         "onstart": args.onstart_cmd,
         "runtype": runtype,
+        "image_login": args.login,
         "python_utf8": args.python_utf8,
         "lang_utf8": args.lang_utf8,
         "use_jupyter_lab": args.jupyter_lab,
@@ -1385,7 +1503,7 @@ def create__instance(args: argparse.Namespace):
 @parser.command(
     argument("id", help="id of instance type to change bid", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
-    usage="vast.py change bid id [--price PRICE]",
+    usage="./vast change bid id [--price PRICE]",
     help="Change the bid price for a spot/interruptible instance",
     epilog=deindent("""
         Change the current bid price of instance id to PRICE.
@@ -1411,7 +1529,7 @@ def change__bid(args: argparse.Namespace):
 @parser.command(
     argument("id", help="id of machine to set min bid price for", type=int),
     argument("--price", help="per gpu min bid price in $/hour", type=float),
-    usage="vast.py set min_bid id [--price PRICE]",
+    usage="./vast set min_bid id [--price PRICE]",
     help="[Host] Set the minimum bid/rental price for a machine",
     epilog=deindent("""
         Change the current min bid price of machine id to PRICE.
@@ -1434,7 +1552,7 @@ def set__min_bid(args):
 
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
-    usage="vast.py set api-key APIKEY",
+    usage="./vast set api-key APIKEY",
     help="Set api-key (get your api-key from the console/CLI)",
 )
 def set__api_key(args):
@@ -1454,7 +1572,7 @@ go to https://vast.ai/console/cli in a web browser to get your api key, then run
     vast set api-key YOUR_API_KEY_HERE
 """
 
-
+"""
 @parser.command(
     argument("ignored", nargs="*"),
     usage=login_deprecated_message
@@ -1462,20 +1580,19 @@ go to https://vast.ai/console/cli in a web browser to get your api key, then run
 def create__account(args):
     print(login_deprecated_message)
 
-
 @parser.command(
     argument("ignored", nargs="*"),
     usage=login_deprecated_message,
 )
 def login(args):
     print(login_deprecated_message)
-
+"""
 
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
-    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base),
-                        type=str, required=False, default=api_key_guard)
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
+
 
     args = parser.parse_args()
     if args.api_key is api_key_guard:
