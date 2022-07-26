@@ -71,6 +71,7 @@ def run_help_for_commands(lines):
     lines.sort()
     i = 1
     for line in lines:
+        cmd_output = ""
         command_parts = re.split(r"\s+", line.strip())
         print(f"{i}: {command_parts}")
         i += 1
