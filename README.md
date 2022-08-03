@@ -117,7 +117,7 @@ This script can be called with various commands as arguments. Commands follow
 a simple "verb-object" pattern. As an example, consider "show machines". To run this
 command we type `./vast.py show machines`
 
-### Comprehensive list of commands
+## List of commands and associated help message
 
 ```
 usage: vast.py [-h] [--url URL] [--raw] [--api-key API_KEY] command ...
@@ -125,28 +125,30 @@ usage: vast.py [-h] [--url URL] [--raw] [--api-key API_KEY] command ...
 positional arguments:
   command               command to run. one of:
     help                print this help message
-    search offers
-    show instances
-    ssh-url
-    scp-url
-    show machines
-    show invoices
-    show user
+    copy                Copy directories between instances and/or local
+    search offers       Search for instance types using custom query
+    show instances      Display user's current instances
+    ssh-url             ssh url helper
+    scp-url             scp url helper
+    show machines       [Host] Show hosted machines
+    show invoices       Get billing history reports
+    show user           Get current user data
     generate pdf-invoices
-    list machine
-    unlist machine
-    remove defjob
-    start instance
-    stop instance
-    label instance
-    destroy instance
-    set defjob
-    create instance
-    change bid
-    set min-bid
-    set api-key
-    create account
-    login
+    list machine        [Host] list a machine for rent
+    unlist machine      [Host] Unlist a listed machine
+    remove defjob       [Host] Delete default jobs
+    reboot instance     Reboot (stop/start) an instance
+    start instance      Start a stopped instance
+    stop instance       Stop a running instance
+    label instance      Assign a string label to an instance
+    destroy instance    Destroy an instance (irreversible, deletes data)
+    execute             Execute a (constrained) remote command on a machine
+    logs                Get the logs for an instance
+    set defjob          [Host] Create default jobs for a machine
+    create instance     Create a new instance
+    change bid          Change the bid price for a spot/interruptible instance
+    set min-bid         [Host] Set the minimum bid/rental price for a machine
+    set api-key         Set api-key (get your api-key from the console/CLI)
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -154,16 +156,14 @@ optional arguments:
   --raw                 output machine-readable json
   --api-key API_KEY     api key. defaults to using the one stored in
                         ~/.vast_api_key
-```
 
-### Commands in Detail
-
----
-
-#### Change existing bid by id
+Use 'vast COMMAND --help' for more info about a command
 
 ```
-usage: vast.py change bid id [--price PRICE]
+#### change bid -- Change the bid price for a spot/interruptible instance
+
+```
+usage: ./vast change bid id [--price PRICE]
 
 positional arguments:
   id                 id of instance type to change bid
@@ -181,31 +181,42 @@ If PRICE is not specified, then a winning bid price is used as the default.
 
 ```
 ---
-#### Create account (command line account creation no longer supported)
+#### copy -- Copy directories between instances and/or local
 
 ```
-usage: 
-login via the command line is no longer supported.
-go to https://vast.ai/console/cli in a web browser to get your api key, then run:
-
-    vast set api-key YOUR_API_KEY_HERE
+usage: ./vast copy src dst
 
 positional arguments:
-  ignored
+  src                   instance_id:/path to source of object to copy.
+  dst                   instance_id:/path to target of copy operation.
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
+  -h, --help            show this help message and exit
+  -i IDENTITY, --identity IDENTITY
+                        Location of ssh private key
+  --url URL             server REST api url
+  --raw                 output machine-readable json
+  --api-key API_KEY     api key. defaults to using the one stored in
+                        ~/.vast_api_key
+
+Copies a directory from a source location to a target location. Each of source and destination
+directories can be either local or remote, subject to appropriate read and write
+permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
+Examples:
+ vast copy 11824:/data/test 12371:/temp
+ vast copy 11824:/data/test data/test
+ vast copy data/test 11824:/data/test
+
+The first example copy syncs the directory '/tmp' in instance 12371 from the directory '/data/test' in instance 11824.
+The second example copy syncs the relative directory 'data/test' on the local machine from '/data/test' in instance 11824.
+The third example copy syncs the directory '/data/test' in instance 11824 from the relative directory 'data/test' on the local machine.
 
 ```
 ---
-#### Create instance
+#### create instance -- Create a new instance
 
 ```
-usage: vast.py create instance id [OPTIONS] [--args ...]
+usage: ./vast create instance id [OPTIONS] [--args ...]
 
 positional arguments:
   id                    id of instance type to launch
@@ -215,12 +226,16 @@ optional arguments:
   --price PRICE         per machine bid price in $/hour
   --disk DISK           size of local disk partition in GB
   --image IMAGE         docker container image to launch
+  --login LOGIN         docker login arguments for private repo
+                        authentication, surround with ''
   --label LABEL         label to set on the instance
   --onstart ONSTART     filename to use as onstart script
   --onstart-cmd ONSTART_CMD
                         contents of onstart script as single argument
+  --ssh                 Launch as an ssh instance type.
   --jupyter             Launch as a jupyter instance instead of an ssh
                         instance.
+  --direct              Use (faster) direct connections for jupyter & ssh.
   --jupyter-dir JUPYTER_DIR
                         For runtype 'jupyter', directory in instance to use to
                         launch jupyter. Defaults to image's working directory.
@@ -231,8 +246,10 @@ optional arguments:
                         locale to C.UTF-8.
   --python-utf8         Workaround for images with locale problems: set
                         python's locale to C.UTF-8.
-  --args ...            DEPRECATED: list of arguments passed to container
-                        launch. Onstart is recommended for this purpose.
+  --env ENV             env variables and port mapping options, surround with
+                        ''
+  --args ...            list of arguments passed to container ENTRYPOINT.
+                        Onstart is recommended for this purpose.
   --create-from CREATE_FROM
                         Existing instance id to use as basis for new instance.
                         Instance configuration should usually be identical, as
@@ -244,12 +261,16 @@ optional arguments:
   --api-key API_KEY     api key. defaults to using the one stored in
                         ~/.vast_api_key
 
-```
----
-#### Destroy instance
+Examples:
+vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
+vast create instance 344521 --image anthonytatowicz/eth-cuda-miner --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
 
 ```
-usage: vast.py destroy instance id [-h] [--api-key API_KEY] [--raw]
+---
+#### destroy instance -- Destroy an instance (irreversible, deletes data)
+
+```
+usage: ./vast destroy instance id [-h] [--api-key API_KEY] [--raw]
 
 positional arguments:
   id                 id of instance to delete
@@ -263,10 +284,28 @@ optional arguments:
 
 ```
 ---
-#### Generate pdf-invoices
+#### execute -- Execute a (constrained) remote command on a machine
 
 ```
-usage: vast.py generate pdf_invoices [OPTIONS]
+usage: ./vast execute ID COMMAND
+
+positional arguments:
+  ID                 id of instance to execute on
+  COMMAND            command to execute
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+#### generate pdf-invoices -- 
+
+```
+usage: ./vast generate pdf_invoices [OPTIONS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -286,10 +325,27 @@ optional arguments:
 
 ```
 ---
-#### Label instance
+#### help -- print this help message
 
 ```
-usage: vast.py label instance <id> <label>
+usage: vast.py help [-h] [--url URL] [--raw] [--api-key API_KEY] [subcommand]
+
+positional arguments:
+  subcommand
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+#### label instance -- Assign a string label to an instance
+
+```
+usage: ./vast label instance <id> <label>
 
 positional arguments:
   id                 id of instance to label
@@ -304,10 +360,10 @@ optional arguments:
 
 ```
 ---
-#### List machine for rent
+#### list machine -- [Host] list a machine for rent
 
 ```
-usage: vast.py list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
+usage: ./vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
 
 positional arguments:
   id                    id of machine to list
@@ -335,17 +391,32 @@ optional arguments:
 
 ```
 ---
-#### Login (command line login no longer supported)
+#### logs -- Get the logs for an instance
 
 ```
-usage: 
-login via the command line is no longer supported.
-go to https://vast.ai/console/cli in a web browser to get your api key, then run:
-
-    vast set api-key YOUR_API_KEY_HERE
+usage: ./vast logs [OPTIONS] INSTANCE_ID
 
 positional arguments:
-  ignored
+  INSTANCE_ID        id of instance
+
+optional arguments:
+  -h, --help         show this help message and exit
+  --tail TAIL        Number of lines to show from the end of the logs (default
+                     '1000')
+  --url URL          server REST api url
+  --raw              output machine-readable json
+  --api-key API_KEY  api key. defaults to using the one stored in
+                     ~/.vast_api_key
+
+```
+---
+#### reboot instance -- Reboot (stop/start) an instance
+
+```
+usage: ./vast reboot instance <id> [--raw]
+
+positional arguments:
+  id                 id of instance to reboot
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -356,7 +427,7 @@ optional arguments:
 
 ```
 ---
-#### Remove default job
+#### remove defjob -- [Host] Delete default jobs
 
 ```
 usage: vast.py remove defjob [-h] [--url URL] [--raw] [--api-key API_KEY] id
@@ -373,10 +444,10 @@ optional arguments:
 
 ```
 ---
-#### scp-url
+#### scp-url -- scp url helper
 
 ```
-usage: vast.py scp-url
+usage: ./vast scp-url
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -388,10 +459,10 @@ optional arguments:
 
 ```
 ---
-#### Search offers
+#### search offers -- Search for instance types using custom query
 
 ```
-usage: vast.py search offers [--help] [--api-key API_KEY] [--raw] <query>
+usage: ./vast search offers [--help] [--api-key API_KEY] [--raw] <query>
 
 positional arguments:
   query                 Query to search for. default: 'external=false
@@ -439,11 +510,13 @@ Available fields:
 
       Name                  Type       Description
 
+    bw_nvlink               float     bandwidth NVLink
     compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
     cpu_cores:              int       # virtual cpus
     cpu_cores_effective:    float     # virtual cpus you get
     cpu_ram:                float     system RAM in gigabytes
     cuda_vers:              float     cuda version
+    direct_port_count       int       open ports on host's router
     disk_bw:                float     disk read bandwidth, in MB/s
     disk_space:             float     disk storage space, in GB
     dlperf:                 float     DL-perf score  (see FAQ for explanation)
@@ -462,6 +535,7 @@ Available fields:
     inet_down_cost:         float     internet download bandwidth cost in $/GB
     inet_up:                float     internet upload speed in Mb/s
     inet_up_cost:           float     internet upload bandwidth cost in $/GB
+    machine_id              int       machine id of instance
     min_bid:                float     current minimum bid price in $/hr for interruptible
     num_gpus:               int       # of GPUs
     pci_gen:                float     PCIE generation
@@ -475,10 +549,10 @@ Available fields:
 
 ```
 ---
-#### Set api-key
+#### set api-key -- Set api-key (get your api-key from the console/CLI)
 
 ```
-usage: vast.py set api-key APIKEY
+usage: ./vast set api-key APIKEY
 
 positional arguments:
   new_api_key        Api key to set as currently logged in user
@@ -492,10 +566,10 @@ optional arguments:
 
 ```
 ---
-#### Set default job
+#### set defjob -- [Host] Create default jobs for a machine
 
 ```
-usage: vast.py set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
+usage: ./vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
 
 positional arguments:
   id                    id of machine to launch default instance on
@@ -517,10 +591,10 @@ optional arguments:
 
 ```
 ---
-#### Set minimum bid
+#### set min-bid -- [Host] Set the minimum bid/rental price for a machine
 
 ```
-usage: vast.py set min_bid id [--price PRICE]
+usage: ./vast set min_bid id [--price PRICE]
 
 positional arguments:
   id                 id of machine to set min bid price for
@@ -537,10 +611,10 @@ Change the current min bid price of machine id to PRICE.
 
 ```
 ---
-#### Show instances we are renting
+#### show instances -- Display user's current instances
 
 ```
-usage: vast.py show instances [--api-key API_KEY] [--raw]
+usage: ./vast show instances [--api-key API_KEY] [--raw]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -551,10 +625,10 @@ optional arguments:
 
 ```
 ---
-#### Show invoices
+#### show invoices -- Get billing history reports
 
 ```
-usage: vast.py show invoices [OPTIONS]
+usage: ./vast show invoices [OPTIONS]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -574,10 +648,10 @@ optional arguments:
 
 ```
 ---
-#### Show machines we are offering for rent
+#### show machines -- [Host] Show hosted machines
 
 ```
-usage: vast.py show machines [OPTIONS]
+usage: ./vast show machines [OPTIONS]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -589,10 +663,10 @@ optional arguments:
 
 ```
 ---
-#### Show user account information
+#### show user -- Get current user data
 
 ```
-usage: vast.py show user[OPTIONS]
+usage: ./vast show user [OPTIONS]
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -604,10 +678,10 @@ optional arguments:
 
 ```
 ---
-#### ssh-url
+#### ssh-url -- ssh url helper
 
 ```
-usage: vast.py ssh-url
+usage: ./vast ssh-url
 
 optional arguments:
   -h, --help         show this help message and exit
@@ -619,10 +693,10 @@ optional arguments:
 
 ```
 ---
-#### Start instance
+#### start instance -- Start a stopped instance
 
 ```
-usage: vast.py start instance <id> [--raw]
+usage: ./vast start instance <id> [--raw]
 
 positional arguments:
   id                 id of instance to start/restart
@@ -636,10 +710,10 @@ optional arguments:
 
 ```
 ---
-#### Stop instance
+#### stop instance -- Stop a running instance
 
 ```
-usage: vast.py stop instance [--raw] <id>
+usage: ./vast stop instance [--raw] <id>
 
 positional arguments:
   id                 id of instance to stop
@@ -653,10 +727,10 @@ optional arguments:
 
 ```
 ---
-#### Unlist machine
+#### unlist machine -- [Host] Unlist a listed machine
 
 ```
-usage: vast.py unlist machine <id>
+usage: ./vast unlist machine <id>
 
 positional arguments:
   id                 id of machine to unlist
