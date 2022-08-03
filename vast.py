@@ -342,9 +342,9 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
     if type(query_str) == list:
         query_str = " ".join(query_str)
     query_str = query_str.strip()
-    opts = re.findall(
-        "([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|[^ ]+)?( *)",
-        query_str)
+    opts = re.findall("([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|[^ ]+)?( *)", query_str)
+
+    #print(opts)
     # res = {}
     op_names = {
         ">=": "gte",
@@ -462,8 +462,10 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         if field in field_multiplier:
             value = str(float(value) * field_multiplier[field]);
 
-        v[op_name] = value
+        v[op_name] = value.replace('_', ' ')
         res[field] = v;
+
+    #print(res)
     return res
 
 
@@ -646,6 +648,7 @@ def copy(args: argparse.Namespace):
             value = <bool, int, float, etc> | 'any'
 
         note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
 
 
         Examples:
@@ -653,6 +656,7 @@ def copy(args: argparse.Namespace):
             ./vast search offers 'compute_cap > 610 total_flops < 5'
             ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
             ./vast search offers 'rentable = any'
+            ./vast search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090'
 
         Available fields:
 
@@ -675,6 +679,7 @@ def copy(args: argparse.Namespace):
             external:               bool      show external offers
             flops_usd:              float     TFLOPs/$
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
+            gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     GPU RAM in GB
             gpu_frac:               float     Ratio of GPUs in the offer to gpus in the system
             has_avx:                bool      CPU supports AVX instruction set.
