@@ -676,7 +676,7 @@ def copy(args: argparse.Namespace):
             dph:                    float     $/hour rental cost
             driver_version          string    driver version in use on a host.
             duration:               float     max rental duration in days
-            external:               bool      show external offers
+            external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
