@@ -866,7 +866,7 @@ def show__invoices(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, "/users/me/invoices", {"owner": "me"});
+    req_url = apiurl(args, "/users/me/invoices", {"owner": "me", "inc_charges" : not args.only_credits});
     r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["invoices"]
@@ -993,8 +993,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
 
     header_text = header_text + " " + type_txt
 
-    rows = list(filter(lambda row: end_timestamp >= row["timestamp"] >= start_timestamp
-                                   and type_filter_fn(row) and float(row["amount"]) != 0, rows))
+    rows = list(filter(lambda row: end_timestamp >= (row["timestamp"] or 0.0) >= start_timestamp and type_filter_fn(row) and float(row["amount"]) != 0, rows))
 
     if start_date_txt:
         start_date_txt = "S:" + start_date_txt
