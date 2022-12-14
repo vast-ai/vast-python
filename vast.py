@@ -1554,6 +1554,22 @@ def set__min_bid(args):
     print("Per gpu min bid price changed".format(r.json()))
 
 
+
+@parser.command(
+    usage="./vast reset api-key",
+    help="Reset your api-key (get new key from website).",
+)
+def reset__api_key(args):
+    """Caution: a bad API key will make it impossible to connect to the servers.
+    """
+    print('fml')
+    #url = apiurl(args, "/users/current/reset-apikey/", {"owner": "me"})
+    url = apiurl(args, "/commands/reset_apikey/" )
+    r = requests.put(url, json={"client_id": "me",})
+    r.raise_for_status()
+    print("api-key reset ".format(r.json()))
+
+
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
     usage="./vast set api-key APIKEY",
