@@ -32,7 +32,7 @@ except NameError:
     pass
 
 
-server_url_default = "https://vast.ai"
+server_url_default = "https://console.vast.ai"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -1277,7 +1277,7 @@ def label__instance(args):
     help="Destroy an instance (irreversible, deletes data)",
 )
 def destroy__instance(args):
-    """Perfoms the same action as pressing the "DESTROY" button on the website at https://vast.ai/console/instances/.
+    """Perfoms the same action as pressing the "DESTROY" button on the website at https://console.vast.ai/instances/.
 
     :param argparse.Namespace args: should supply all the command-line options
     """
@@ -1455,7 +1455,7 @@ def parse_env(envs):
     """),
 )
 def create__instance(args: argparse.Namespace):
-    """Performs the same action as pressing the "RENT" button on the website at https://vast.ai/console/create/.
+    """Performs the same action as pressing the "RENT" button on the website at https://console.vast.ai/create/.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     """
@@ -1530,6 +1530,18 @@ def change__bid(args: argparse.Namespace):
     print("Per gpu bid price changed".format(r.json()))
 
 
+
+
+
+def pretty_print_POST(req):
+    print('{}\n{}\r\n{}\r\n\r\n{}'.format(
+        '-----------START-----------',
+        req.method + ' ' + req.url,
+        '\r\n'.join('{}: {}'.format(k, v) for k, v in req.headers.items()),
+        req.body,
+    ))
+
+
 @parser.command(
     argument("id", help="id of machine to set min bid price for", type=int),
     argument("--price", help="per gpu min bid price in $/hour", type=float),
@@ -1546,10 +1558,18 @@ def set__min_bid(args):
     :rtype:
     """
     url = apiurl(args, "/machines/{id}/minbid/".format(id=args.id))
-    r = requests.put(url, json={
-        "client_id": "me",
-        "price": args.price,
-    })
+    print(url)
+
+    req = requests.put(url, json={"client_id": "me", "price": args.price,})
+    #prepared = req.prepare()
+    #pretty_print_POST(prepared)
+
+    r = requests.put(url, json={"client_id": "me", "price": args.price,})
+
+    print(r.request.url)
+    print(r.request.body)
+    print(r.request.headers)
+
     r.raise_for_status()
     print("Per gpu min bid price changed".format(r.json()))
 
@@ -1587,7 +1607,7 @@ def set__api_key(args):
 
 login_deprecated_message = """
 login via the command line is no longer supported.
-go to https://vast.ai/console/cli in a web browser to get your api key, then run:
+go to https://console.vast.ai/cli in a web browser to get your api key, then run:
 
     vast set api-key YOUR_API_KEY_HERE
 """
