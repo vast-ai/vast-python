@@ -32,6 +32,7 @@ except NameError:
     pass
 
 
+#server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
@@ -226,19 +227,20 @@ displayable_fields = (
     ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
     ("num_gpus", "Num", "{}x", None, False),
     ("gpu_name", "Model", "{}", None, True),
-    ("pcie_bw", "PCIE_BW", "{:0.1f}", None, True),
+    ("pcie_bw", "PCIE", "{:0.1f}", None, True),
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
-    ("disk_space", "Storage", "{:.0f}", None, True),
+    ("disk_space", "Disk", "{:.0f}", None, True),
     ("dph_total", "$/hr", "{:0.4f}", None, True),
-    ("dlperf", "DLPerf", "{:0.1f}", None, True),
+    ("dlperf", "DLP", "{:0.1f}", None, True),
     ("dlperf_per_dphtotal", "DLP/$", "{:0.1f}", None, True),
-    ("driver_version", "Nvidia Driver Version", "{}", None, True),
+    ("driver_version", "NV Driver", "{}", None, True),
     ("inet_up", "Net_up", "{:0.1f}", None, True),
     ("inet_down", "Net_down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
-    ("machine_id", "machine_id", "{}", None, True),
+    ("machine_id", "mach_id", "{}", None, True),
+    ("verification", "verification", "{}", None, True),
    #  ("direct_port_count", "Direct Port Count", "{}", None, True),
 )
 
@@ -423,6 +425,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "rented",
         "storage_cost",
         "total_flops",
+        "verification",
         "verified",
 
     };
@@ -847,6 +850,66 @@ def show__machines(args):
             else:
                 print("{N} machines: ".format(N=len(rows)));
                 print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
+
+
+@parser.command(
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    argument("-s", "--start_date", help="start date and time for report. Many formats accepted", type=str),
+    argument("-e", "--end_date", help="end date and time for report. Many formats accepted ", type=str),
+    argument("-m", "--machine_id", help="Machine id (optional)", type=int),
+    usage="./vast show earnings [OPTIONS]",
+    help="Get machine earning history reports",
+)
+def show__earnings(args):
+    """
+    Show earnings history for a time range, optionally per machine. Various options available to limit time range and type of items.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+
+    Minutes = 60.0;
+    Hours	= 60.0*Minutes;
+    Days	= 24.0*Hours;
+    Years	= 365.0*Days;
+    cday    = time.time() / Days
+    sday = cday - 1.0
+    eday = cday - 1.0
+
+    try:
+        import dateutil
+        from dateutil import parser
+
+    except ImportError:
+        print("""\nWARNING: Missing dateutil, can't parse time format""")
+
+    if args.end_date:
+        try:
+            end_date = dateutil.parser.parse(str(args.end_date))
+            end_date_txt = end_date.isoformat()
+            end_timestamp = time.mktime(end_date.timetuple())
+            eday = end_timestamp / Days
+        except ValueError:
+            print("Warning: Invalid end date format! Ignoring end date!")
+
+    if args.start_date:
+        try:
+            start_date = dateutil.parser.parse(str(args.start_date))
+            start_date_txt = start_date.isoformat()
+            start_timestamp = time.mktime(start_date.timetuple())
+            sday = start_timestamp / Days
+        except ValueError:
+            print("Warning: Invalid start date format! Ignoring start date!")
+
+
+
+    req_url = apiurl(args, "/users/me/machine-earnings", {"owner": "me", "sday": sday, "eday": eday, "machid" :args.machine_id});
+    r = requests.get(req_url)
+    r.raise_for_status()
+    rows = r.json()
+
+    print(json.dumps(rows, indent=1, sort_keys=True))
+
 
 
 @parser.command(
