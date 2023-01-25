@@ -241,7 +241,7 @@ displayable_fields = (
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
     ("machine_id", "mach_id", "{}", None, True),
     ("verification", "status", "{}", None, True),
-    ("direct_port_count", "num_open_ports", "{}", None, True),
+    ("direct_port_count", "ports", "{}", None, True),
     ("geolocation", "country", "{}", None, True),
    #  ("direct_port_count", "Direct Port Count", "{}", None, True),
 )
