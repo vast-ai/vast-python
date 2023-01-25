@@ -1380,13 +1380,10 @@ def execute(args):
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print(rj["command"])
-            print(args)
             print("Executing {args.COMMAND} on instance {args.ID}.".format(**(locals())));
             for i in range(0,30):
                 time.sleep(1)
                 url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-                print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
                     print(r.text)
