@@ -225,7 +225,7 @@ displayable_fields = (
     # ("bw_nvlink", "Bandwidth NVLink", "{}", None, True),
     ("id", "ID", "{}", None, True),
     ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
-    ("num_gpus", "Num", "{}x", None, False),
+    ("num_gpus", "N", "{}x", None, False),
     ("gpu_name", "Model", "{}", None, True),
     ("pcie_bw", "PCIE", "{:0.1f}", None, True),
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
@@ -233,15 +233,15 @@ displayable_fields = (
     ("disk_space", "Disk", "{:.0f}", None, True),
     ("dph_total", "$/hr", "{:0.4f}", None, True),
     ("dlperf", "DLP", "{:0.1f}", None, True),
-    ("dlperf_per_dphtotal", "DLP/$", "{:0.1f}", None, True),
+    ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
     ("driver_version", "NV Driver", "{}", None, True),
     ("inet_up", "Net_up", "{:0.1f}", None, True),
     ("inet_down", "Net_down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
     ("machine_id", "mach_id", "{}", None, True),
-    ("verification", "verification", "{}", None, True),
-   #  ("direct_port_count", "Direct Port Count", "{}", None, True),
+    ("verification", "status", "{}", None, True),
+    ("direct_port_count", "num_open_ports", "{}", None, True),
 )
 
 
@@ -1378,7 +1378,9 @@ def execute(args):
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print("Executing {args.command} on instance {args.id}.".format(**(locals())));
+            print(rj["command"])
+            print(args)
+            print("Executing {args.COMMAND} on instance {args.ID}.".format(**(locals())));
         else:
             print(rj["msg"]);
     else:
