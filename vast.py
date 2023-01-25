@@ -241,6 +241,7 @@ displayable_fields = (
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
     ("machine_id", "mach_id", "{}", None, True),
     ("verification", "verification", "{}", None, True),
+    ("geolocation", "country", "{}", None, True),
    #  ("direct_port_count", "Direct Port Count", "{}", None, True),
 )
 
@@ -1380,7 +1381,7 @@ def execute(args):
         if (rj["success"]):
             print("Executing {args.command} on instance {args.id}.".format(**(locals())));
         else:
-            print(rj["msg"]);
+            print(rj);
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
