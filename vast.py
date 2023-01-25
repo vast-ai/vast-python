@@ -242,6 +242,8 @@ displayable_fields = (
     ("machine_id", "mach_id", "{}", None, True),
     ("verification", "status", "{}", None, True),
     ("direct_port_count", "num_open_ports", "{}", None, True),
+    ("geolocation", "country", "{}", None, True),
+   #  ("direct_port_count", "Direct Port Count", "{}", None, True),
 )
 
 
@@ -1382,7 +1384,7 @@ def execute(args):
             print(args)
             print("Executing {args.COMMAND} on instance {args.ID}.".format(**(locals())));
         else:
-            print(rj["msg"]);
+            print(rj);
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
