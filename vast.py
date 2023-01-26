@@ -1365,9 +1365,22 @@ def destroy__instance(args):
 
 @parser.command(
     argument("ID", help="id of instance to execute on", type=int),
-    argument("COMMAND", help="command to execute",  type=str),
+    argument("COMMAND", help="bash command surrounded by single quotes",  type=str),
     usage="./vast execute ID COMMAND",
     help="Execute a (constrained) remote command on a machine",
+    epilog=deindent("""
+        examples:
+          ./vast execute 99999 'ls -l -o -r'
+          ./vast execute 99999 'rm -r home/delete_this.txt'
+          ./vast execute 99999 'du -d2 -h'
+
+        available commands:
+          ls                 List directory contents
+          rm                 Remote files or directories
+          du                 Summarize device usage for a set of files
+
+
+    """),
 )
 def execute(args):
     """Execute a (constrained) remote command on a machine.
@@ -1380,10 +1393,10 @@ def execute(args):
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print("Executing {args.COMMAND} on instance {args.ID}.".format(**(locals())));
             for i in range(0,30):
                 time.sleep(1)
                 url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+                print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
