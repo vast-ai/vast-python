@@ -1396,7 +1396,6 @@ def execute(args):
             for i in range(0,30):
                 time.sleep(1)
                 url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-                print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
