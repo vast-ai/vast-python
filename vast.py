@@ -1421,7 +1421,7 @@ def logs(args):
     if (r.status_code == 200):
         rj = r.json();
         for i in range(0,30):
-            time.sleep(1)
+            time.sleep(0.3)
             url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
             print(f"waiting on logs for instance {args.INSTANCE_ID}")
             r = requests.get(url);
