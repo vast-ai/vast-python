@@ -1385,7 +1385,8 @@ def execute(args):
             #print("Executing {args.COMMAND} on instance {args.ID}.".format(**(locals())));
             for i in range(0,30):
                 time.sleep(0.3)
-                url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+                #url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + "C.log"
                 #print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
@@ -1422,8 +1423,9 @@ def logs(args):
         rj = r.json();
         for i in range(0,30):
             time.sleep(0.3)
-            url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-            print(f"waiting on logs for instance {args.INSTANCE_ID}")
+            #url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+            url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + ".log"
+            print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
             r = requests.get(url);
             if (r.status_code == 200):
                 print(r.text)
