@@ -1491,7 +1491,7 @@ def parse_env(envs):
                 return result
           elif (prev == "-e"):
             e = e.strip(" '\"")
-            if set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
+            if True: #set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
                 kv = e.split('=')
                 result[kv[0]] = kv[1]
             else:
