@@ -1386,7 +1386,7 @@ def execute(args):
             for i in range(0,30):
                 time.sleep(0.3)
                 #url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + "C.log"
+                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
                 #print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
