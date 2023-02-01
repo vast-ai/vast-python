@@ -9,6 +9,7 @@ import argparse
 import os
 import time
 import typing
+import hashlib
 from datetime import date, datetime
 
 import requests
@@ -1396,7 +1397,9 @@ def execute(args):
             for i in range(0,30):
                 time.sleep(0.3)
                 #url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
+                api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
+                #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
+                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
                 #print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
@@ -1434,7 +1437,9 @@ def logs(args):
         for i in range(0,30):
             time.sleep(0.3)
             #url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-            url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + ".log"
+            #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + ".log"
+            api_key_id_h = hashlib.md5( (args.api_key + str(args.INSTANCE_ID)).encode('utf-8') ).hexdigest()
+            url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + ".log"
             print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
             r = requests.get(url);
             if (r.status_code == 200):
