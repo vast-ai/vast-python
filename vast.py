@@ -475,13 +475,15 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
     return res
 
 
-def display_table(rows: list, fields: typing.Tuple) -> None:
+def display_table(rows: list, fields: typing.Tuple, max_count: typing.Optional[int] = None) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
     of it.
 
     :param list rows: Each row is a dict with keys corresponding to the field names (first element) in the fields tuple.
 
     :param Tuple fields: 5-tuple describing a field. First element is field name, second is human readable version, third is format string, fourth is a lambda function run on the data in that field, fifth is a bool determining text justification. True = left justify, False = right justify. Here is an example showing the tuples in action.
+
+    :param int max_count: The maximum number of table entries to show.
 
     :rtype None:
 
@@ -490,6 +492,7 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
     header = [name for _, name, _, _, _ in fields]
     out_rows = [header]
     lengths = [len(x) for x in header]
+    count = 0
     for instance in rows:
         row = []
         out_rows.append(row)
@@ -505,6 +508,9 @@ def display_table(rows: list, fields: typing.Tuple) -> None:
             idx = len(row)
             lengths[idx] = max(len(s), lengths[idx])
             row.append(s)
+        count += 1
+        if max_count is not None and count >= max_count:
+            break
     for row in out_rows:
         out = []
         for l, s, f in zip(lengths, row, fields):
@@ -641,6 +647,8 @@ def copy(args: argparse.Namespace):
     argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
+    argument("-f", "--fields", type=str, default=None, help="Comma-separated list of fields to show in the table."),
+    argument("-m", "--max", type=int, default=None, help="Maximum number of table entries to show."),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="./vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
     help="Search for instance types using custom query",
@@ -719,7 +727,7 @@ def search__offers(args):
         "dlperf_usd": "dlperf_per_dphtotal",
         "dph": "dph_total",
         "flops_usd": "flops_per_dphtotal",
-    };
+    }
 
     try:
 
@@ -734,13 +742,14 @@ def search__offers(args):
         order = []
         for name in args.order.split(","):
             name = name.strip()
-            if not name: continue
+            if not name:
+                continue
             direction = "asc"
             if name.strip("-") != name:
                 direction = "desc"
-            field = name.strip("-");
+            field = name.strip("-")
             if field in field_alias:
-                field = field_alias[field];
+                field = field_alias[field]
             order.append([field, direction])
 
         query["order"] = order
@@ -755,13 +764,20 @@ def search__offers(args):
         return 1
 
     url = apiurl(args, "/bundles", {"q": query})
-    r = requests.get(url);
+    r = requests.get(url)
     r.raise_for_status()
     rows = r.json()["offers"]
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
-        display_table(rows, displayable_fields)
+        shown_fields = displayable_fields
+        if args.fields is not None:
+            fields_set = set([f.strip() for f in args.fields.split(',')])
+            shown_fields = [f for f in displayable_fields if f[0] in fields_set]
+            if len(shown_fields) == 0:
+                print('Error: Fields requested not found.')
+                return 1
+        display_table(rows, shown_fields, max_count=args.max)
 
 
 @parser.command(
