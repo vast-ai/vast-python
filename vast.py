@@ -11,7 +11,11 @@ import time
 import typing
 import hashlib
 from datetime import date, datetime
+from pathlib import Path
 
+from scp import SCPClient, SCPException
+
+import paramiko
 import requests
 import getpass
 import subprocess
@@ -562,7 +566,7 @@ def parse_vast_url(url_str):
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
     usage="./vast copy src dst",
-    help=" Copy directories between instances and/or local",
+    help=" Copy directories between instances and/or local, using rsync",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
         directories can be either local or remote, subject to appropriate read and write
@@ -636,6 +640,41 @@ def copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+
+@parser.command(
+    argument("src", help="path to source directory to copy.", type=str),
+    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
+    argument("-i", "--identity", help="Location of ssh private key", type=str),
+    usage="./vast copy2 src dst",
+    help="Copy a directory from local to instance using Python-based scp",
+    epilog=deindent("""
+        Examples:
+         vast copy2 . 11824:/root
+    """),
+)
+def copy2(args: argparse.Namespace):
+    """
+    Transfer data from one instance to another.
+
+    @param src: Location of data object to be copied.
+    @param dst: Target to copy object to.
+    """
+
+    (src_id, src_path) = parse_vast_url(args.src)
+    (dst_id, dst_path) = parse_vast_url(args.dst)
+    if dst_id is None:
+        print('Error: destination path requires instance ID')
+        return 1
+    if src_id is not None:
+        print("Error: source path must be local")
+        return 1
+    if not os.path.isdir(src_path):
+        print('Error: source path must be a directory')
+        return 1
+    file_paths = list(Path(src_path).rglob('*'))
+    file_paths = [str(fp) for fp in file_paths if fp.is_file()]
+    print(f'Copying {len(file_paths)} files from {src_path} to {dst_path} in instance {dst_id}...')
+    _scp_files(args, file_paths, dst_id, dst_path)
 
 
 @parser.command(
@@ -791,8 +830,8 @@ def show__instances(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, "/instances", {"owner": "me"});
-    r = requests.get(req_url);
+    req_url = apiurl(args, "/instances", {"owner": "me"})
+    r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
     if args.raw:
@@ -830,8 +869,8 @@ def scp_url(args):
 
 
 def _ssh_url(args, protocol):
-    req_url = apiurl(args, "/instances", {"owner": "me"});
-    r = requests.get(req_url);
+    req_url = apiurl(args, "/instances", {"owner": "me"})
+    r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
     if args.id:
@@ -843,6 +882,34 @@ def _ssh_url(args, protocol):
         instance, = rows
     print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
 
+
+def _ssh_url_for_id(args, protocol, id: int):
+    req_url = apiurl(args, "/instances", {"owner": "me"})
+    r = requests.get(req_url)
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    instance, = [r for r in rows if r['id'] == id]
+    return f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}'
+
+
+def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: str):
+    req_url = apiurl(args, "/instances", {"owner": "me"})
+    r = requests.get(req_url)
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    instance, = [r for r in rows if r['id'] == target_id]
+    ssh_host = instance['ssh_host']
+    ssh_port = instance['ssh_port']
+    with paramiko.SSHClient() as ssh_client:
+        ssh_client.load_system_host_keys()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
+        with SCPClient(ssh_client.get_transport()) as scp:
+            try:
+                scp.put(file_paths, remote_path)
+            except SCPException as scp_err:
+                print(f'Error: {scp_err}')
+                return 1
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
