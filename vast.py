@@ -13,6 +13,7 @@ import hashlib
 from datetime import date, datetime
 from pathlib import Path
 
+from paramiko import ChannelFile
 from scp import SCPClient, SCPException
 
 import paramiko
@@ -680,7 +681,8 @@ def copy2(args: argparse.Namespace):
 @parser.command(
     argument("id", help="id of instance type to launch", type=int),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
-    argument('--timeout', help="Maximum number of seconds to wait for instance to become available.", type=float, default=120.0),
+    argument('--timeout', help="Maximum number of seconds to wait for instance to become available.", type=float,
+             default=512.0),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
@@ -700,11 +702,11 @@ def copy2(args: argparse.Namespace):
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="./vast copy2 src dst",
-    help="Copy a directory from local to instance using Python-based scp",
+    usage="./vast launch --image image-name id command",
+    help="Create instance, copy files, execute command, destroy instance.",
     epilog=deindent("""
         Examples:
-         vast copy2 . 11824:/root
+         vast launch --image pytorch/pytorch 123456 "python -u myexperiment.py"
     """),
 )
 def launch(args: argparse.Namespace):
@@ -951,14 +953,12 @@ def _is_instance_running(args, target_id):
 def _wait_for_instance_running(args, target_id, timeout: float = 120):
     print(f'Waiting for instance {target_id}...')
     start_time = time.time()
-    pause_time = 2.0
+    pause_time = 30.0
     while time.time() - start_time < timeout:
         print('$$$ checking...')
         if _is_instance_running(args, target_id):
             return
         time.sleep(pause_time)
-        if pause_time < 8.0:
-            pause_time *= 2
     raise TimeoutError(f'Instance did not start in {time.time() - start_time:.1f} seconds')
 
 
@@ -976,23 +976,6 @@ def _get_connected_ssh_client(args, target_id: int):
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
     return ssh_client
-
-
-def _wait_for_connected_client(args, target_id: int, timeout: float):
-    print(f'Waiting for connection to {target_id}...')
-    start_time = time.time()
-    pause_time = 2.0
-    while time.time() - start_time < timeout:
-        print('$$$ checking...')
-        try:
-            with _get_connected_ssh_client(args, target_id) as c:
-                pass
-            return
-        except Exception as e:
-            print('$$$ got exception of type ', type(e))
-            time.sleep(pause_time)
-            pause_time *= 2
-    raise TimeoutError(f'Did not find connection in {time.time() - start_time:.1f} seconds')
 
 
 def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: str):
@@ -1017,8 +1000,11 @@ def _launch_job(args, instance_id: int):
     timeout -= (time2 - time1)
     # _wait_for_connected_client(args, instance_id, timeout=timeout)
     with _get_connected_ssh_client(args, instance_id) as ssh_client:
-        result = ssh_client.exec_command('ls -lh')
-        print('$$$ result=', result)
+        stdout: ChannelFile
+        stdin, stdout, stderr = ssh_client.exec_command('ls -lh')
+        stdout.channel.set_combine_stderr(True)
+        for line in stdout:
+            print(line)
 
 
 @parser.command(
