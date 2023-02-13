@@ -678,6 +678,48 @@ def copy2(args: argparse.Namespace):
 
 
 @parser.command(
+    argument("id", help="id of instance type to launch", type=int),
+    argument("-i", "--identity", help="Location of ssh private key", type=str),
+    argument('--timeout', help="Maximum number of seconds to wait for instance to become available.", type=float, default=120.0),
+    argument("--price", help="per machine bid price in $/hour", type=float),
+    argument("--disk", help="size of local disk partition in GB", type=float, default=10),
+    argument("--image", help="docker container image to launch", type=str),
+    argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
+    argument("--label", help="label to set on the instance", type=str),
+    argument("--onstart", help="filename to use as onstart script", type=str),
+    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
+    argument("--extra", help=argparse.SUPPRESS),
+    argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
+    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
+    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
+    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
+    usage="./vast copy2 src dst",
+    help="Copy a directory from local to instance using Python-based scp",
+    epilog=deindent("""
+        Examples:
+         vast copy2 . 11824:/root
+    """),
+)
+def launch(args: argparse.Namespace):
+    r = _create_instance(args)
+    r_props = r.json()
+    instance_id = r_props['new_contract']
+    try:
+        print('$$$r=', r_props)
+        _launch_job(args, instance_id)
+    finally:
+        args.id = instance_id
+        _destroy_instance(args)
+
+
+@parser.command(
     argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
@@ -892,14 +934,69 @@ def _ssh_url_for_id(args, protocol, id: int):
     return f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}'
 
 
-def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: str):
+def _get_instance(args, target_id) -> typing.Any:
     req_url = apiurl(args, "/instances", {"owner": "me"})
     r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
     instance, = [r for r in rows if r['id'] == target_id]
+    return instance
+
+
+def _is_instance_running(args, target_id):
+    instance = _get_instance(args, target_id)
+    return instance['actual_status'] == 'running'
+
+
+def _wait_for_instance_running(args, target_id, timeout: float = 120):
+    print(f'Waiting for instance {target_id}...')
+    start_time = time.time()
+    pause_time = 2.0
+    while time.time() - start_time < timeout:
+        print('$$$ checking...')
+        if _is_instance_running(args, target_id):
+            return
+        time.sleep(pause_time)
+        if pause_time < 8.0:
+            pause_time *= 2
+    raise TimeoutError(f'Instance did not start in {time.time() - start_time:.1f} seconds')
+
+
+def _ssh_host_port(args, target_id: int):
+    instance = _get_instance(args, target_id)
     ssh_host = instance['ssh_host']
     ssh_port = instance['ssh_port']
+    return ssh_host, ssh_port,
+
+
+def _get_connected_ssh_client(args, target_id: int):
+    ssh_host, ssh_port = _ssh_host_port(args, target_id)
+    ssh_client = paramiko.SSHClient()
+    ssh_client.load_system_host_keys()
+    ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
+    return ssh_client
+
+
+def _wait_for_connected_client(args, target_id: int, timeout: float):
+    print(f'Waiting for connection to {target_id}...')
+    start_time = time.time()
+    pause_time = 2.0
+    while time.time() - start_time < timeout:
+        print('$$$ checking...')
+        try:
+            with _get_connected_ssh_client(args, target_id) as c:
+                pass
+            return
+        except Exception as e:
+            print('$$$ got exception of type ', type(e))
+            time.sleep(pause_time)
+            pause_time *= 2
+    raise TimeoutError(f'Did not find connection in {time.time() - start_time:.1f} seconds')
+
+
+def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: str):
+    ssh_host, ssh_port = _ssh_host_port(args, target_id)
     with paramiko.SSHClient() as ssh_client:
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -910,6 +1007,19 @@ def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: 
             except SCPException as scp_err:
                 print(f'Error: {scp_err}')
                 return 1
+
+
+def _launch_job(args, instance_id: int):
+    timeout = args.timeout
+    time1 = time.time()
+    _wait_for_instance_running(args, instance_id, timeout=timeout)
+    time2 = time.time()
+    timeout -= (time2 - time1)
+    # _wait_for_connected_client(args, instance_id, timeout=timeout)
+    with _get_connected_ssh_client(args, instance_id) as ssh_client:
+        result = ssh_client.exec_command('ls -lh')
+        print('$$$ result=', result)
+
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
@@ -1430,10 +1540,7 @@ def destroy__instance(args):
 
     :param argparse.Namespace args: should supply all the command-line options
     """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.delete(url, json={})
-    r.raise_for_status()
-
+    r = _destroy_instance(args)
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
@@ -1600,6 +1707,56 @@ def parse_env(envs):
 
 #print(parse_env("-e TYZ=BM3828 -e BOB=UTC -p 10831:22 -p 8080:8080"))
 
+def _create_instance(args):
+    if args.onstart:
+        with open(args.onstart, "r") as reader:
+            args.onstart_cmd = reader.read()
+    runtype = 'ssh'
+    if args.args:
+        runtype = 'args'
+    if args.jupyter_dir or args.jupyter_lab:
+        args.jupyter = True
+    if args.jupyter and runtype == 'args':
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
+        return 1
+
+    if args.jupyter:
+        runtype = 'jupyter_direc ssh_direct ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
+
+    if args.ssh:
+        runtype = 'ssh_direct ssh_proxy' if args.direct else 'ssh_proxy'
+
+    url = apiurl(args, "/asks/{id}/".format(id=args.id))
+    r = requests.put(url, json={
+        "client_id": "me",
+        "image": args.image,
+        "args": args.args,
+        "env": parse_env(args.env),
+        "price": args.price,
+        "disk": args.disk,
+        "label": args.label,
+        "extra": args.extra,
+        "onstart": args.onstart_cmd,
+        "runtype": runtype,
+        "image_login": args.login,
+        "python_utf8": args.python_utf8,
+        "lang_utf8": args.lang_utf8,
+        "use_jupyter_lab": args.jupyter_lab,
+        "jupyter_dir": args.jupyter_dir,
+        "create_from": args.create_from,
+        "force": args.force
+    })
+    r.raise_for_status()
+    return r
+
+
+def _destroy_instance(args):
+    url = apiurl(args, "/instances/{id}/".format(id=args.id))
+    r = requests.delete(url, json={})
+    r.raise_for_status()
+    return r
+
+
 @parser.command(
     argument("id", help="id of instance type to launch", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
@@ -1634,45 +1791,7 @@ def create__instance(args: argparse.Namespace):
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     """
-    if args.onstart:
-        with open(args.onstart, "r") as reader:
-            args.onstart_cmd = reader.read()
-    runtype = 'ssh'
-    if args.args:
-        runtype = 'args'
-    if args.jupyter_dir or args.jupyter_lab:
-        args.jupyter = True
-    if args.jupyter and runtype == 'args':
-        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
-        return 1
-
-    if args.jupyter:
-        runtype = 'jupyter_direc ssh_direct ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
-
-    if args.ssh:
-        runtype = 'ssh_direct ssh_proxy' if args.direct else 'ssh_proxy'
-
-    url = apiurl(args, "/asks/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "client_id": "me",
-        "image": args.image,
-        "args": args.args,
-        "env" : parse_env(args.env),
-        "price": args.price,
-        "disk": args.disk,
-        "label": args.label,
-        "extra": args.extra,
-        "onstart": args.onstart_cmd,
-        "runtype": runtype,
-        "image_login": args.login,
-        "python_utf8": args.python_utf8,
-        "lang_utf8": args.lang_utf8,
-        "use_jupyter_lab": args.jupyter_lab,
-        "jupyter_dir": args.jupyter_dir,
-        "create_from": args.create_from,
-        "force": args.force
-    })
-    r.raise_for_status()
+    r = _create_instance(args)
     if args.raw:
         print(json.dumps(r.json(), indent=1))
     else:
