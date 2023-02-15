@@ -276,6 +276,12 @@ instance_fields = (
     # ("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
 )
 
+ipaddr_fields = (
+    ("ip", "ip", "{}", None, True),
+    ("first_seen", "first_seen", "{}", None, True),
+    ("first_location", "first_location", "{}", None, True),
+)
+
 invoice_fields = (
     ("amount", "Amount", "{}", None, True),
     ("description", "Description", "{}", None, True),
@@ -765,27 +771,6 @@ def search__offers(args):
 
 
 @parser.command(
-    usage="./vast show instances [--api-key API_KEY] [--raw]",
-    help="Display user's current instances"
-)
-def show__instances(args):
-    """
-    Shows the stats on the machine the user is renting.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    req_url = apiurl(args, "/instances", {"owner": "me"});
-    r = requests.get(req_url);
-    r.raise_for_status()
-    rows = r.json()["instances"]
-    if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
-    else:
-        display_table(rows, instance_fields)
-
-
-@parser.command(
     argument("--id", help="id of instance", type=int),
     usage="./vast ssh-url",
     help="ssh url helper",
@@ -826,33 +811,6 @@ def _ssh_url(args, protocol):
     else:
         instance, = rows
     print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
-
-
-@parser.command(
-    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage="./vast show machines [OPTIONS]",
-    help="[Host] Show hosted machines",
-)
-def show__machines(args):
-    """
-    Show the machines user is offering for rent.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    req_url = apiurl(args, "/machines", {"owner": "me"});
-    r = requests.get(req_url);
-    r.raise_for_status()
-    rows = r.json()["machines"]
-    if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
-    else:
-        for machine in rows:
-            if args.quiet:
-                print("{id}".format(id=machine["id"]))
-            else:
-                print("{N} machines: ".format(N=len(rows)));
-                print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
 
 
 @parser.command(
@@ -950,6 +908,77 @@ def show__invoices(args):
         print(filter_header)
         display_table(rows, invoice_fields)
         print("Current: ", current_charges)
+
+
+@parser.command(
+    usage="./vast show instances [--api-key API_KEY] [--raw]",
+    help="Display user's current instances"
+)
+def show__instances(args):
+    """
+    Shows the stats on the machine the user is renting.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/instances", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["instances"]
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, instance_fields)
+
+
+@parser.command(
+    usage="./vast show ipaddrs [--api-key API_KEY] [--raw]",
+    help="Display user's history of ip addresses"
+)
+def show__ipaddrs(args):
+    """
+    Shows the history of ip address accesses to console.vast.ai endpoints
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+
+    req_url = apiurl(args, "/users/me/ipaddrs", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["results"]
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, ipaddr_fields)
+
+
+@parser.command(
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    usage="./vast show machines [OPTIONS]",
+    help="[Host] Show hosted machines",
+)
+def show__machines(args):
+    """
+    Show the machines user is offering for rent.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/machines", {"owner": "me"});
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["machines"]
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        for machine in rows:
+            if args.quiet:
+                print("{id}".format(id=machine["id"]))
+            else:
+                print("{N} machines: ".format(N=len(rows)));
+                print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
+
 
 
 @parser.command(
