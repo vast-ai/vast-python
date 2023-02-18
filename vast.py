@@ -13,6 +13,7 @@ import hashlib
 from datetime import date, datetime
 from pathlib import Path
 
+from gitignore_parser import parse_gitignore
 from paramiko import ChannelFile
 from scp import SCPClient, SCPException
 
@@ -609,7 +610,7 @@ def copy(args: argparse.Namespace):
     r = requests.put(url, json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
-        rj = r.json();
+        rj = r.json()
         #print(json.dumps(rj, indent=1, sort_keys=True))
         if (rj["success"]) and ((src_id is None) or (dst_id is None)):
             homedir = subprocess.getoutput("echo $HOME")
@@ -646,6 +647,7 @@ def copy(args: argparse.Namespace):
     argument("src", help="path to source directory to copy.", type=str),
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
+    argument("-g", "--gitignore", help="Do not copy files matching .gitignore paths", action="store_true"),
     usage="./vast copy2 src dst",
     help="Copy a directory from local to instance using Python-based scp",
     epilog=deindent("""
@@ -673,13 +675,14 @@ def copy2(args: argparse.Namespace):
         print('Error: source path must be a directory')
         return 1
     file_paths = list(Path(src_path).rglob('*'))
-    file_paths = [str(fp) for fp in file_paths if fp.is_file()]
+    rel_paths = [str(p.relative_to(src_path)) for p in file_paths]
     print(f'Copying {len(file_paths)} files from {src_path} to {dst_path} in instance {dst_id}...')
-    _scp_files(args, file_paths, dst_id, dst_path)
+    check_gitignore = args.gitignore
+    _scp_files(args, src_path, rel_paths, dst_id, dst_path, check_gitignore=check_gitignore)
 
 
 @parser.command(
-    argument("id", help="id of instance type to launch", type=int),
+    argument("id", help="id of instance type (offer ID) to launch", type=int),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
     argument('--timeout', help="Maximum number of seconds to wait for instance to become available.", type=float,
              default=512.0),
@@ -941,8 +944,10 @@ def _get_instance(args, target_id) -> typing.Any:
     r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
-    instance, = [r for r in rows if r['id'] == target_id]
-    return instance
+    instances = [r for r in rows if r['id'] == target_id]
+    if len(instances) == 0:
+        raise ValueError(f'No instances with ID {target_id}')
+    return instances[0]
 
 
 def _is_instance_running(args, target_id):
@@ -978,7 +983,14 @@ def _get_connected_ssh_client(args, target_id: int):
     return ssh_client
 
 
-def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: str):
+def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], target_id: int, remote_path: str,
+               check_gitignore: bool):
+    print(f'$$$ src_path: {src_path}')
+    print(f'$$$ file_paths: {rel_src_paths}')
+    gi_matches = None
+    if check_gitignore:
+        git_ignore_path = os.path.join(src_path, '.gitignore')
+        gi_matches = parse_gitignore(git_ignore_path)
     ssh_host, ssh_port = _ssh_host_port(args, target_id)
     with paramiko.SSHClient() as ssh_client:
         ssh_client.load_system_host_keys()
@@ -986,7 +998,19 @@ def _scp_files(args, file_paths: typing.List[str], target_id: int, remote_path: 
         ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
         with SCPClient(ssh_client.get_transport()) as scp:
             try:
-                scp.put(file_paths, remote_path)
+                ssh_client.exec_command(f'mkdir -p {remote_path}')
+                for rel_path in rel_src_paths:
+                    ignore = gi_matches is not None and gi_matches(rel_path)
+                    if not ignore:
+                        src_file_path = os.path.join(src_path, rel_path)
+                        target_file_path = Path(os.path.join(remote_path, rel_path)).as_posix()
+                        if os.path.isdir(src_file_path):
+                            print(f'$$$ Making remote dir: {target_file_path}')
+                            ssh_client.exec_command(f'mkdir -p {target_file_path}')
+                        else:
+                            scp.put([src_file_path], target_file_path)
+                    else:
+                        print(f'$$$ ignoring {rel_path}')
             except SCPException as scp_err:
                 print(f'Error: {scp_err}')
                 return 1
