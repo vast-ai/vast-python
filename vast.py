@@ -10,11 +10,13 @@ import os
 import time
 import typing
 import hashlib
+import uuid
 from datetime import date, datetime
 from pathlib import Path
+from random import random
 
 from gitignore_parser import parse_gitignore
-from paramiko import ChannelFile
+from paramiko import ChannelFile, SSHClient, Channel
 from scp import SCPClient, SCPException
 
 import paramiko
@@ -45,6 +47,9 @@ server_url_default = "https://console.vast.ai"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
 api_key_guard = object()
+
+_app_path = '/app'
+
 
 class Object(object):
     pass
@@ -184,7 +189,8 @@ def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     return new_d
 
 
-def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
+def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None,
+           add_rnd: bool = False) -> str:
     """Creates the endpoint URL for a given combination of parameters.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
@@ -196,6 +202,8 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         query_args = {}
     if args.api_key is not None:
         query_args["api_key"] = args.api_key
+    if add_rnd:
+        query_args['.r'] = uuid.uuid4().hex
     if query_args:
         # a_list      = [<expression> for <l-expression> in <expression>]
         '''
@@ -674,15 +682,16 @@ def copy2(args: argparse.Namespace):
     if not os.path.isdir(src_path):
         print('Error: source path must be a directory')
         return 1
-    file_paths = list(Path(src_path).rglob('*'))
-    rel_paths = [str(p.relative_to(src_path)) for p in file_paths]
-    print(f'Copying {len(file_paths)} files from {src_path} to {dst_path} in instance {dst_id}...')
+    rel_paths = _relative_paths(src_path)
+    print(f'Copying {len(rel_paths)} files from {src_path} to {dst_path} in instance {dst_id}...')
     check_gitignore = args.gitignore
-    _scp_files(args, src_path, rel_paths, dst_id, dst_path, check_gitignore=check_gitignore)
+    instance = _get_instance(args, dst_id)
+    _scp_files(args, src_path, rel_paths, instance, dst_path, check_gitignore=check_gitignore)
 
 
 @parser.command(
     argument("id", help="id of instance type (offer ID) to launch", type=int),
+    argument("command", help="command to be run in the launched instance", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
     argument('--timeout', help="Maximum number of seconds to wait for instance to become available.", type=float,
              default=512.0),
@@ -717,7 +726,6 @@ def launch(args: argparse.Namespace):
     r_props = r.json()
     instance_id = r_props['new_contract']
     try:
-        print('$$$r=', r_props)
         _launch_job(args, instance_id)
     finally:
         args.id = instance_id
@@ -940,7 +948,7 @@ def _ssh_url_for_id(args, protocol, id: int):
 
 
 def _get_instance(args, target_id) -> typing.Any:
-    req_url = apiurl(args, "/instances", {"owner": "me"})
+    req_url = apiurl(args, "/instances", {"owner": "me"}, add_rnd=True)
     r = requests.get(req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
@@ -955,20 +963,30 @@ def _is_instance_running(args, target_id):
     return instance['actual_status'] == 'running'
 
 
+def _is_instance_obj_running(instance):
+    return instance['actual_status'] == 'running'
+
+
 def _wait_for_instance_running(args, target_id, timeout: float = 120):
     print(f'Waiting for instance {target_id}...')
     start_time = time.time()
-    pause_time = 30.0
+    pause_time = 45.0
     while time.time() - start_time < timeout:
-        print('$$$ checking...')
-        if _is_instance_running(args, target_id):
-            return
+        instance = _get_instance(args, target_id)
+        if _is_instance_obj_running(instance):
+            return instance
         time.sleep(pause_time)
     raise TimeoutError(f'Instance did not start in {time.time() - start_time:.1f} seconds')
 
 
 def _ssh_host_port(args, target_id: int):
     instance = _get_instance(args, target_id)
+    ssh_host = instance['ssh_host']
+    ssh_port = instance['ssh_port']
+    return ssh_host, ssh_port,
+
+
+def _ssh_host_port_for_instance(instance: any):
     ssh_host = instance['ssh_host']
     ssh_port = instance['ssh_port']
     return ssh_host, ssh_port,
@@ -983,15 +1001,18 @@ def _get_connected_ssh_client(args, target_id: int):
     return ssh_client
 
 
-def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], target_id: int, remote_path: str,
+def _relative_paths(src_path: str):
+    file_paths = list(Path(src_path).rglob('*'))
+    return [str(p.relative_to(src_path)) for p in file_paths]
+
+
+def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: any, remote_path: str,
                check_gitignore: bool):
-    print(f'$$$ src_path: {src_path}')
-    print(f'$$$ file_paths: {rel_src_paths}')
     gi_matches = None
     if check_gitignore:
         git_ignore_path = os.path.join(src_path, '.gitignore')
         gi_matches = parse_gitignore(git_ignore_path)
-    ssh_host, ssh_port = _ssh_host_port(args, target_id)
+    ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
     with paramiko.SSHClient() as ssh_client:
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -1005,30 +1026,67 @@ def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], target_id: 
                         src_file_path = os.path.join(src_path, rel_path)
                         target_file_path = Path(os.path.join(remote_path, rel_path)).as_posix()
                         if os.path.isdir(src_file_path):
-                            print(f'$$$ Making remote dir: {target_file_path}')
                             ssh_client.exec_command(f'mkdir -p {target_file_path}')
                         else:
                             scp.put([src_file_path], target_file_path)
-                    else:
-                        print(f'$$$ ignoring {rel_path}')
             except SCPException as scp_err:
                 print(f'Error: {scp_err}')
                 return 1
 
 
+def _execute(ssh_client: SSHClient, command: str, get_pty=False):
+    stdout: ChannelFile
+    stdin, stdout, stderr = ssh_client.exec_command(command, get_pty=get_pty)
+    stdout.channel.set_combine_stderr(True)
+    while not stdout.channel.exit_status_ready():
+        if stdout.channel.recv_ready():
+            solo_line = stdout.channel.recv(1024)
+            sys.stdout.buffer.write(solo_line)
+            sys.stdout.buffer.flush()
+
+
+def _send_command(c: Channel, text: str):
+    text_b = bytes(text, encoding='utf-8')
+    while len(text_b) > 0:
+        n_sent = c.send(text_b)
+        if n_sent == 0:
+            print('EOF')
+            return
+        text_b = text_b[n_sent:]
+
+
 def _launch_job(args, instance_id: int):
     timeout = args.timeout
     time1 = time.time()
-    _wait_for_instance_running(args, instance_id, timeout=timeout)
+    instance = _wait_for_instance_running(args, instance_id, timeout=timeout)
+    time.sleep(3.0)
     time2 = time.time()
     timeout -= (time2 - time1)
+    src_path = '.'
+    rel_src_paths = _relative_paths(src_path)
+    has_reqs = 'requirements.txt' in rel_src_paths
+    remote_path = _app_path
+    print(f'Copying {len(rel_src_paths)} files...')
+    _scp_files(args, src_path, rel_src_paths, instance, remote_path, check_gitignore=True)
     # _wait_for_connected_client(args, instance_id, timeout=timeout)
     with _get_connected_ssh_client(args, instance_id) as ssh_client:
-        stdout: ChannelFile
-        stdin, stdout, stderr = ssh_client.exec_command('ls -lh')
-        stdout.channel.set_combine_stderr(True)
-        for line in stdout:
-            print(line)
+        path_script = f'{remote_path}/.set-path.sh'
+        with ssh_client.invoke_shell() as shell:
+            sc = f'#!/bin/bash\n' +\
+                 f'echo -n "PATH=\\\"$PATH\\\"" > {path_script}\n'
+            _send_command(shell, sc)
+
+        def _full_command(cmd: str) -> str:
+            return f'cd {remote_path} && source {path_script} && {cmd}'
+
+        # _execute(ssh_client, f'source {path_script} && python --version')
+        if has_reqs:
+            print('Installing requirements...')
+            _execute(ssh_client, _full_command('pip install -r requirements.txt'))
+        else:
+            print('No requirements.txt file found.')
+        print('===== command output follows =====')
+        _execute(ssh_client, _full_command(args.command))
 
 
 @parser.command(
