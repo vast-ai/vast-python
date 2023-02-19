@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals, print_function
 
+import logging
 import re
 import json
 import sys
@@ -725,6 +726,7 @@ def launch(args: argparse.Namespace):
     r = _create_instance(args)
     r_props = r.json()
     instance_id = r_props['new_contract']
+    print(f'Created instance {instance_id}.')
     try:
         _launch_job(args, instance_id)
     finally:
@@ -1006,6 +1008,16 @@ def _relative_paths(src_path: str):
     return [str(p.relative_to(src_path)) for p in file_paths]
 
 
+def _scp_dowload(args, remote_path: str, local_path: str, instance: any, preserve_times: bool = True):
+    ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
+    with paramiko.SSHClient() as ssh_client:
+        ssh_client.load_system_host_keys()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
+        with SCPClient(ssh_client.get_transport()) as scp:
+            scp.get(remote_path, local_path, recursive=True, preserve_times=preserve_times)
+
+
 def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: any, remote_path: str,
                check_gitignore: bool):
     gi_matches = None
@@ -1013,6 +1025,7 @@ def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: a
         git_ignore_path = os.path.join(src_path, '.gitignore')
         gi_matches = parse_gitignore(git_ignore_path)
     ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
+    count = 0
     with paramiko.SSHClient() as ssh_client:
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -1029,9 +1042,11 @@ def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: a
                             ssh_client.exec_command(f'mkdir -p {target_file_path}')
                         else:
                             scp.put([src_file_path], target_file_path)
+                            count += 1
             except SCPException as scp_err:
                 print(f'Error: {scp_err}')
                 return 1
+    return count
 
 
 def _execute(ssh_client: SSHClient, command: str, get_pty=False):
@@ -1059,15 +1074,16 @@ def _launch_job(args, instance_id: int):
     timeout = args.timeout
     time1 = time.time()
     instance = _wait_for_instance_running(args, instance_id, timeout=timeout)
-    time.sleep(3.0)
+    time.sleep(5.0)
     time2 = time.time()
     timeout -= (time2 - time1)
     src_path = '.'
     rel_src_paths = _relative_paths(src_path)
     has_reqs = 'requirements.txt' in rel_src_paths
     remote_path = _app_path
-    print(f'Copying {len(rel_src_paths)} files...')
-    _scp_files(args, src_path, rel_src_paths, instance, remote_path, check_gitignore=True)
+    print('Uploading files...')
+    count = _scp_files(args, src_path, rel_src_paths, instance, remote_path, check_gitignore=True)
+    print(f'Uploaded {count} files.')
     # _wait_for_connected_client(args, instance_id, timeout=timeout)
     with _get_connected_ssh_client(args, instance_id) as ssh_client:
         path_script = f'{remote_path}/.set-path.sh'
@@ -1087,6 +1103,14 @@ def _launch_job(args, instance_id: int):
             print('No requirements.txt file found.')
         print('===== command output follows =====')
         _execute(ssh_client, _full_command(args.command))
+        print('===== end of command output ====')
+        artifacts_remote_path = (Path(remote_path) / 'vast-artifacts').as_posix()
+        try:
+            _scp_dowload(args, artifacts_remote_path, src_path, instance)
+            print('Artifacts downloaded.')
+        except SCPException:
+            print('No artifacts produced (or unable to download.)')
+            logging.exception('$$$ Got exception from download!')
 
 
 @parser.command(
