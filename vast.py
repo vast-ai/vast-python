@@ -1679,20 +1679,38 @@ def set__min_bid(args):
     :rtype:
     """
     url = apiurl(args, "/machines/{id}/minbid/".format(id=args.id))
-    print(url)
-
-    req = requests.put(url, json={"client_id": "me", "price": args.price,})
-    #prepared = req.prepare()
-    #pretty_print_POST(prepared)
+    #print(url)
 
     r = requests.put(url, json={"client_id": "me", "price": args.price,})
-
-    print(r.request.url)
-    print(r.request.body)
-    print(r.request.headers)
+    #prepared = req.prepare()
+    #pretty_print_POST(prepared)
+    #print(r.request.url)
+    #print(r.request.body)
+    #print(r.request.headers)
 
     r.raise_for_status()
     print("Per gpu min bid price changed".format(r.json()))
+
+
+@parser.command(
+    argument("id", help="id of machine to schedule maintenance for", type=int),
+    argument("--start_date", help="maintenance start date in unix epoch time (UTC seconds)", type=float),
+    argument("--duration",   help="maintenance duration in hours", type=float),
+    usage="./vast schedule maintenance id [--sdate START_DATE --duration DURATION]",
+    help="[Host] Schedule an upcoming maintenance window for a machine, notifying active clients",
+)
+def schedule__maint(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/machines/{id}/dnotify/".format(id=args.id))
+    #print(url)
+
+    r = requests.put(url, json={"client_id": "me", "sdate": args.start_date, "duration": args.duration})
+
+    r.raise_for_status()
+    print("Maintenance window scheduled:".format(r.json()))
 
 
 
