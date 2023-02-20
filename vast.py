@@ -18,6 +18,7 @@ from random import random
 
 from gitignore_parser import parse_gitignore
 from paramiko import ChannelFile, SSHClient, Channel
+from paramiko.ssh_exception import NoValidConnectionsError
 from scp import SCPClient, SCPException
 
 import paramiko
@@ -981,6 +982,19 @@ def _wait_for_instance_running(args, target_id, timeout: float = 120):
     raise TimeoutError(f'Instance did not start in {time.time() - start_time:.1f} seconds')
 
 
+def _wait_for_connected_ssh_client(args, instance: any, timeout: float = 120):
+    start_time = time.time()
+    pause_time = 3.0
+    while time.time() - start_time < timeout:
+        try:
+            client = _get_connected_ssh_client(args, instance)
+            client.close()
+            return
+        except NoValidConnectionsError:
+            time.sleep(pause_time)
+    raise TimeoutError(f'Could not connect to instance in {time.time() - start_time:.1f} seconds')
+
+
 def _ssh_host_port(args, target_id: int):
     instance = _get_instance(args, target_id)
     ssh_host = instance['ssh_host']
@@ -994,8 +1008,8 @@ def _ssh_host_port_for_instance(instance: any):
     return ssh_host, ssh_port,
 
 
-def _get_connected_ssh_client(args, target_id: int):
-    ssh_host, ssh_port = _ssh_host_port(args, target_id)
+def _get_connected_ssh_client(args, instance: typing.Any):
+    ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
     ssh_client = paramiko.SSHClient()
     ssh_client.load_system_host_keys()
     ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -1053,11 +1067,19 @@ def _execute(ssh_client: SSHClient, command: str, get_pty=False):
     stdout: ChannelFile
     stdin, stdout, stderr = ssh_client.exec_command(command, get_pty=get_pty)
     stdout.channel.set_combine_stderr(True)
-    while not stdout.channel.exit_status_ready():
+    some_receive = False
+    second_attempt = False
+    while True:
         if stdout.channel.recv_ready():
             solo_line = stdout.channel.recv(1024)
             sys.stdout.buffer.write(solo_line)
             sys.stdout.buffer.flush()
+            some_receive = True
+        elif stdout.channel.exit_status_ready():
+            if some_receive or second_attempt:
+                break
+            second_attempt = True
+            time.sleep(1.0)
 
 
 def _send_command(c: Channel, text: str):
@@ -1065,7 +1087,7 @@ def _send_command(c: Channel, text: str):
     while len(text_b) > 0:
         n_sent = c.send(text_b)
         if n_sent == 0:
-            print('EOF')
+            logging.warning('Got EOF sending shell command.')
             return
         text_b = text_b[n_sent:]
 
@@ -1074,9 +1096,9 @@ def _launch_job(args, instance_id: int):
     timeout = args.timeout
     time1 = time.time()
     instance = _wait_for_instance_running(args, instance_id, timeout=timeout)
-    time.sleep(5.0)
     time2 = time.time()
     timeout -= (time2 - time1)
+    _wait_for_connected_ssh_client(args, instance, timeout=timeout)
     src_path = '.'
     rel_src_paths = _relative_paths(src_path)
     has_reqs = 'requirements.txt' in rel_src_paths
@@ -1084,18 +1106,16 @@ def _launch_job(args, instance_id: int):
     print('Uploading files...')
     count = _scp_files(args, src_path, rel_src_paths, instance, remote_path, check_gitignore=True)
     print(f'Uploaded {count} files.')
-    # _wait_for_connected_client(args, instance_id, timeout=timeout)
-    with _get_connected_ssh_client(args, instance_id) as ssh_client:
-        path_script = f'{remote_path}/.set-path.sh'
+    with _get_connected_ssh_client(args, instance) as ssh_client:
+        path_script_file = '.vast-set-path.sh'
+        path_script = f'{remote_path}/{path_script_file}'
         with ssh_client.invoke_shell() as shell:
-            sc = f'#!/bin/bash\n' +\
-                 f'echo -n "PATH=\\\"$PATH\\\"" > {path_script}\n'
-            _send_command(shell, sc)
+            _send_command(shell, f'echo "export PYTHONPATH={remote_path}" > {path_script}\n')
+            _send_command(shell, f'echo "export PATH=\\"$PATH\\"" >> {path_script}\n')
 
         def _full_command(cmd: str) -> str:
-            return f'cd {remote_path} && source {path_script} && {cmd}'
+            return f'cd {remote_path} && source {path_script_file} && {cmd}'
 
-        # _execute(ssh_client, f'source {path_script} && python --version')
         if has_reqs:
             print('Installing requirements...')
             _execute(ssh_client, _full_command('pip install -r requirements.txt'))
@@ -1110,7 +1130,6 @@ def _launch_job(args, instance_id: int):
             print('Artifacts downloaded.')
         except SCPException:
             print('No artifacts produced (or unable to download.)')
-            logging.exception('$$$ Got exception from download!')
 
 
 @parser.command(
