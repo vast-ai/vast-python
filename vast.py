@@ -8,13 +8,16 @@ import json
 import sys
 import argparse
 import os
+import tempfile
 import time
 import typing
 import hashlib
 import uuid
+from tqdm import tqdm
 from datetime import date, datetime
 from pathlib import Path
 from random import random
+from zipfile import ZipFile
 
 from gitignore_parser import parse_gitignore
 from paramiko import ChannelFile, SSHClient, Channel
@@ -1032,57 +1035,87 @@ def _scp_dowload(args, remote_path: str, local_path: str, instance: any, preserv
             scp.get(remote_path, local_path, recursive=True, preserve_times=preserve_times)
 
 
+def _upload_zip(instance: typing.Any, src_zip_path: str, remote_path: str):
+    ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
+    file_size = os.path.getsize(src_zip_path)
+    print(f'Uploading zip file of {file_size / (1024.0 ** 2):.4g} Mb...')
+    with paramiko.SSHClient() as ssh_client:
+        ssh_client.load_system_host_keys()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
+        target_zip_path = '/tmp/vast-upload.zip'
+
+        with tqdm(total=file_size, unit='B', unit_scale=True, desc="Uploading") as progress:
+            def progress_fn(filename: bytes, size: int, sent: int, x):
+                progress.update(sent)
+
+            try:
+                with SCPClient(ssh_client.get_transport(), progress4=progress_fn) as scp:
+                    scp.put([src_zip_path], target_zip_path)
+            except SCPException as scp_err:
+                print(f'Error: {scp_err}')
+                return 1
+        print('Installing zip package...')
+        _execute(ssh_client, 'apt-get install -y zip')
+        print('Unzipping uploaded files...')
+        _execute(ssh_client, f'unzip {target_zip_path} -d {remote_path}')
+
+
 def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: any, remote_path: str,
                check_gitignore: bool):
     gi_matches = None
     if check_gitignore:
         git_ignore_path = os.path.join(src_path, '.gitignore')
         gi_matches = parse_gitignore(git_ignore_path)
-    ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
-    count = 0
-    with paramiko.SSHClient() as ssh_client:
-        ssh_client.load_system_host_keys()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.connect(hostname=ssh_host, username='root', port=ssh_port)
-        with SCPClient(ssh_client.get_transport()) as scp:
-            try:
-                ssh_client.exec_command(f'mkdir -p {remote_path}')
-                for rel_path in rel_src_paths:
-                    ignore = gi_matches is not None and gi_matches(rel_path)
-                    if not ignore:
-                        src_file_path = os.path.join(src_path, rel_path)
-                        target_file_path = Path(os.path.join(remote_path, rel_path)).as_posix()
-                        if os.path.isdir(src_file_path):
-                            ssh_client.exec_command(f'mkdir -p {target_file_path}')
-                        else:
-                            scp.put([src_file_path], target_file_path)
-                            count += 1
-            except SCPException as scp_err:
-                print(f'Error: {scp_err}')
-                return 1
-    return count
+    print('Building zip file...')
+    tmp_zip_file = tempfile.NamedTemporaryFile(prefix='vast-', suffix='.zip', delete=False)
+    try:
+        count = 0
+        with ZipFile(tmp_zip_file, 'w') as zip_object:
+            # Adding files that need to be zipped
+            for rel_path in rel_src_paths:
+                ignore = gi_matches is not None and gi_matches(rel_path)
+                if not ignore:
+                    src_file_path = os.path.join(src_path, rel_path)
+                    zip_object.write(src_file_path, arcname=rel_path)
+                    count += 1
+        print(f'Zipped {count} files. Excluded {len(rel_src_paths) - count}.')
+        _upload_zip(instance, tmp_zip_file.name, remote_path)
+    finally:
+        try:
+            os.remove(tmp_zip_file.name)
+        except:
+            # TODO ignoring issue
+            pass
 
 
-def _execute(ssh_client: SSHClient, command: str, get_pty=False):
-    stdout: ChannelFile
-    stdin, stdout, stderr = ssh_client.exec_command(command, get_pty=get_pty)
-    stdout.channel.set_combine_stderr(True)
+def _capture_channel_output(channel: Channel):
     some_receive = False
     second_attempt = False
     while True:
-        if stdout.channel.recv_ready():
-            solo_line = stdout.channel.recv(1024)
+        time.sleep(0.001)
+        if channel.recv_ready():
+            solo_line = channel.recv(1024)
             sys.stdout.buffer.write(solo_line)
             sys.stdout.buffer.flush()
             some_receive = True
-        elif stdout.channel.exit_status_ready():
+        elif channel.exit_status_ready():
             if some_receive or second_attempt:
                 break
             second_attempt = True
             time.sleep(1.0)
 
 
-def _send_command(c: Channel, text: str):
+def _execute(ssh_client: SSHClient, command: str, get_pty=False):
+    stdout: ChannelFile
+    stdin, stdout, stderr = ssh_client.exec_command(command, get_pty=get_pty)
+    stdout.channel.set_combine_stderr(True)
+    _capture_channel_output(stdout.channel)
+
+
+def _send_command(c: Channel, text: str, verbose: bool = False):
+    if not text.endswith('\n'):
+        text = text + '\n'
     text_b = bytes(text, encoding='utf-8')
     while len(text_b) > 0:
         n_sent = c.send(text_b)
@@ -1090,6 +1123,9 @@ def _send_command(c: Channel, text: str):
             logging.warning('Got EOF sending shell command.')
             return
         text_b = text_b[n_sent:]
+    if verbose:
+        print(f'Shell: {text.strip()}')
+        _capture_channel_output(c)
 
 
 def _launch_job(args, instance_id: int):
@@ -1103,14 +1139,14 @@ def _launch_job(args, instance_id: int):
     rel_src_paths = _relative_paths(src_path)
     has_reqs = 'requirements.txt' in rel_src_paths
     remote_path = _app_path
-    print('Uploading files...')
-    count = _scp_files(args, src_path, rel_src_paths, instance, remote_path, check_gitignore=True)
-    print(f'Uploaded {count} files.')
+    _scp_files(args, src_path, rel_src_paths, instance, remote_path, check_gitignore=True)
     with _get_connected_ssh_client(args, instance) as ssh_client:
         path_script_file = '.vast-set-path.sh'
         path_script = f'{remote_path}/{path_script_file}'
         with ssh_client.invoke_shell() as shell:
-            _send_command(shell, f'echo "export PYTHONPATH={remote_path}" > {path_script}\n')
+            _send_command(shell, f'rm -f {path_script} && touch {path_script}\n')
+            _send_command(shell, f'echo "export PYTHONUNBUFFERED=1" >> {path_script}\n')
+            _send_command(shell, f'echo "export PYTHONPATH={remote_path}" >> {path_script}\n')
             _send_command(shell, f'echo "export PATH=\\"$PATH\\"" >> {path_script}\n')
 
         def _full_command(cmd: str) -> str:

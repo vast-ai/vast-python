@@ -61,6 +61,7 @@ six==1.11.0
 # ssh-import-id==5.7
 # system-service==0.3
 # systemd-python==234
+tqdm=4.64.1
 # ubuntu-advantage-tools==27.6
 # ubuntu-drivers-common==0.0.0
 # ufw==0.36
