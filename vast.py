@@ -1593,11 +1593,12 @@ def create__instance(args: argparse.Namespace):
         return 1
 
     if args.jupyter:
-        runtype = 'jupyter_direc ssh_direct ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
+        runtype = 'jupyter_direc ssh_direc ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
 
     if args.ssh:
-        runtype = 'ssh_direct ssh_proxy' if args.direct else 'ssh_proxy'
+        runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
+    #print(f"put asks/{args.id}/  runtype:{runtype}")
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
     r = requests.put(url, json={
         "client_id": "me",
