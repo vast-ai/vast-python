@@ -1019,7 +1019,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     """
 
     try:
-        import vast_pdf
+        #import vast_pdf
         import dateutil
         from dateutil import parser
 
