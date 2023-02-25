@@ -558,6 +558,34 @@ def parse_vast_url(url_str):
 
 
 @parser.command(
+    argument("id", help="id of instance type to change bid", type=int),
+    argument("--price", help="per machine bid price in $/hour", type=float),
+    usage="./vast change bid id [--price PRICE]",
+    help="Change the bid price for a spot/interruptible instance",
+    epilog=deindent("""
+        Change the current bid price of instance id to PRICE.
+        If PRICE is not specified, then a winning bid price is used as the default.
+    """),
+)
+def change__bid(args: argparse.Namespace):
+    """Alter the bid with id contained in args.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype int:
+    """
+    url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
+    print(f"URL: {url}")
+    r = requests.put(url, json={
+        "client_id": "me",
+        "price": args.price,
+    })
+    r.raise_for_status()
+    print("Per gpu bid price changed".format(r.json()))
+
+
+
+
+@parser.command(
     argument("src", help="instance_id:/path to source of object to copy.", type=str),
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
@@ -632,6 +660,308 @@ def copy(args: argparse.Namespace):
                 print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
             else:
                 print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("id", help="id of instance type to launch", type=int),
+    argument("--price", help="per machine bid price in $/hour", type=float),
+    argument("--disk", help="size of local disk partition in GB", type=float, default=10),
+    argument("--image", help="docker container image to launch", type=str),
+    argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
+    argument("--label", help="label to set on the instance", type=str),
+    argument("--onstart", help="filename to use as onstart script", type=str),
+    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
+    argument("--extra", help=argparse.SUPPRESS),
+    argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
+    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
+    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
+    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
+    usage="./vast create instance id [OPTIONS] [--args ...]",
+    help="Create a new instance",
+    epilog=deindent("""
+        Examples:
+        vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
+        vast create instance 344521 --image anthonytatowicz/eth-cuda-miner --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
+    """),
+)
+def create__instance(args: argparse.Namespace):
+    """Performs the same action as pressing the "RENT" button on the website at https://console.vast.ai/create/.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    """
+    if args.onstart:
+        with open(args.onstart, "r") as reader:
+            args.onstart_cmd = reader.read()
+    runtype = 'ssh'
+    if args.args:
+        runtype = 'args'
+    if args.jupyter_dir or args.jupyter_lab:
+        args.jupyter = True
+    if args.jupyter and runtype == 'args':
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
+        return 1
+
+    if args.jupyter:
+        runtype = 'jupyter_direc ssh_direc ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
+
+    if args.ssh:
+        runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
+
+    #print(f"put asks/{args.id}/  runtype:{runtype}")
+    url = apiurl(args, "/asks/{id}/".format(id=args.id))
+    r = requests.put(url, json={
+        "client_id": "me",
+        "image": args.image,
+        "args": args.args,
+        "env" : parse_env(args.env),
+        "price": args.price,
+        "disk": args.disk,
+        "label": args.label,
+        "extra": args.extra,
+        "onstart": args.onstart_cmd,
+        "runtype": runtype,
+        "image_login": args.login,
+        "python_utf8": args.python_utf8,
+        "lang_utf8": args.lang_utf8,
+        "use_jupyter_lab": args.jupyter_lab,
+        "jupyter_dir": args.jupyter_dir,
+        "create_from": args.create_from,
+        "force": args.force
+    })
+    r.raise_for_status()
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print("Started. {}".format(r.json()))
+
+@parser.command(
+    argument("id", help="id of instance to delete", type=int),
+    usage="./vast destroy instance id [-h] [--api-key API_KEY] [--raw]",
+    help="Destroy an instance (irreversible, deletes data)",
+)
+def destroy__instance(args):
+    """Perfoms the same action as pressing the "DESTROY" button on the website at https://console.vast.ai/instances/.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    url = apiurl(args, "/instances/{id}/".format(id=args.id))
+    r = requests.delete(url, json={})
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("destroying instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+@parser.command(
+    argument("ID", help="id of instance to execute on", type=int),
+    argument("COMMAND", help="bash command surrounded by single quotes",  type=str),
+    usage="./vast execute ID COMMAND",
+    help="Execute a (constrained) remote command on a machine",
+    epilog=deindent("""
+        examples:
+          ./vast execute 99999 'ls -l -o -r'
+          ./vast execute 99999 'rm -r home/delete_this.txt'
+          ./vast execute 99999 'du -d2 -h'
+
+        available commands:
+          ls                 List directory contents
+          rm                 Remote files or directories
+          du                 Summarize device usage for a set of files
+
+
+    """),
+)
+def execute(args):
+    """Execute a (constrained) remote command on a machine.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
+    r = requests.put(url, json={"command": args.COMMAND} )
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            for i in range(0,30):
+                time.sleep(0.3)
+                #url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+                api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
+                #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
+                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
+                #print(url)
+                r = requests.get(url);
+                if (r.status_code == 200):
+                    filtered_text = r.text.replace(rj["writeable_path"], '');
+                    print(filtered_text)
+                    break
+        else:
+            print(rj);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+
+
+@parser.command(
+    argument("id", help="id of instance to label", type=int),
+    argument("label", help="label to set", type=str),
+    usage="./vast label instance <id> <label>",
+    help="Assign a string label to an instance",
+)
+def label__instance(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/{id}/".format(id=args.id))
+    r = requests.put(url, json={
+        "label": args.label
+    })
+    r.raise_for_status()
+
+    rj = r.json();
+    if rj["success"]:
+        print("label for {args.id} set to {args.label}.".format(**(locals())));
+    else:
+        print(rj["msg"]);
+
+
+
+@parser.command(
+    argument("INSTANCE_ID", help="id of instance", type=int),
+    argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
+    usage="./vast logs [OPTIONS] INSTANCE_ID",
+    help="Get the logs for an instance",
+)
+def logs(args):
+    """Get the logs for an instance
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
+    #url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.INSTANCE_ID))
+    json = {}
+    if (args.tail):
+        json['tail'] = args.tail
+    r = requests.put(url, json=json )
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        for i in range(0,30):
+            time.sleep(0.3)
+            #url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
+            #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + ".log"
+            api_key_id_h = hashlib.md5( (args.api_key + str(args.INSTANCE_ID)).encode('utf-8') ).hexdigest()
+            url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + ".log"
+            print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
+            r = requests.get(url);
+            if (r.status_code == 200):
+                print(r.text)
+                break
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+
+
+
+@parser.command(
+    argument("id", help="id of instance to reboot", type=int),
+    usage="./vast reboot instance <id> [--raw]",
+    help="Reboot (stop/start) an instance",
+)
+def reboot__instance(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
+    r = requests.put(url, json={})
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Rebooting instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("id", help="id of instance to start/restart", type=int),
+    usage="./vast start instance <id> [--raw]",
+    help="Start a stopped instance",
+)
+def start__instance(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/{id}/".format(id=args.id))
+    r = requests.put(url, json={
+        "state": "running"
+    })
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("starting instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("id", help="id of instance to stop", type=int),
+    usage="./vast stop instance [--raw] <id>",
+    help="Stop a running instance",
+)
+def stop__instance(args):
+    """
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/{id}/".format(id=args.id))
+    r = requests.put(url, json={
+        "state": "stopped"
+    })
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("stopping instance {args.id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
@@ -1007,6 +1337,28 @@ def show__user(args):
         display_table([user_blob], user_fields)
 
 
+@parser.command(
+    argument("recipient", help="email of recipient account", type=str),
+    argument("amount",    help="$dollars of credit to transfer ", type=float),
+    usage="./vast transfer credit RECIPIENT AMOUNT",
+    help="Transfer credits to another account",
+    epilog=deindent("""
+        Transfer (amount) credits to account with email (recipient).
+    """),
+)
+def transfer__credit(args: argparse.Namespace):
+    url = apiurl(args, "/commands/transfer_credit/")
+    print(f"URL: {url}")
+    r = requests.put(url, json={
+        "sender":    "me",
+        "recipient": args.recipient,
+        "amount":    args.amount,
+    })
+    r.raise_for_status()
+    print(f"Sent {args.amount} to {args.recipient} ".format(r.json()))
+
+
+
 def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
     'only_charge' and 'only_credits' options.invoice_number
@@ -1260,225 +1612,6 @@ def set_ask(args):
     print("set asks!\n");
 
 
-@parser.command(
-    argument("id", help="id of instance to reboot", type=int),
-    usage="./vast reboot instance <id> [--raw]",
-    help="Reboot (stop/start) an instance",
-)
-def reboot__instance(args):
-    """
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
-    r = requests.put(url, json={})
-    r.raise_for_status()
-
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("Rebooting instance {args.id}.".format(**(locals())));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-@parser.command(
-    argument("id", help="id of instance to start/restart", type=int),
-    usage="./vast start instance <id> [--raw]",
-    help="Start a stopped instance",
-)
-def start__instance(args):
-    """
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "state": "running"
-    })
-    r.raise_for_status()
-
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("starting instance {args.id}.".format(**(locals())));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-@parser.command(
-    argument("id", help="id of instance to stop", type=int),
-    usage="./vast stop instance [--raw] <id>",
-    help="Stop a running instance",
-)
-def stop__instance(args):
-    """
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "state": "stopped"
-    })
-    r.raise_for_status()
-
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("stopping instance {args.id}.".format(**(locals())));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-@parser.command(
-    argument("id", help="id of instance to label", type=int),
-    argument("label", help="label to set", type=str),
-    usage="./vast label instance <id> <label>",
-    help="Assign a string label to an instance",
-)
-def label__instance(args):
-    """
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "label": args.label
-    })
-    r.raise_for_status()
-
-    rj = r.json();
-    if rj["success"]:
-        print("label for {args.id} set to {args.label}.".format(**(locals())));
-    else:
-        print(rj["msg"]);
-
-
-@parser.command(
-    argument("id", help="id of instance to delete", type=int),
-    usage="./vast destroy instance id [-h] [--api-key API_KEY] [--raw]",
-    help="Destroy an instance (irreversible, deletes data)",
-)
-def destroy__instance(args):
-    """Perfoms the same action as pressing the "DESTROY" button on the website at https://console.vast.ai/instances/.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.delete(url, json={})
-    r.raise_for_status()
-
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("destroying instance {args.id}.".format(**(locals())));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-
-
-@parser.command(
-    argument("ID", help="id of instance to execute on", type=int),
-    argument("COMMAND", help="bash command surrounded by single quotes",  type=str),
-    usage="./vast execute ID COMMAND",
-    help="Execute a (constrained) remote command on a machine",
-    epilog=deindent("""
-        examples:
-          ./vast execute 99999 'ls -l -o -r'
-          ./vast execute 99999 'rm -r home/delete_this.txt'
-          ./vast execute 99999 'du -d2 -h'
-
-        available commands:
-          ls                 List directory contents
-          rm                 Remote files or directories
-          du                 Summarize device usage for a set of files
-
-
-    """),
-)
-def execute(args):
-    """Execute a (constrained) remote command on a machine.
-    :param argparse.Namespace args: should supply all the command-line options
-    """
-    url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
-    r = requests.put(url, json={"command": args.COMMAND} )
-    r.raise_for_status()
-
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            for i in range(0,30):
-                time.sleep(0.3)
-                #url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-                api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
-                #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
-                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
-                #print(url)
-                r = requests.get(url);
-                if (r.status_code == 200):
-                    filtered_text = r.text.replace(rj["writeable_path"], '');
-                    print(filtered_text)
-                    break
-        else:
-            print(rj);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-
-@parser.command(
-    argument("INSTANCE_ID", help="id of instance", type=int),
-    argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
-    usage="./vast logs [OPTIONS] INSTANCE_ID",
-    help="Get the logs for an instance",
-)
-def logs(args):
-    """Get the logs for an instance
-    :param argparse.Namespace args: should supply all the command-line options
-    """
-    url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
-    #url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.INSTANCE_ID))
-    json = {}
-    if (args.tail):
-        json['tail'] = args.tail
-    r = requests.put(url, json=json )
-    r.raise_for_status()
-
-    if (r.status_code == 200):
-        rj = r.json();
-        for i in range(0,30):
-            time.sleep(0.3)
-            #url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-            #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + ".log"
-            api_key_id_h = hashlib.md5( (args.api_key + str(args.INSTANCE_ID)).encode('utf-8') ).hexdigest()
-            url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + ".log"
-            print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
-            r = requests.get(url);
-            if (r.status_code == 200):
-                print(r.text)
-                break
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
@@ -1545,111 +1678,6 @@ def parse_env(envs):
 
 
 #print(parse_env("-e TYZ=BM3828 -e BOB=UTC -p 10831:22 -p 8080:8080"))
-
-@parser.command(
-    argument("id", help="id of instance type to launch", type=int),
-    argument("--price", help="per machine bid price in $/hour", type=float),
-    argument("--disk", help="size of local disk partition in GB", type=float, default=10),
-    argument("--image", help="docker container image to launch", type=str),
-    argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
-    argument("--label", help="label to set on the instance", type=str),
-    argument("--onstart", help="filename to use as onstart script", type=str),
-    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
-    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
-    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
-    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
-    argument("--extra", help=argparse.SUPPRESS),
-    argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
-    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
-    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
-    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="./vast create instance id [OPTIONS] [--args ...]",
-    help="Create a new instance",
-    epilog=deindent("""
-        Examples:
-        vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
-        vast create instance 344521 --image anthonytatowicz/eth-cuda-miner --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
-    """),
-)
-def create__instance(args: argparse.Namespace):
-    """Performs the same action as pressing the "RENT" button on the website at https://console.vast.ai/create/.
-
-    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
-    """
-    if args.onstart:
-        with open(args.onstart, "r") as reader:
-            args.onstart_cmd = reader.read()
-    runtype = 'ssh'
-    if args.args:
-        runtype = 'args'
-    if args.jupyter_dir or args.jupyter_lab:
-        args.jupyter = True
-    if args.jupyter and runtype == 'args':
-        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
-        return 1
-
-    if args.jupyter:
-        runtype = 'jupyter_direc ssh_direc ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
-
-    if args.ssh:
-        runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
-
-    #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "client_id": "me",
-        "image": args.image,
-        "args": args.args,
-        "env" : parse_env(args.env),
-        "price": args.price,
-        "disk": args.disk,
-        "label": args.label,
-        "extra": args.extra,
-        "onstart": args.onstart_cmd,
-        "runtype": runtype,
-        "image_login": args.login,
-        "python_utf8": args.python_utf8,
-        "lang_utf8": args.lang_utf8,
-        "use_jupyter_lab": args.jupyter_lab,
-        "jupyter_dir": args.jupyter_dir,
-        "create_from": args.create_from,
-        "force": args.force
-    })
-    r.raise_for_status()
-    if args.raw:
-        print(json.dumps(r.json(), indent=1))
-    else:
-        print("Started. {}".format(r.json()))
-
-
-@parser.command(
-    argument("id", help="id of instance type to change bid", type=int),
-    argument("--price", help="per machine bid price in $/hour", type=float),
-    usage="./vast change bid id [--price PRICE]",
-    help="Change the bid price for a spot/interruptible instance",
-    epilog=deindent("""
-        Change the current bid price of instance id to PRICE.
-        If PRICE is not specified, then a winning bid price is used as the default.
-    """),
-)
-def change__bid(args: argparse.Namespace):
-    """Alter the bid with id contained in args.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype int:
-    """
-    url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
-    print(f"URL: {url}")
-    r = requests.put(url, json={
-        "client_id": "me",
-        "price": args.price,
-    })
-    r.raise_for_status()
-    print("Per gpu bid price changed".format(r.json()))
 
 
 
