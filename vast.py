@@ -1348,12 +1348,18 @@ def show__user(args):
 )
 def transfer__credit(args: argparse.Namespace):
     url = apiurl(args, "/commands/transfer_credit/")
-    print(f"URL: {url}")
+ 
+    print(f"Transfer ${args.amount} credit to account {args.recipient}?  This is irreversible.")
+    ok = input("Continue? [y/n] ")
+    if ok.strip().lower() != "y":
+        return
+
     r = requests.put(url, json={
         "sender":    "me",
         "recipient": args.recipient,
         "amount":    args.amount,
     })
+    
     r.raise_for_status()
     print(f"Sent {args.amount} to {args.recipient} ".format(r.json()))
 
@@ -1723,11 +1729,14 @@ def set__min_bid(args):
 
 @parser.command(
     argument("id", help="id of machine to schedule maintenance for", type=int),
-    argument("--start_date", help="maintenance start date in unix epoch time (UTC seconds)", type=float),
+    argument("--sdate",      help="maintenance start date in unix epoch time (UTC seconds)", type=float),
     argument("--duration",   help="maintenance duration in hours", type=float),
     usage="./vast schedule maintenance id [--sdate START_DATE --duration DURATION]",
     help="[Host] Schedule an upcoming maintenance window for a machine, notifying active clients",
-)
+    epilog=deindent("""
+        Example: ./vast.py schedule maint 8207 --sdate 1677562671 --duration 0.5
+    """),
+    )
 def schedule__maint(args):
     """
     :param argparse.Namespace args: should supply all the command-line options
@@ -1736,11 +1745,16 @@ def schedule__maint(args):
     url = apiurl(args, "/machines/{id}/dnotify/".format(id=args.id))
     #print(url)
 
-    r = requests.put(url, json={"client_id": "me", "sdate": args.start_date, "duration": args.duration})
+    dt = datetime.utcfromtimestamp(args.sdate)
+    print(f"Scheduling maintenance window starting {dt} lasting {args.duration} hours")
+    print(f"This will notify all clients of this machine.")
+    ok = input("Continue? [y/n] ")
+    if ok.strip().lower() != "y":
+        return
 
+    r = requests.put(url, json={"client_id": "me", "sdate": args.sdate, "duration": args.duration})
     r.raise_for_status()
-    print("Maintenance window scheduled:".format(r.json()))
-
+    print(f"Maintenance window scheduled for {dt} success".format(r.json()))
 
 
 @parser.command(
