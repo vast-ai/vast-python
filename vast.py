@@ -1038,7 +1038,7 @@ def _scp_dowload(args, remote_path: str, local_path: str, instance: any, preserv
 def _upload_zip(instance: typing.Any, src_zip_path: str, remote_path: str):
     ssh_host, ssh_port = _ssh_host_port_for_instance(instance)
     file_size = os.path.getsize(src_zip_path)
-    print(f'Uploading zip file of {file_size / (1024.0 ** 2):.4g} Mb...')
+    print(f'Uploading zip file of {file_size / 1e6:.4g} Mb...')
     with paramiko.SSHClient() as ssh_client:
         ssh_client.load_system_host_keys()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -1047,7 +1047,7 @@ def _upload_zip(instance: typing.Any, src_zip_path: str, remote_path: str):
 
         with tqdm(total=file_size, unit='B', unit_scale=True, desc="Uploading") as progress:
             def progress_fn(filename: bytes, size: int, sent: int, x):
-                progress.update(sent)
+                progress.update(sent - progress.n)
 
             try:
                 with SCPClient(ssh_client.get_transport(), progress4=progress_fn) as scp:
@@ -1065,8 +1065,16 @@ def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: a
                check_gitignore: bool):
     gi_matches = None
     if check_gitignore:
-        git_ignore_path = os.path.join(src_path, '.gitignore')
-        gi_matches = parse_gitignore(git_ignore_path)
+        pattern_ignore_path = None
+        vast_ignore_path = os.path.join(src_path, '.vastignore')
+        if os.path.exists(vast_ignore_path):
+            pattern_ignore_path = vast_ignore_path
+        else:
+            git_ignore_path = os.path.join(src_path, '.gitignore')
+            if os.path.exists(git_ignore_path):
+                pattern_ignore_path = git_ignore_path
+        if pattern_ignore_path is not None:
+            gi_matches = parse_gitignore(pattern_ignore_path)
     print('Building zip file...')
     tmp_zip_file = tempfile.NamedTemporaryFile(prefix='vast-', suffix='.zip', delete=False)
     try:
