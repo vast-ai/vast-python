@@ -705,6 +705,9 @@ def create__instance(args: argparse.Namespace):
     runtype = 'ssh'
     if args.args:
         runtype = 'args'
+    if (args.args == '') or (args.args == ['']) or (args.args == []):
+        runtype = 'args'
+        args.args = None
     if args.jupyter_dir or args.jupyter_lab:
         args.jupyter = True
     if args.jupyter and runtype == 'args':
@@ -719,10 +722,9 @@ def create__instance(args: argparse.Namespace):
 
     #print(f"put asks/{args.id}/  runtype:{runtype}")
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
-    r = requests.put(url, json={
+    json_blob ={
         "client_id": "me",
         "image": args.image,
-        "args": args.args,
         "env" : parse_env(args.env),
         "price": args.price,
         "disk": args.disk,
@@ -737,7 +739,14 @@ def create__instance(args: argparse.Namespace):
         "jupyter_dir": args.jupyter_dir,
         "create_from": args.create_from,
         "force": args.force
-    })
+    }
+
+    #print(args.args)
+
+    if (args.args != None):
+     json_blob["args"] = args.args
+
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
     if args.raw:
         print(json.dumps(r.json(), indent=1))
