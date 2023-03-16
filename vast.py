@@ -589,18 +589,18 @@ def change__bid(args: argparse.Namespace):
     argument("src", help="instance_id:/path to source of object to copy.", type=str),
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
-    usage="./vast copy src dst",
+    usage="./vast copy SRC DST",
     help=" Copy directories between instances and/or local",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
         directories can be either local or remote, subject to appropriate read and write
         permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
         Examples:
-         vast copy 11824:/data/test 12371:/temp
+         vast copy 6003036:/workspace/ 6003038:/workspace/
          vast copy 11824:/data/test data/test
          vast copy data/test 11824:/data/test
 
-        The first example copy syncs the directory '/tmp' in instance 12371 from the directory '/data/test' in instance 11824.
+        The first example copy syncs all files from the absolute directory '/workspace' on instance 6003036 to the directory '/workspace' on instance 6003038.
         The second example copy syncs the relative directory 'data/test' on the local machine from '/data/test' in instance 11824.
         The third example copy syncs the directory '/data/test' in instance 11824 from the relative directory 'data/test' on the local machine.
     """),
@@ -663,6 +663,50 @@ def copy(args: argparse.Namespace):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
+    usage="./vast cancel copy DST",
+    help=" Cancel a remote copy in progress, specified by DST id",
+    epilog=deindent("""
+        Use this command to cancel any/all current remote copy operations copying to a specific named instance, given by DST.
+        Examples:
+         vast cancel copy 12371
+
+        The first example cancels all copy operations currently copying data into instance 12371
+
+    """),
+)
+def cancel__copy(args: argparse.Namespace):
+    """
+    Cancel a remote copy in progress, specified by DST id"
+
+    @param dst: ID of copy instance Target to cancel.
+    """
+
+    url = apiurl(args, f"/commands/rsync/")
+    dst_id = args.dst
+    if (dst_id is None):
+        print("invalid arguments")
+        return
+
+    print(f"canceling remote copies to {dst_id} ")
+
+    req_json = { "client_id": "me", "dst_id": dst_id, }
+    r = requests.delete(url, json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
 
 
 @parser.command(
