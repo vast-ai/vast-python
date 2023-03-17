@@ -737,6 +737,27 @@ def launch(args: argparse.Namespace):
         args.id = instance_id
         _destroy_instance(args)
 
+@parser.command(
+    argument("id", help="id of instance to launch", type=int),
+    argument("command", help="command to be run in the started instance", type=str),
+    argument('--timeout', help="Maximum number of seconds to wait for instance to become available.", type=float,
+             default=512.0),
+    usage="./vast start run id command",
+    help="Start an instance, install requirements, run command, and stop the instance.",
+    epilog=deindent("""
+        Examples:
+         vast start run 123456 "python -u myexperiment.py"
+    """),
+)
+def start__run(args: argparse.Namespace):
+    instance_id = args.id
+    _start_instance(args)
+    print(f'Started instance {instance_id}.')
+    try:
+        _launch_job(args, instance_id)
+    finally:
+        _stop_instance(args)
+
 
 @parser.command(
     argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
@@ -1136,13 +1157,17 @@ def _send_command(c: Channel, text: str, verbose: bool = False):
         _capture_channel_output(c)
 
 
-def _launch_job(args, instance_id: int):
+def _wait_for_instance_ready_timeout(args, instance_id: int):
     timeout = args.timeout
     time1 = time.time()
     instance = _wait_for_instance_running(args, instance_id, timeout=timeout)
     time2 = time.time()
     timeout -= (time2 - time1)
     _wait_for_connected_ssh_client(args, instance, timeout=timeout)
+    return instance
+
+
+def _launch_job_in_ready_instance(args, instance):
     src_path = '.'
     rel_src_paths = _relative_paths(src_path)
     has_reqs = 'requirements.txt' in rel_src_paths
@@ -1174,6 +1199,30 @@ def _launch_job(args, instance_id: int):
             print('Artifacts downloaded.')
         except SCPException:
             print('No artifacts produced (or unable to download.)')
+
+
+def _launch_job(args, instance_id: int):
+    instance = _wait_for_instance_ready_timeout(args, instance_id)
+    return _launch_job_in_ready_instance(args, instance)
+
+
+def _start_instance(args):
+    instance_id = args.id
+    url = apiurl(args, "/instances/{id}/".format(id=instance_id))
+    r = requests.put(url, json={
+        "state": "running"
+    })
+    r.raise_for_status()
+    instance = _wait_for_instance_ready_timeout(args, instance_id)
+    return instance
+
+
+def _stop_instance(args):
+    url = apiurl(args, "/instances/{id}/".format(id=args.id))
+    r = requests.put(url, json={
+        "state": "stopped"
+    })
+    r.raise_for_status()
 
 
 @parser.command(
