@@ -401,6 +401,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "cpu_cores_effective",
         "cpu_ram",
         "cuda_max_good",
+        "datacenter",
         "direct_port_count",
         "driver_version",
         "disk_bw",
@@ -416,6 +417,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "gpu_mem_bw",
         "gpu_name",
         "gpu_ram",
+        "gpu_display_active",
         "has_avx",
         "host_id",
         "id",
@@ -1048,8 +1050,8 @@ def stop__instance(args):
 
         Examples:
 
-            ./vast search offers 'compute_cap > 610 total_flops < 5'
-            ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
+            ./vast search offers 'compute_cap > 610 total_flops < 5 datacenter=true'
+            ./vast search offers 'reliability > 0.99  num_gpus>=4 verified=false' -o 'num_gpus-'
             ./vast search offers 'rentable = any'
             ./vast search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090'
 
@@ -1063,6 +1065,7 @@ def stop__instance(args):
             cpu_cores_effective:    float     # virtual cpus you get
             cpu_ram:                float     system RAM in gigabytes
             cuda_vers:              float     cuda version
+            datacenter:             bool      show only datacenter offers
             direct_port_count       int       open ports on host's router
             disk_bw:                float     disk read bandwidth, in MB/s
             disk_space:             float     disk storage space, in GB
@@ -1077,6 +1080,7 @@ def stop__instance(args):
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     GPU RAM in GB
             gpu_frac:               float     Ratio of GPUs in the offer to gpus in the system
+            gpu_display_active:     bool      True if the GPU has a display attached
             has_avx:                bool      CPU supports AVX instruction set.
             id:                     int       instance unique ID
             inet_down:              float     internet download speed in Mb/s
