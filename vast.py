@@ -1416,9 +1416,17 @@ def transfer__credit(args: argparse.Namespace):
         "recipient": args.recipient,
         "amount":    args.amount,
     })
-    
     r.raise_for_status()
-    print(f"Sent {args.amount} to {args.recipient} ".format(r.json()))
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print(f"Sent {args.amount} to {args.recipient} ".format(r.json()))
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
 
