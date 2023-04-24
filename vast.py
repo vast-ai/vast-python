@@ -1079,7 +1079,7 @@ def _upload_zip(instance: typing.Any, src_zip_path: str, remote_path: str):
         print('Installing zip package...')
         _execute(ssh_client, 'apt-get install -y zip')
         print('Unzipping uploaded files...')
-        _execute(ssh_client, f'unzip {target_zip_path} -d {remote_path}')
+        _execute(ssh_client, f'unzip -o {target_zip_path} -d {remote_path}')
 
 
 def _scp_files(args, src_path: str, rel_src_paths: typing.List[str], instance: any, remote_path: str,
