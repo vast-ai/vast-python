@@ -35,6 +35,7 @@ except NameError:
 
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
+#server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -800,6 +801,32 @@ def create__instance(args: argparse.Namespace):
         print("Started. {}".format(r.json()))
 
 @parser.command(
+    argument("--email", help="email address to use for login", type=str),
+    argument("--username", help="username to use for login", type=str),
+    argument("--password", help="password to use for login", type=str),
+    argument("--type", help="host/client", type=str),
+    usage="./vast create subaccount --email EMAIL --username USERNAME --password PASSWORD --type TYPE",
+    help="Create a subaccount",
+)
+def create__subaccount(args):
+    """Creates a new account that is considered a child of your current account as defined via the API key.
+    """
+
+    url = apiurl(args, "/users/")
+    json_blob = {
+        "email": args.email,
+        "username": args.username,
+        "password": args.password,
+        "host_only": True if args.type.lower() == "host" else False,
+        "parent_id": "me"
+    }
+
+    r = requests.post(url, json=json_blob)
+    r.raise_for_status()
+
+
+
+@parser.command(
     argument("id", help="id of instance to delete", type=int),
     usage="./vast destroy instance id [-h] [--api-key API_KEY] [--raw]",
     help="Destroy an instance (irreversible, deletes data)",
@@ -848,6 +875,8 @@ def execute(args):
     """
     url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
     r = requests.put(url, json={"command": args.COMMAND} )
+    print(url)
+    print(args.COMMAND)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -859,7 +888,7 @@ def execute(args):
                 api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
                 #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
                 url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
-                #print(url)
+                print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
@@ -1393,6 +1422,28 @@ def show__user(args):
     else:
         display_table([user_blob], user_fields)
 
+@parser.command(
+    argument("-q", "--quiet", action="store_true", help="display subaccounts from current user"),
+    usage="./vast show subaccounts [OPTIONS]",
+    help="Get current subaccounts"
+)
+def show__subaccounts(args):
+    """
+    Shows stats for logged-in user. Does not show API key.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/subaccounts", {"owner": "me"});
+    print(f"URL: {req_url}")
+    print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh\n")
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()["users"]
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, user_fields)
 
 @parser.command(
     argument("recipient", help="email of recipient account", type=str),
@@ -1403,6 +1454,7 @@ def show__user(args):
         Transfer (amount) credits to account with email (recipient).
     """),
 )
+
 def transfer__credit(args: argparse.Namespace):
     url = apiurl(args, "/commands/transfer_credit/")
  
