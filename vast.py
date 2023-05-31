@@ -845,8 +845,9 @@ def destroy__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
     r.raise_for_status()
-
-    if (r.status_code == 200):
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    elif (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
             print("destroying instance {args.id}.".format(**(locals())));
