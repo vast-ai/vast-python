@@ -824,6 +824,12 @@ def create__subaccount(args):
     r = requests.post(url, json=json_blob)
     r.raise_for_status()
 
+    if (r.status_code == 200):
+        rj = r.json();
+        print(rj)
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
