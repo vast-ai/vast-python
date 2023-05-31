@@ -881,8 +881,6 @@ def execute(args):
     """
     url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
     r = requests.put(url, json={"command": args.COMMAND} )
-    print(url)
-    print(args.COMMAND)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -894,7 +892,6 @@ def execute(args):
                 api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
                 #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
                 url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
-                print(url)
                 r = requests.get(url);
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
@@ -1441,8 +1438,6 @@ def show__subaccounts(args):
     :rtype:
     """
     req_url = apiurl(args, "/subaccounts", {"owner": "me"});
-    print(f"URL: {req_url}")
-    print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh\n")
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["users"]
