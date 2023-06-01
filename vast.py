@@ -439,7 +439,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "total_flops",
         "verification",
         "verified",
-
+        "geolocation"
     };
 
     joined = "".join("".join(x) for x in opts)
@@ -476,8 +476,10 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
 
         if field in field_multiplier:
             value = str(float(value) * field_multiplier[field]);
-
-        v[op_name] = value.replace('_', ' ')
+        if isinstance(value, str):
+            v[op_name] = value.replace('_', ' ')
+        else:
+            v[op_name] = [v.replace('_', ' ') for v in value]
         res[field] = v;
 
     #print(res)
@@ -1108,6 +1110,7 @@ def stop__instance(args):
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
+            geolocation:            string    Two letter country code. Works with operators =, !=, in, not in (e.g. geolocation not in [XV,XZ])
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     GPU RAM in GB
@@ -1183,6 +1186,24 @@ def search__offers(args):
     r = requests.get(url);
     r.raise_for_status()
     rows = r.json()["offers"]
+    # TODO: add this post-query geolocation filter to the database call rather than handling it locally
+    if 'geolocation' in query:
+        geo_filter = query['geolocation']
+        filter_op = list(geo_filter.keys())[0]
+        geo_target = geo_filter[filter_op]
+        new_rows = []
+        for row in rows:
+            if row["geolocation"] is not None and ' ' in row["geolocation"]:
+                country_code = row["geolocation"].split(' ')[1][:2]
+                if filter_op == "eq" and country_code == geo_target:
+                    new_rows.append(row)
+                if filter_op == "neq" and country_code != geo_target:
+                    new_rows.append(row)
+                if filter_op == "in" and country_code in geo_target:
+                    new_rows.append(row)
+                if filter_op == "notin" and country_code not in geo_target:
+                    new_rows.append(row)  
+        rows = new_rows
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
