@@ -35,7 +35,7 @@ except NameError:
 
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
-#server_url_default = "http://localhost:5002"
+# server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -272,9 +272,8 @@ instance_fields = (
     ("inet_up", "Net up", "{:0.1f}", None, True),
     ("inet_down", "Net down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
-    ("label", "Label", "{}", None, True)
-
-    # ("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
+    ("label", "Label", "{}", None, True),
+    ("duration", "duration(sec)", "{:0.8f}",  lambda x: x/(60.0), True),
 )
 
 ipaddr_fields = (
@@ -1366,6 +1365,8 @@ def show__instances(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["instances"]
+    for row in rows:
+        row['duration'] = time.time() - row['start_date'] 
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
