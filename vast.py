@@ -178,6 +178,7 @@ def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
     new_d = {k: translate_nulls(v) for k, v in d.items()}
     return new_d
 
+    req_url = apiurl(args, "/instances", {"owner": "me"});
 
 def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
     """Creates the endpoint URL for a given combination of parameters.
@@ -187,6 +188,8 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
     :param typing.Dict query_args: specifics such as API key and search parameters that complete the URL.
     :rtype str:
     """
+    result = None
+
     if query_args is None:
         query_args = {}
     if args.api_key is not None:
@@ -200,11 +203,14 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         }
         '''
         # an_iterator = (<expression> for <l-expression> in <expression>)
-        return args.url + "/api/v0" + subpath + "?" + "&".join(
+        result = args.url + "/api/v0" + subpath + "?" + "&".join(
             "{x}={y}".format(x=x, y=quote_plus(y if isinstance(y, str) else json.dumps(y))) for x, y in
             query_args.items())
     else:
-        return args.url + "/api/v0" + subpath
+        result = args.url + "/api/v0" + subpath
+
+    print(result)
+    return result
 
 
 def deindent(message: str) -> str:
@@ -1341,6 +1347,7 @@ def show__instances(args):
     :rtype:
     """
     req_url = apiurl(args, "/instances", {"owner": "me"});
+    print(req_url)
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["instances"]
@@ -1780,13 +1787,14 @@ def parse_env(envs):
     prev = None
     for e in env:
         if (prev is None):
-          if ((e == "-e") or (e == "-p")):
+          if (e in {"-e", "-p", "-h"}):
               prev = e
           else:
+              print(result)
               return result
         else:
           if (prev == "-p"):
-            if set(e).issubset(set("0123456789:")):
+            if set(e).issubset(set("0123456789:tcp/udp")):
                 result["-p " + e] = "1"
             else:
                 return result
@@ -1797,7 +1805,11 @@ def parse_env(envs):
                 result[kv[0]] = kv[1]
             else:
                 return result
+          else:
+              result[prev] = e
           prev = None
+
+    print(result)
     return result
 
 
