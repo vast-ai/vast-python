@@ -194,6 +194,9 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         query_args = {}
     if args.api_key is not None:
         query_args["api_key"] = args.api_key
+    
+    query_json = None
+
     if query_args:
         # a_list      = [<expression> for <l-expression> in <expression>]
         '''
@@ -203,13 +206,22 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         }
         '''
         # an_iterator = (<expression> for <l-expression> in <expression>)
-        result = args.url + "/api/v0" + subpath + "?" + "&".join(
+
+        query_json = "&".join(
             "{x}={y}".format(x=x, y=quote_plus(y if isinstance(y, str) else json.dumps(y))) for x, y in
             query_args.items())
+        
+        result = args.url + "/api/v0" + subpath + "?" + query_json
     else:
         result = args.url + "/api/v0" + subpath
 
-    print(result)
+    if (args.explain):
+        print("query args:")
+        print(query_args)
+        print("")
+        print(f"base: {args.url + '/api/v0' + subpath + '?'} + query: ")
+        print(result)
+        print("")
     return result
 
 
@@ -584,11 +596,12 @@ def change__bid(args: argparse.Namespace):
     :rtype int:
     """
     url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.id))
-    print(f"URL: {url}")
-    r = requests.put(url, json={
-        "client_id": "me",
-        "price": args.price,
-    })
+
+    json_blob = {"client_id": "me", "price": args.price,}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
     print("Per gpu bid price changed".format(r.json()))
 
@@ -639,6 +652,9 @@ def copy(args: argparse.Namespace):
         "src_path": src_path,
         "dst_path": dst_path,
     }
+    if (args.explain):
+        print("request json: ")
+        print(req_json)
     r = requests.put(url, json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
@@ -800,6 +816,9 @@ def create__instance(args: argparse.Namespace):
     if (args.args != None):
      json_blob["args"] = args.args
 
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
     r = requests.put(url, json=json_blob)
     r.raise_for_status()
     if args.raw:
@@ -827,7 +846,9 @@ def create__subaccount(args):
         "host_only": True if args.type.lower() == "host" else False,
         "parent_id": "me"
     }
-
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
     r = requests.post(url, json=json_blob)
     r.raise_for_status()
 
@@ -888,7 +909,11 @@ def execute(args):
     :param argparse.Namespace args: should supply all the command-line options
     """
     url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
-    r = requests.put(url, json={"command": args.COMMAND} )
+    json_blob={"command": args.COMMAND} 
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob )
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -926,10 +951,12 @@ def label__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "label": args.label
-    })
+    url       = apiurl(args, "/instances/{id}/".format(id=args.id))
+    json_blob = { "label": args.label }
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
 
     rj = r.json();
@@ -952,10 +979,14 @@ def logs(args):
     """
     url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
     #url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.INSTANCE_ID))
-    json = {}
+    json_blob = {}
     if (args.tail):
-        json['tail'] = args.tail
-    r = requests.put(url, json=json )
+        json_blob['tail'] = args.tail
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+
+    r = requests.put(url, json=json_blob )
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1018,9 +1049,11 @@ def start__instance(args):
     :rtype:
     """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "state": "running"
-    })
+    json_blob ={"state": "running"}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1046,9 +1079,11 @@ def stop__instance(args):
     :rtype:
     """
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.put(url, json={
-        "state": "stopped"
-    })
+    json_blob ={"state": "stopped"}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1368,7 +1403,6 @@ def show__instances(args):
     :rtype:
     """
     req_url = apiurl(args, "/instances", {"owner": "me"});
-    print(req_url)
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["instances"]
@@ -1494,11 +1528,15 @@ def transfer__credit(args: argparse.Namespace):
     if ok.strip().lower() != "y":
         return
 
-    r = requests.put(url, json={
+    json_blob = {
         "sender":    "me",
         "recipient": args.recipient,
         "amount":    args.amount,
-    })
+    }
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1683,11 +1721,15 @@ def list__machine(args):
     :rtype:
     """
     req_url = apiurl(args, "/machines/create_asks/")
-    r = requests.put(req_url, json={'machine': args.id, 'price_gpu': args.price_gpu,
+
+    json_blob = {'machine': args.id, 'price_gpu': args.price_gpu,
                                     'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
                                     'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
-                                    'end_date': args.end_date})
-
+                                    'end_date': args.end_date}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(req_url, json=json_blob)
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
@@ -1784,10 +1826,12 @@ def set__defjob(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, "/machines/create_bids/");
-    print(f"URL:{req_url}")
-    r = requests.put(req_url, json={'machine': args.id, 'price_gpu': args.price_gpu, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd, 'image': args.image, 'args': args.args});
-
+    req_url   = apiurl(args, "/machines/create_bids/");
+    json_blob = {'machine': args.id, 'price_gpu': args.price_gpu, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd, 'image': args.image, 'args': args.args}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(req_url, json=json_blob)
     if (r.status_code == 200):
 
         rj = r.json();
@@ -1832,7 +1876,7 @@ def parse_env(envs):
               result[prev] = e
           prev = None
 
-    print(result)
+    #rint(result)
     return result
 
 
@@ -1867,15 +1911,11 @@ def set__min_bid(args):
     :rtype:
     """
     url = apiurl(args, "/machines/{id}/minbid/".format(id=args.id))
-    #print(url)
-
-    r = requests.put(url, json={"client_id": "me", "price": args.price,})
-    #prepared = req.prepare()
-    #pretty_print_POST(prepared)
-    #print(r.request.url)
-    #print(r.request.body)
-    #print(r.request.headers)
-
+    json_blob = {"client_id": "me", "price": args.price,}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
     print("Per gpu min bid price changed".format(r.json()))
 
@@ -1905,7 +1945,11 @@ def schedule__maint(args):
     if ok.strip().lower() != "y":
         return
 
-    r = requests.put(url, json={"client_id": "me", "sdate": args.sdate, "duration": args.duration})
+    json_blob = {"client_id": "me", "sdate": args.sdate, "duration": args.duration}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
     print(f"Maintenance window scheduled for {dt} success".format(r.json()))
 
@@ -1920,7 +1964,11 @@ def reset__api_key(args):
     print('fml')
     #url = apiurl(args, "/users/current/reset-apikey/", {"owner": "me"})
     url = apiurl(args, "/commands/reset_apikey/" )
-    r = requests.put(url, json={"client_id": "me",})
+    json_blob = {"client_id": "me",}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
@@ -1966,6 +2014,7 @@ def login(args):
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json");
+    parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints");
     parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
 
 
