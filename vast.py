@@ -35,7 +35,7 @@ except NameError:
 
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
-#server_url_default = "http://localhost:5002"
+# server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -278,9 +278,8 @@ instance_fields = (
     ("inet_up", "Net up", "{:0.1f}", None, True),
     ("inet_down", "Net down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
-    ("label", "Label", "{}", None, True)
-
-    # ("duration",            "Max Days", "{:0.1f}",  lambda x: x/(24.0*60.0*60.0), True),
+    ("label", "Label", "{}", None, True),
+    ("duration", "duration(sec)", "{:0.8f}",  lambda x: x/(60.0), True),
 )
 
 ipaddr_fields = (
@@ -445,7 +444,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "total_flops",
         "verification",
         "verified",
-
+        "geolocation"
     };
 
     joined = "".join("".join(x) for x in opts)
@@ -482,8 +481,10 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
 
         if field in field_multiplier:
             value = str(float(value) * field_multiplier[field]);
-
-        v[op_name] = value.replace('_', ' ')
+        if isinstance(value, str):
+            v[op_name] = value.replace('_', ' ')
+        else:
+            v[op_name] = [v.replace('_', ' ') for v in value]
         res[field] = v;
 
     #print(res)
@@ -851,8 +852,9 @@ def destroy__instance(args):
     url = apiurl(args, "/instances/{id}/".format(id=args.id))
     r = requests.delete(url, json={})
     r.raise_for_status()
-
-    if (r.status_code == 200):
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    elif (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
             print("destroying instance {args.id}.".format(**(locals())));
@@ -1114,6 +1116,7 @@ def stop__instance(args):
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
+            geolocation:            string    Two letter country code. Works with operators =, !=, in, not in (e.g. geolocation not in [XV,XZ])
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     GPU RAM in GB
@@ -1189,6 +1192,24 @@ def search__offers(args):
     r = requests.get(url);
     r.raise_for_status()
     rows = r.json()["offers"]
+    # TODO: add this post-query geolocation filter to the database call rather than handling it locally
+    if 'geolocation' in query:
+        geo_filter = query['geolocation']
+        filter_op = list(geo_filter.keys())[0]
+        geo_target = geo_filter[filter_op]
+        new_rows = []
+        for row in rows:
+            if row["geolocation"] is not None and ' ' in row["geolocation"]:
+                country_code = row["geolocation"].split(' ')[1][:2]
+                if filter_op == "eq" and country_code == geo_target:
+                    new_rows.append(row)
+                if filter_op == "neq" and country_code != geo_target:
+                    new_rows.append(row)
+                if filter_op == "in" and country_code in geo_target:
+                    new_rows.append(row)
+                if filter_op == "notin" and country_code not in geo_target:
+                    new_rows.append(row)  
+        rows = new_rows
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
@@ -1351,6 +1372,8 @@ def show__instances(args):
     r = requests.get(req_url);
     r.raise_for_status()
     rows = r.json()["instances"]
+    for row in rows:
+        row['duration'] = time.time() - row['start_date'] 
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
