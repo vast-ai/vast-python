@@ -921,10 +921,10 @@ def execute(args):
         if (rj["success"]):
             for i in range(0,30):
                 time.sleep(0.3)
-                #url = args.url + "/static/docker_logs/C" + str(args.ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-                api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
-                #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.ID) + "C.log"
-                url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
+                url = rj.get("result_url",None)
+                if (url is None):
+                    api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
+                    url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
                 r = requests.get(url);
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
@@ -1010,6 +1010,35 @@ def logs(args):
 
 
 
+@parser.command(
+    argument("id", help="id of instance to prepay for", type=int),
+    argument("amount", help="amount of instance credit prepayment (discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
+    usage="./vast prepay instance <id> <amount>",
+    help="Purchase credits in advance for an instance to lock in a prepayment discount.",
+)
+def prepay__instance(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url       = apiurl(args, "/instances/prepay/{id}/".format(id=args.id))
+    json_blob = { "amount": args.amount }
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
+    r.raise_for_status()
+
+    rj = r.json();
+    if rj["success"]:
+        timescale = round( rj["timescale"], 3)
+        discount_rate = 100.0*round( rj["discount_rate"], 3)
+        print("prepaid for {timescale} months of instance {args.id} applying ${args.amount} credits for a discount of {discount_rate}%.".format(**(locals())));
+    else:
+        print(rj["msg"]);
+
+'''
+'''
 
 
 @parser.command(
