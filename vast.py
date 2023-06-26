@@ -1012,7 +1012,7 @@ def logs(args):
 
 @parser.command(
     argument("id", help="id of instance to prepay for", type=int),
-    argument("amount", help="amount of instance credit prepayment (discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
+    argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
     usage="./vast prepay instance <id> <amount>",
     help="Purchase credits in advance for an instance to lock in a prepayment discount.",
 )
@@ -1737,6 +1737,7 @@ def generate__pdf_invoices(args):
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
     argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
+    argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 (40%)", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
     usage="./vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
@@ -1752,9 +1753,9 @@ def list__machine(args):
     req_url = apiurl(args, "/machines/create_asks/")
 
     json_blob = {'machine': args.id, 'price_gpu': args.price_gpu,
-                                    'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
-                                    'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
-                                    'end_date': args.end_date}
+                        'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
+                        'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
+                        'end_date': args.end_date, 'credit_discount_max': args.discount_rate}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -1767,8 +1768,9 @@ def list__machine(args):
             price_inetd_ = str(args.price_inetd);
             min_chunk_ = str(args.min_chunk);
             end_date_ = str(args.end_date);
+            discount_rate_ = str(args.discount_rate)
             print(
-                "offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, till {end_date_}".format(
+                "offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, max discount_rate {discount_rate_}, till {end_date_}".format(
                     **locals()));
         else:
             print(rj["msg"]);
