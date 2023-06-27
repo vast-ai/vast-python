@@ -1737,7 +1737,7 @@ def generate__pdf_invoices(args):
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
     argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
-    argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 (40%)", type=float),
+    argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
     usage="./vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
