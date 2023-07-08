@@ -409,7 +409,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
     field_multiplier = {
         "cpu_ram": 1000,
         "gpu_ram": 1000,
-        "duration": 1.0 / (24.0 * 60.0 * 60.0),
+        "duration": 24.0 * 60.0 * 60.0,
     }
 
     fields = {
@@ -492,11 +492,19 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
             continue
 
         if field in field_multiplier:
-            value = str(float(value) * field_multiplier[field]);
-        if isinstance(value, str):
-            v[op_name] = value.replace('_', ' ')
+            value = float(value) * field_multiplier[field]
+
+            if isinstance(value, str):
+                v[op_name] = value.replace('_', ' ')
+            else:
+                v[op_name] = value
+
         else:
-            v[op_name] = [v.replace('_', ' ') for v in value]
+            if isinstance(value, str):
+                v[op_name] = value.replace('_', ' ')
+            else:
+                v[op_name] = [v.replace('_', ' ') for v in value]
+
         res[field] = v;
 
     #print(res)
@@ -1014,7 +1022,7 @@ def logs(args):
     argument("id", help="id of instance to prepay for", type=int),
     argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
     usage="./vast prepay instance <id> <amount>",
-    help="Purchase credits in advance for an instance to lock in a prepayment discount.",
+    help="Deposit credits into reserved instance.",
 )
 def prepay__instance(args):
     """
@@ -1128,9 +1136,10 @@ def stop__instance(args):
 
 
 @parser.command(
-    argument("-t", "--type", default="on-demand", help="Show 'bid'(interruptible) or 'on-demand' offers. default: on-demand"),
+    argument("-t", "--type", default="on-demand", help="Show 'on-demand', 'reserved', or 'bid'(interruptible) pricing. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
+    argument("-r", "--reserved", dest="type", const="reserved", action="store_const", help="Alias for --type=reserved"),
     argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
     argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
@@ -1251,7 +1260,7 @@ def search__offers(args):
     except ValueError as e:
         print("Error: ", e)
         return 1
-
+    
     url = apiurl(args, "/bundles", {"q": query})
     r = requests.get(url);
     r.raise_for_status()
@@ -1956,7 +1965,7 @@ def set__min_bid(args):
     argument("--sdate",      help="maintenance start date in unix epoch time (UTC seconds)", type=float),
     argument("--duration",   help="maintenance duration in hours", type=float),
     usage="./vast schedule maintenance id [--sdate START_DATE --duration DURATION]",
-    help="[Host] Schedule an upcoming maintenance window for a machine, notifying active clients",
+    help="[Host] Schedule upcoming maint window",
     epilog=deindent("""
         Example: ./vast.py schedule maint 8207 --sdate 1677562671 --duration 0.5
     """),
