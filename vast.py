@@ -251,7 +251,7 @@ displayable_fields = (
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
-    ("dph_total", "$/hr", "{:0.4f}", None, True),
+    ("discounted_dph_total", "$/hr", "{:0.4f}", None, True),
     ("dlperf", "DLP", "{:0.1f}", None, True),
     ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
     ("driver_version", "NV Driver", "{}", None, True),
@@ -1290,8 +1290,8 @@ def search__offers(args):
 
 
 @parser.command(
-    argument("--id", help="id of instance", type=int),
-    usage="./vast ssh-url",
+    argument("id", help="id of instance", type=int),
+    usage="./vast ssh-url ID",
     help="ssh url helper",
 )
 def ssh_url(args):
@@ -1304,8 +1304,8 @@ def ssh_url(args):
 
 
 @parser.command(
-    argument("--id", help="id of instance", type=int),
-    usage="./vast scp-url",
+    argument("id",   help="id", type=int),
+    usage="./vast scp-url ID",
     help="scp url helper",
 )
 def scp_url(args):
@@ -1318,18 +1318,54 @@ def scp_url(args):
 
 
 def _ssh_url(args, protocol):
-    req_url = apiurl(args, "/instances", {"owner": "me"});
-    r = requests.get(req_url);
-    r.raise_for_status()
-    rows = r.json()["instances"]
-    if args.id:
-        instance, = [r for r in rows if r['id'] == args.id]
-    elif len(rows) > 1:
-        print("Found multiple running instances")
-        return 1
-    else:
-        instance, = rows
-    print(f'{protocol}root@{instance["ssh_host"]}:{instance["ssh_port"]}')
+
+    json_object = None
+
+    # Opening JSON file
+    try:
+        with open(f"ssh_{args.id}.json", 'r') as openfile:
+            json_object = json.load(openfile)
+    except:
+        pass
+
+    port      = None
+    ipaddr    = None
+
+    if json_object is not None:
+        ipaddr = json_object["ipaddr"]
+        port   = json_object["port"]
+
+    if ipaddr is None:
+        req_url = apiurl(args, "/instances", {"owner": "me"});
+        r = requests.get(req_url);
+        r.raise_for_status()
+        rows = r.json()["instances"]
+        if args.id:
+            instance, = [r for r in rows if r['id'] == args.id]
+        elif len(rows) > 1:
+            print("Found multiple running instances")
+            return 1
+        else:
+            instance, = rows
+
+        ports     = instance.get("ports",{})
+        port_22d  = ports.get("22/tcp",None)
+        if (port_22d is not None):
+            ipaddr = instance["public_ipaddr"]
+            port   = port_22d[0]["HostPort"]
+        else:        
+            ipaddr = instance["ssh_host"]
+            port   = int(instance["ssh_port"])+1
+
+    print(f'{protocol}root@{ipaddr}:{port}')
+
+   
+    # Writing to sample.json
+    try:
+        with open(f"ssh_{args.id}.json", "w") as outfile:
+            json.dump({"ipaddr":ipaddr, "port":port}, outfile)
+    except:
+        pass
 
 
 @parser.command(
