@@ -1922,11 +1922,34 @@ def set__defjob(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+def smart_split(s, char):
+    in_quotes = False
+    parts = []
+    current = []
+
+    for c in s:
+        if c == char and not in_quotes:
+            parts.append(''.join(current))
+            current = []
+        elif c == '"':
+            in_quotes = not in_quotes
+            current.append(c)
+        else:
+            current.append(c)
+
+    parts.append(''.join(current))  # add last part
+
+    return parts
+
+
+
 def parse_env(envs):
     result = {}
     if (envs is None):
         return result
-    env  = envs.split(' ')
+    #env  = envs.split(' ')
+    env = smart_split(envs,' ')
+    print(env)
     prev = None
     for e in env:
         if (prev is None):
@@ -1942,17 +1965,17 @@ def parse_env(envs):
             else:
                 return result
           elif (prev == "-e"):
-            e = e.strip(" '\"")
             if True: #set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
                 kv = e.split('=')
-                result[kv[0]] = kv[1]
+                val = kv[1].strip("'\"")
+                result[kv[0]] = val
             else:
                 return result
           else:
               result[prev] = e
           prev = None
 
-    #rint(result)
+    print(result)
     return result
 
 
