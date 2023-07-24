@@ -860,6 +860,8 @@ def create__instance(args: argparse.Namespace):
 
     #print(f"put asks/{args.id}/  runtype:{runtype}")
     url = apiurl(args, "/asks/{id}/".format(id=args.id))
+
+    #print(".")
     json_blob ={
         "client_id": "me",
         "image": args.image,
@@ -878,6 +880,7 @@ def create__instance(args: argparse.Namespace):
         "create_from": args.create_from,
         "force": args.force
     }
+    #print("..")
 
     #print(args.args)
 
@@ -2031,14 +2034,14 @@ def parse_env(envs):
         return result
     #env  = envs.split(' ')
     env = smart_split(envs,' ')
-    print(env)
+    #print(env)
     prev = None
     for e in env:
         if (prev is None):
           if (e in {"-e", "-p", "-h"}):
               prev = e
           else:
-              print(result)
+              #print(result)
               return result
         else:
           if (prev == "-p"):
@@ -2057,7 +2060,7 @@ def parse_env(envs):
               result[prev] = e
           prev = None
 
-    print(result)
+    #print(result)
     return result
 
 
