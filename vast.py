@@ -35,7 +35,7 @@ except NameError:
 
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
-# server_url_default = "http://localhost:5002"
+#server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -341,6 +341,11 @@ user_fields = (
     ("username", "Username", "{}", None, True)
 )
 
+connection_fields = (
+    ("id", "ID", "{}", None, True),
+    ("name", "NAME", "{}", None, True),
+    ("cloud_type", "Cloud Type", "{}", None, True),
+)
 
 def version_string_sort(a, b) -> int:
     """
@@ -740,7 +745,62 @@ def cancel__copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+@parser.command(
+    argument("--src", help="path to source of object to copy.", type=str),
+    argument("--dst", help="path to target of copy operation.", type=str, default="/workspace"),
+    argument("--instance", help="id of the instance", type=str),
+    argument("--connection", help="id of cloud connection on your account", type=str),
+    argument("--transfer", help="type of transfer, possible options include Instance To Cloud and Cloud To Instance", type=str, default="Instance to Cloud"),
+    usage="./vast cloud_copy SRC DST CLOUD_SERVICE INSTANCE_ID CLOUD_SERVICE_SELECTED TRANSFER",
+    help=" Copy files/folders to and from cloud providers",
+    epilog=deindent("""
+        Copies a directory from a source location to a target location. Each of source and destination
+        directories can be either local or remote, subject to appropriate read and write
+        permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
+        Examples:
+         vast cloud_copy --src folder --dst /workspace --cloud_service "Amazon S3" --instance_id 6003036 --cloud_service_selected 52 --transfer "Instance To Cloud"
 
+        The example copies all contents of /folder into /workspace on instance 6003036 from Amazon S3.
+    """),
+)
+def cloud__copy(args: argparse.Namespace):
+    """
+    Transfer data from one instance to another.
+
+    @param src: Location of data object to be copied.
+    @param dst: Target to copy object to.
+    """
+
+    url = apiurl(args, f"/commands/rclone/")
+    #(src_id, src_path) = parse_vast_url(args.src)
+    #(dst_id, dst_path) = parse_vast_url(args.dst)
+    if (args.src is None) and (args.dst is None):
+        print("invalid arguments")
+        return
+
+    print(f"copying {args.src} {args.dst} {args.instance} {args.connection} {args.transfer}")
+
+    req_json = {
+        "src": args.src,
+        "dst": args.dst,
+        "instance_id": args.instance,
+        "selected": args.connection,
+        "transfer": args.transfer
+    }
+
+    if (args.explain):
+        print("request json: ")
+        print(req_json)
+    
+    r = requests.post(url, json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        print("Cloud Copy Started - check instance status bar for progress updates (~30 seconds delayed).")
+        print("When the operation is finished you should see 'Cloud Cody Operation Finished' in the instance status bar.")  
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+    
 
 
 @parser.command(
@@ -1486,6 +1546,28 @@ def show__instances(args):
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
         display_table(rows, instance_fields)
+
+@parser.command(
+    usage="./vast show connections [--api-key API_KEY] [--raw]",
+    help="Displays user's cloud connections"
+)
+def show__connections(args):
+    """
+    Shows the stats on the machine the user is renting.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/users/cloud_integrations/");
+    print(req_url)
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()
+
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, connection_fields)
 
 
 @parser.command(
