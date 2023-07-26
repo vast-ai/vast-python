@@ -453,6 +453,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "rentable",
         "rented",
         "storage_cost",
+        "static_ip",
         "total_flops",
         "verification",
         "verified",
@@ -500,7 +501,12 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
                 v[op_name] = value
 
         else:
-            if isinstance(value, str):
+            print(value)
+            if value == 'true':
+                v[op_name] = True
+            elif value == 'False':
+                v[op_name] = False
+            elif isinstance(value, str):
                 v[op_name] = value.replace('_', ' ')
             else:
                 v[op_name] = [v.replace('_', ' ') for v in value]
@@ -1213,6 +1219,7 @@ def stop__instance(args):
             rentable:               bool      is the instance currently rentable
             rented:                 bool      is the instance currently rented
             storage_cost:           float     storage cost in $/GB/month
+            static_ip:              bool      is the IP addr static/stable
             total_flops:            float     total TFLOPs from all GPUs
             verified:               bool      is the machine verified
     """),
