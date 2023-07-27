@@ -501,7 +501,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
                 v[op_name] = value
 
         else:
-            print(value)
+            #print(value)
             if value == 'true':
                 v[op_name] = True
             elif value == 'False':
