@@ -1365,7 +1365,7 @@ def _ssh_url(args, protocol):
             port   = port_22d[0]["HostPort"]
         else:        
             ipaddr = instance["ssh_host"]
-            port   = int(instance["ssh_port"])+1
+            port   = int(instance["ssh_port"])
 
     print(f'{protocol}root@{ipaddr}:{port}')
 
