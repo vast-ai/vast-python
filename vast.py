@@ -69,6 +69,18 @@ class hidden_aliases(object):
         self.l.append(x)
 
 
+def http_get(args, req_url):
+    t = 0.1
+    for i in range(0, args.retry):
+        r = requests.get(req_url)
+        if (r.status_code == 429):
+            time.sleep(t)
+            t *= 1.5
+        else:
+            break
+    return r
+
+
 class apwrap(object):
     def __init__(self, *args, **kwargs):
         kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
@@ -458,6 +470,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "rentable",
         "rented",
         "storage_cost",
+        "static_ip",
         "total_flops",
         "verification",
         "verified",
@@ -505,7 +518,12 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
                 v[op_name] = value
 
         else:
-            if isinstance(value, str):
+            #print(value)
+            if value == 'true':
+                v[op_name] = True
+            elif value == 'False':
+                v[op_name] = False
+            elif isinstance(value, str):
                 v[op_name] = value.replace('_', ' ')
             else:
                 v[op_name] = [v.replace('_', ' ') for v in value]
@@ -1273,6 +1291,7 @@ def stop__instance(args):
             rentable:               bool      is the instance currently rentable
             rented:                 bool      is the instance currently rented
             storage_cost:           float     storage cost in $/GB/month
+            static_ip:              bool      is the IP addr static/stable
             total_flops:            float     total TFLOPs from all GPUs
             verified:               bool      is the machine verified
     """),
@@ -1400,7 +1419,7 @@ def _ssh_url(args, protocol):
 
     if ipaddr is None:
         req_url = apiurl(args, "/instances", {"owner": "me"});
-        r = requests.get(req_url);
+        r = http_get(args, req_url);
         r.raise_for_status()
         rows = r.json()["instances"]
         if args.id:
@@ -1483,7 +1502,7 @@ def show__earnings(args):
 
 
     req_url = apiurl(args, "/users/me/machine-earnings", {"owner": "me", "sday": sday, "eday": eday, "machid" :args.machine_id});
-    r = requests.get(req_url)
+    r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()
 
@@ -1509,7 +1528,7 @@ def show__invoices(args):
     :rtype:
     """
     req_url = apiurl(args, "/users/me/invoices", {"owner": "me", "inc_charges" : not args.only_credits});
-    r = requests.get(req_url)
+    r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()["invoices"]
     # print("Timestamp for first row: ", rows[0]["timestamp"])
@@ -1540,7 +1559,8 @@ def show__instances(args):
     :rtype:
     """
     req_url = apiurl(args, "/instances", {"owner": "me"});
-    r = requests.get(req_url);
+    #r = requests.get(req_url)
+    r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
     for row in rows:
@@ -1586,7 +1606,7 @@ def show__ipaddrs(args):
     """
 
     req_url = apiurl(args, "/users/me/ipaddrs", {"owner": "me"});
-    r = requests.get(req_url);
+    r = http_get(args, req_url);
     r.raise_for_status()
     rows = r.json()["results"]
     if args.raw:
@@ -1608,7 +1628,7 @@ def show__machines(args):
     :rtype:
     """
     req_url = apiurl(args, "/machines", {"owner": "me"});
-    r = requests.get(req_url);
+    r = http_get(args, req_url);
     r.raise_for_status()
     rows = r.json()["machines"]
     if args.raw:
@@ -1638,7 +1658,7 @@ def show__user(args):
     req_url = apiurl(args, "/users/current", {"owner": "me"});
     print(f"URL: {req_url}")
     print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh\n")
-    r = requests.get(req_url);
+    r = http_get(args, req_url);
     r.raise_for_status()
     user_blob = r.json()
     user_blob.pop("api_key")
@@ -1661,7 +1681,7 @@ def show__subaccounts(args):
     :rtype:
     """
     req_url = apiurl(args, "/subaccounts", {"owner": "me"});
-    r = requests.get(req_url);
+    r = http_get(args, req_url);
     r.raise_for_status()
     rows = r.json()["users"]
     if args.raw:
@@ -1846,7 +1866,7 @@ def generate__pdf_invoices(args):
     invoice_filter_data = filter_invoice_items(args, rows_inv)
     rows_inv = invoice_filter_data["rows"]
     req_url = apiurl(args, "/users/current", {"owner": "me"})
-    r = requests.get(req_url)
+    r = http_get(args, req_url)
     r.raise_for_status()
     user_blob = r.json()
     user_blob = translate_null_strings_to_blanks(user_blob)
@@ -2197,8 +2217,9 @@ def login(args):
 
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
-    parser.add_argument("--raw", action="store_true", help="output machine-readable json");
-    parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints");
+    parser.add_argument("--retry", help="retry limit", default=3)
+    parser.add_argument("--raw", action="store_true", help="output machine-readable json")
+    parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
     parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
 
 
