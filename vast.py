@@ -263,6 +263,31 @@ displayable_fields = (
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
+    ("dph_total", "$/hr", "{:0.4f}", None, True),
+    ("dlperf", "DLP", "{:0.1f}", None, True),
+    ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
+    ("driver_version", "NV Driver", "{}", None, True),
+    ("inet_up", "Net_up", "{:0.1f}", None, True),
+    ("inet_down", "Net_down", "{:0.1f}", None, True),
+    ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
+    ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
+    ("machine_id", "mach_id", "{}", None, True),
+    ("verification", "status", "{}", None, True),
+    ("direct_port_count", "ports", "{}", None, True),
+    ("geolocation", "country", "{}", None, True),
+   #  ("direct_port_count", "Direct Port Count", "{}", None, True),
+)
+
+displayable_fields_reserved = (
+    # ("bw_nvlink", "Bandwidth NVLink", "{}", None, True),
+    ("id", "ID", "{}", None, True),
+    ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
+    ("num_gpus", "N", "{}x", None, False),
+    ("gpu_name", "Model", "{}", None, True),
+    ("pcie_bw", "PCIE", "{:0.1f}", None, True),
+    ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
+    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
+    ("disk_space", "Disk", "{:.0f}", None, True),
     ("discounted_dph_total", "$/hr", "{:0.4f}", None, True),
     ("dlperf", "DLP", "{:0.1f}", None, True),
     ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
@@ -1308,7 +1333,10 @@ def search__offers(args):
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
-        display_table(rows, displayable_fields)
+        if args.type == "reserved":           
+            display_table(rows, displayable_fields_reserved)
+        else:
+            display_table(rows, displayable_fields)
 
 
 @parser.command(
