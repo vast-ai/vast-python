@@ -1576,7 +1576,8 @@ def show__instance(args):
     r = http_get(args, req_url)
     r.raise_for_status()
     row = r.json()["instances"]
-    row['duration'] = time.time() - row['start_date'] 
+    row['duration'] = time.time() - row['start_date']
+    row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
     if args.raw:
         print(json.dumps(row, indent=1, sort_keys=True))
     else:
@@ -1600,7 +1601,8 @@ def show__instances(args):
     r.raise_for_status()
     rows = r.json()["instances"]
     for row in rows:
-        row['duration'] = time.time() - row['start_date'] 
+        row['duration'] = time.time() - row['start_date']
+        row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
