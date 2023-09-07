@@ -788,6 +788,49 @@ def cancel__copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+
+@parser.command(
+    argument("dst", help="instance_id:/path to target of sync operation.", type=str),
+    usage="vastai cancel sync DST",
+    help=" Cancel a remote copy in progress, specified by DST id",
+    epilog=deindent("""
+        Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
+        Examples:
+         vast cancel sync 12371
+
+        The first example cancels all copy operations currently copying data into instance 12371
+
+    """),
+)
+def cancel__sync(args: argparse.Namespace):
+    """
+    Cancel a remote cloud sync in progress, specified by DST id"
+
+    @param dst: ID of cloud sync instance Target to cancel.
+    """
+
+    url = apiurl(args, f"/commands/rclone/")
+    dst_id = args.dst
+    if (dst_id is None):
+        print("invalid arguments")
+        return
+
+    print(f"canceling remote copies to {dst_id} ")
+
+    req_json = { "client_id": "me", "dst_id": dst_id, }
+    r = requests.delete(url, json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
 @parser.command(
     argument("--src", help="path to source of object to copy.", type=str),
     argument("--dst", help="path to target of copy operation.", type=str, default="/workspace"),
@@ -844,47 +887,6 @@ def cloud__copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
     
-@parser.command(
-    argument("dst", help="instance_id:/path to target of sync operation.", type=str),
-    usage="vastai cancel sync DST",
-    help=" Cancel a remote copy in progress, specified by DST id",
-    epilog=deindent("""
-        Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
-        Examples:
-         vast cancel sync 12371
-
-        The first example cancels all copy operations currently copying data into instance 12371
-
-    """),
-)
-def cancel__sync(args: argparse.Namespace):
-    """
-    Cancel a remote cloud sync in progress, specified by DST id"
-
-    @param dst: ID of cloud sync instance Target to cancel.
-    """
-
-    url = apiurl(args, f"/commands/rclone/")
-    dst_id = args.dst
-    if (dst_id is None):
-        print("invalid arguments")
-        return
-
-    print(f"canceling remote copies to {dst_id} ")
-
-    req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, json=req_json)
-    r.raise_for_status()
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
 
 @parser.command(
     argument("id", help="id of instance type to launch", type=int),
@@ -1014,6 +1016,23 @@ def create__subaccount(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+def destroy_instance(id,args):
+    url = apiurl(args, "/instances/{id}/".format(id=id))
+    r = requests.delete(url, json={})
+    r.raise_for_status()
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    elif (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("destroying instance {id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
 @parser.command(
     argument("id", help="id of instance to delete", type=int),
     usage="vastai destroy instance id [-h] [--api-key API_KEY] [--raw]",
@@ -1024,20 +1043,19 @@ def destroy__instance(args):
 
     :param argparse.Namespace args: should supply all the command-line options
     """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    r = requests.delete(url, json={})
-    r.raise_for_status()
-    if args.raw:
-        print(json.dumps(r.json(), indent=1))
-    elif (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("destroying instance {args.id}.".format(**(locals())));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+    destroy_instance(args.id,args)
+
+@parser.command(
+    argument("ids", help="ids of instance to destroy", type=int, nargs='+'),
+    usage="vastai destroy instances [--raw] <id>",
+    help="Destroy a list of instances (irreversible, deletes data)",
+)
+def destroy__instances(args):
+    """
+    """
+    for id in args.ids:
+        destroy_instance(id, args)
+
 
 @parser.command(
     argument("ID", help="id of instance to execute on", type=int),
@@ -1220,6 +1238,25 @@ def reboot__instance(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+def start_instance(id,args):
+    url = apiurl(args, "/instances/{id}/".format(id=id))
+    json_blob ={"state": "running"}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("starting instance {id}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
 @parser.command(
     argument("id", help="id of instance to start/restart", type=int),
     usage="vastai start instance <id> [--raw]",
@@ -1231,8 +1268,23 @@ def start__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    json_blob ={"state": "running"}
+    start_instance(args.id,args)
+
+@parser.command(
+    argument("ids", help="ids of instance to start", type=int, nargs='+'),
+    usage="vastai start instances [--raw] <id>",
+    help="Start a list of instances",
+)
+def start__instances(args):
+    """
+    """
+    for id in args.ids:
+        start_instance(id, args)
+
+
+def stop_instance(id,args):
+    url = apiurl(args, "/instances/{id}/".format(id=id))
+    json_blob ={"state": "stopped"}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -1242,7 +1294,7 @@ def start__instance(args):
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print("starting instance {args.id}.".format(**(locals())));
+            print("stopping instance {id}.".format(**(locals())));
         else:
             print(rj["msg"]);
     else:
@@ -1261,24 +1313,19 @@ def stop__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/instances/{id}/".format(id=args.id))
-    json_blob ={"state": "stopped"}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = requests.put(url, json=json_blob)
-    r.raise_for_status()
+    stop_instance(args.id,args)
 
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("stopping instance {args.id}.".format(**(locals())));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+@parser.command(
+    argument("ids", help="ids of instance to stop", type=int, nargs='+'),
+    usage="vastai stop instance [--raw] <id>",
+    help="Stop a list of instances",
+)
+def stop__instances(args):
+    """
+    """
 
+    for id in args.ids:
+        stop_instance(id, args)
 
 
 @parser.command(
@@ -1605,8 +1652,12 @@ def show__invoices(args):
     filter_header = invoice_filter_data["header_text"]
 
     current_charges = r.json()["current"]
-
-    if args.raw:
+    if args.quiet:
+        for row in rows:
+            id = row.get("id", None)
+            if id is not None:
+                print(id)
+    elif args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
         # print("Current: ", current_charges)
     else:
@@ -1644,7 +1695,8 @@ def show__instance(args):
         display_table([row], instance_fields)
 
 @parser.command(
-    usage="vastai show instances [--api-key API_KEY] [--raw]",
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    usage="vastai show instances [OPTIONS] [--api-key API_KEY] [--raw]",
     help="Display user's current instances"
 )
 def show__instances(args):
@@ -1662,7 +1714,13 @@ def show__instances(args):
     for row in rows:
         row['duration'] = time.time() - row['start_date']
         row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
-    if args.raw:
+
+    if args.quiet:
+        for row in rows:
+            id = row.get("id", None)
+            if id is not None:
+                print(id)
+    elif args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
         display_table(rows, instance_fields)
