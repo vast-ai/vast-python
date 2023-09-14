@@ -263,6 +263,31 @@ displayable_fields = (
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
+    ("dph_total", "$/hr", "{:0.4f}", None, True),
+    ("dlperf", "DLP", "{:0.1f}", None, True),
+    ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
+    ("driver_version", "NV Driver", "{}", None, True),
+    ("inet_up", "Net_up", "{:0.1f}", None, True),
+    ("inet_down", "Net_down", "{:0.1f}", None, True),
+    ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
+    ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
+    ("machine_id", "mach_id", "{}", None, True),
+    ("verification", "status", "{}", None, True),
+    ("direct_port_count", "ports", "{}", None, True),
+    ("geolocation", "country", "{}", None, True),
+   #  ("direct_port_count", "Direct Port Count", "{}", None, True),
+)
+
+displayable_fields_reserved = (
+    # ("bw_nvlink", "Bandwidth NVLink", "{}", None, True),
+    ("id", "ID", "{}", None, True),
+    ("cuda_max_good", "CUDA", "{:0.1f}", None, True),
+    ("num_gpus", "N", "{}x", None, False),
+    ("gpu_name", "Model", "{}", None, True),
+    ("pcie_bw", "PCIE", "{:0.1f}", None, True),
+    ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
+    ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
+    ("disk_space", "Disk", "{:.0f}", None, True),
     ("discounted_dph_total", "$/hr", "{:0.4f}", None, True),
     ("dlperf", "DLP", "{:0.1f}", None, True),
     ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
@@ -303,7 +328,7 @@ instance_fields = (
     ("inet_down", "Net down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("label", "Label", "{}", None, True),
-    ("duration", "duration(sec)", "{:0.8f}",  lambda x: x/(60.0), True),
+    ("duration", "duration(sec)", "{:0.2f}",  lambda x: x/(60.0), True),
 )
 
 ipaddr_fields = (
@@ -613,7 +638,7 @@ def parse_vast_url(url_str):
 @parser.command(
     argument("id", help="id of instance type to change bid", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
-    usage="./vast change bid id [--price PRICE]",
+    usage="vastai change bid id [--price PRICE]",
     help="Change the bid price for a spot/interruptible instance",
     epilog=deindent("""
         Change the current bid price of instance id to PRICE.
@@ -643,7 +668,7 @@ def change__bid(args: argparse.Namespace):
     argument("src", help="instance_id:/path to source of object to copy.", type=str),
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
-    usage="./vast copy SRC DST",
+    usage="vastai copy SRC DST",
     help=" Copy directories between instances and/or local",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
@@ -724,7 +749,7 @@ def copy(args: argparse.Namespace):
 
 @parser.command(
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
-    usage="./vast cancel copy DST",
+    usage="vastai cancel copy DST",
     help=" Cancel a remote copy in progress, specified by DST id",
     epilog=deindent("""
         Use this command to cancel any/all current remote copy operations copying to a specific named instance, given by DST.
@@ -819,6 +844,46 @@ def cloud__copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
     
+@parser.command(
+    argument("dst", help="instance_id:/path to target of sync operation.", type=str),
+    usage="vastai cancel sync DST",
+    help=" Cancel a remote copy in progress, specified by DST id",
+    epilog=deindent("""
+        Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
+        Examples:
+         vast cancel sync 12371
+
+        The first example cancels all copy operations currently copying data into instance 12371
+
+    """),
+)
+def cancel__sync(args: argparse.Namespace):
+    """
+    Cancel a remote cloud sync in progress, specified by DST id"
+
+    @param dst: ID of cloud sync instance Target to cancel.
+    """
+
+    url = apiurl(args, f"/commands/rclone/")
+    dst_id = args.dst
+    if (dst_id is None):
+        print("invalid arguments")
+        return
+
+    print(f"canceling remote copies to {dst_id} ")
+
+    req_json = { "client_id": "me", "dst_id": dst_id, }
+    r = requests.delete(url, json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
@@ -842,7 +907,7 @@ def cloud__copy(args: argparse.Namespace):
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="./vast create instance id [OPTIONS] [--args ...]",
+    usage="vastai create instance id [OPTIONS] [--args ...]",
     help="Create a new instance",
     epilog=deindent("""
         Examples:
@@ -920,7 +985,7 @@ def create__instance(args: argparse.Namespace):
     argument("--username", help="username to use for login", type=str),
     argument("--password", help="password to use for login", type=str),
     argument("--type", help="host/client", type=str),
-    usage="./vast create subaccount --email EMAIL --username USERNAME --password PASSWORD --type TYPE",
+    usage="vastai create subaccount --email EMAIL --username USERNAME --password PASSWORD --type TYPE",
     help="Create a subaccount",
 )
 def create__subaccount(args):
@@ -951,7 +1016,7 @@ def create__subaccount(args):
 
 @parser.command(
     argument("id", help="id of instance to delete", type=int),
-    usage="./vast destroy instance id [-h] [--api-key API_KEY] [--raw]",
+    usage="vastai destroy instance id [-h] [--api-key API_KEY] [--raw]",
     help="Destroy an instance (irreversible, deletes data)",
 )
 def destroy__instance(args):
@@ -977,7 +1042,7 @@ def destroy__instance(args):
 @parser.command(
     argument("ID", help="id of instance to execute on", type=int),
     argument("COMMAND", help="bash command surrounded by single quotes",  type=str),
-    usage="./vast execute ID COMMAND",
+    usage="vastai execute ID COMMAND",
     help="Execute a (constrained) remote command on a machine",
     epilog=deindent("""
         examples:
@@ -1031,7 +1096,7 @@ def execute(args):
 @parser.command(
     argument("id", help="id of instance to label", type=int),
     argument("label", help="label to set", type=str),
-    usage="./vast label instance <id> <label>",
+    usage="vastai label instance <id> <label>",
     help="Assign a string label to an instance",
 )
 def label__instance(args):
@@ -1059,7 +1124,7 @@ def label__instance(args):
 @parser.command(
     argument("INSTANCE_ID", help="id of instance", type=int),
     argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
-    usage="./vast logs [OPTIONS] INSTANCE_ID",
+    usage="vastai logs [OPTIONS] INSTANCE_ID",
     help="Get the logs for an instance",
 )
 def logs(args):
@@ -1102,7 +1167,7 @@ def logs(args):
 @parser.command(
     argument("id", help="id of instance to prepay for", type=int),
     argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
-    usage="./vast prepay instance <id> <amount>",
+    usage="vastai prepay instance <id> <amount>",
     help="Deposit credits into reserved instance.",
 )
 def prepay__instance(args):
@@ -1132,7 +1197,7 @@ def prepay__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to reboot", type=int),
-    usage="./vast reboot instance <id> [--raw]",
+    usage="vastai reboot instance <id> [--raw]",
     help="Reboot (stop/start) an instance",
 )
 def reboot__instance(args):
@@ -1157,7 +1222,7 @@ def reboot__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to start/restart", type=int),
-    usage="./vast start instance <id> [--raw]",
+    usage="vastai start instance <id> [--raw]",
     help="Start a stopped instance",
 )
 def start__instance(args):
@@ -1187,7 +1252,7 @@ def start__instance(args):
 
 @parser.command(
     argument("id", help="id of instance to stop", type=int),
-    usage="./vast stop instance [--raw] <id>",
+    usage="vastai stop instance [--raw] <id>",
     help="Stop a running instance",
 )
 def stop__instance(args):
@@ -1227,7 +1292,7 @@ def stop__instance(args):
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
-    usage="./vast search offers [--help] [--api-key API_KEY] [--raw] <query>",
+    usage="vastai search offers [--help] [--api-key API_KEY] [--raw] <query>",
     help="Search for instance types using custom query",
     epilog=deindent("""
         Query syntax:
@@ -1368,12 +1433,15 @@ def search__offers(args):
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
-        display_table(rows, displayable_fields)
+        if args.type == "reserved":           
+            display_table(rows, displayable_fields_reserved)
+        else:
+            display_table(rows, displayable_fields)
 
 
 @parser.command(
     argument("id", help="id of instance", type=int),
-    usage="./vast ssh-url ID",
+    usage="vastai ssh-url ID",
     help="ssh url helper",
 )
 def ssh_url(args):
@@ -1387,7 +1455,7 @@ def ssh_url(args):
 
 @parser.command(
     argument("id",   help="id", type=int),
-    usage="./vast scp-url ID",
+    usage="vastai scp-url ID",
     help="scp url helper",
 )
 def scp_url(args):
@@ -1455,7 +1523,7 @@ def _ssh_url(args, protocol):
     argument("-s", "--start_date", help="start date and time for report. Many formats accepted", type=str),
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted ", type=str),
     argument("-m", "--machine_id", help="Machine id (optional)", type=int),
-    usage="./vast show earnings [OPTIONS]",
+    usage="vastai show earnings [OPTIONS]",
     help="Get machine earning history reports",
 )
 def show__earnings(args):
@@ -1516,7 +1584,7 @@ def show__earnings(args):
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="./vast show invoices [OPTIONS]",
+    usage="vastai show invoices [OPTIONS]",
     help="Get billing history reports",
 )
 def show__invoices(args):
@@ -1548,7 +1616,35 @@ def show__invoices(args):
 
 
 @parser.command(
-    usage="./vast show instances [--api-key API_KEY] [--raw]",
+    argument("id", help="id of instance to get", type=int),
+    usage="vastai show instance [--api-key API_KEY] [--raw]",
+    help="Display user's current instances"
+)
+def show__instance(args):
+    """
+    Shows the stats on the machine the user is renting.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+
+    #req_url = apiurl(args, "/instance", {"owner": "me"});
+    req_url = apiurl(args, "/instances/{id}/".format(id=args.id) , {"owner": "me"} )
+   
+    #r = requests.get(req_url)
+    r = http_get(args, req_url)
+    r.raise_for_status()
+    row = r.json()["instances"]
+    row['duration'] = time.time() - row['start_date']
+    row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
+    if args.raw:
+        print(json.dumps(row, indent=1, sort_keys=True))
+    else:
+        #print(row)
+        display_table([row], instance_fields)
+
+@parser.command(
+    usage="vastai show instances [--api-key API_KEY] [--raw]",
     help="Display user's current instances"
 )
 def show__instances(args):
@@ -1564,7 +1660,8 @@ def show__instances(args):
     r.raise_for_status()
     rows = r.json()["instances"]
     for row in rows:
-        row['duration'] = time.time() - row['start_date'] 
+        row['duration'] = time.time() - row['start_date']
+        row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
@@ -1594,7 +1691,7 @@ def show__connections(args):
 
 
 @parser.command(
-    usage="./vast show ipaddrs [--api-key API_KEY] [--raw]",
+    usage="vastai show ipaddrs [--api-key API_KEY] [--raw]",
     help="Display user's history of ip addresses"
 )
 def show__ipaddrs(args):
@@ -1617,7 +1714,7 @@ def show__ipaddrs(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage="./vast show machines [OPTIONS]",
+    usage="vastai show machines [OPTIONS]",
     help="[Host] Show hosted machines",
 )
 def show__machines(args):
@@ -1645,7 +1742,7 @@ def show__machines(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
-    usage="./vast show user [OPTIONS]",
+    usage="vastai show user [OPTIONS]",
     help="   Get current user data"
 )
 def show__user(args):
@@ -1670,7 +1767,7 @@ def show__user(args):
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display subaccounts from current user"),
-    usage="./vast show subaccounts [OPTIONS]",
+    usage="vastai show subaccounts [OPTIONS]",
     help="Get current subaccounts"
 )
 def show__subaccounts(args):
@@ -1692,7 +1789,7 @@ def show__subaccounts(args):
 @parser.command(
     argument("recipient", help="email of recipient account", type=str),
     argument("amount",    help="$dollars of credit to transfer ", type=float),
-    usage="./vast transfer credit RECIPIENT AMOUNT",
+    usage="vastai transfer credit RECIPIENT AMOUNT",
     help="Transfer credits to another account",
     epilog=deindent("""
         Transfer (amount) credits to account with email (recipient).
@@ -1839,7 +1936,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="./vast generate pdf_invoices [OPTIONS]",
+    usage="vastai generate pdf_invoices [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     """
@@ -1890,7 +1987,7 @@ def generate__pdf_invoices(args):
     argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
-    usage="./vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    usage="vastai list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
     help="[Host] list a machine for rent",
 )
 def list__machine(args):
@@ -1931,7 +2028,7 @@ def list__machine(args):
 
 @parser.command(
     argument("id", help="id of machine to unlist", type=int),
-    usage="./vast unlist machine <id>",
+    usage="vastai unlist machine <id>",
     help="[Host] Unlist a listed machine",
 )
 def unlist__machine(args):
@@ -1998,7 +2095,7 @@ def set_ask(args):
     argument("--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("--image", help="docker container image to launch", type=str),
     argument("--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
-    usage="./vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]",
+    usage="vastai set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]",
     help="[Host] Create default jobs for a machine",
 )
 def set__defjob(args):
@@ -2102,7 +2199,7 @@ def pretty_print_POST(req):
 @parser.command(
     argument("id", help="id of machine to set min bid price for", type=int),
     argument("--price", help="per gpu min bid price in $/hour", type=float),
-    usage="./vast set min_bid id [--price PRICE]",
+    usage="vastai set min_bid id [--price PRICE]",
     help="[Host] Set the minimum bid/rental price for a machine",
     epilog=deindent("""
         Change the current min bid price of machine id to PRICE.
@@ -2128,7 +2225,7 @@ def set__min_bid(args):
     argument("id", help="id of machine to schedule maintenance for", type=int),
     argument("--sdate",      help="maintenance start date in unix epoch time (UTC seconds)", type=float),
     argument("--duration",   help="maintenance duration in hours", type=float),
-    usage="./vast schedule maintenance id [--sdate START_DATE --duration DURATION]",
+    usage="vastai schedule maintenance id [--sdate START_DATE --duration DURATION]",
     help="[Host] Schedule upcoming maint window",
     epilog=deindent("""
         Example: ./vast.py schedule maint 8207 --sdate 1677562671 --duration 0.5
@@ -2159,7 +2256,7 @@ def schedule__maint(args):
 
 
 @parser.command(
-    usage="./vast reset api-key",
+    usage="vastai reset api-key",
     help="Reset your api-key (get new key from website).",
 )
 def reset__api_key(args):
@@ -2179,7 +2276,7 @@ def reset__api_key(args):
 
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
-    usage="./vast set api-key APIKEY",
+    usage="vastai set api-key APIKEY",
     help="Set api-key (get your api-key from the console/CLI)",
 )
 def set__api_key(args):
