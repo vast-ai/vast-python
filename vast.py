@@ -2332,6 +2332,90 @@ def reset__api_key(args):
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
+@parser.command(
+    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
+    argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
+    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 4.0)", type=float),
+    argument("--template_hash",   help="template hash", type=str),
+    argument("--template_id",   help="template id", type=int),
+    argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
+    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=float),
+    argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
+    argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=float),
+    usage="vastai autoscaler create --min_load 4.5 --target_util 0.9 --cold_mult 4.0 --template_hash TEMPLATE_HASH --template_id 4242 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name ENDPOINT_NAME",
+    help="Create a new autoscale job",
+)
+def create_autojobs(args):
+    url = apiurl(args, "/autojobs/" )
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram", args.gpu_ram, "endpoint_name": endpoint_name}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.post(url, json=json_blob)
+    r.raise_for_status()
+    print("autoscaler create ".format(r.json()))
+
+
+@parser.command(
+    argument("autojob_id", help="id of job to delete", type=int),
+    usage="vastai autoscaler delete AUTOJOB_ID ",
+    help="Delete an autoscaler job",
+    epilog=deindent("""
+        Example: ./vast.py autoscaler delete 4242
+    """),
+)
+def delete_autojobs(args):
+    url = apiurl(args, "/autojobs/" )
+    json_blob = {"client_id": "me", "autojob_id": args.autojob_id}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.delete(url, json=json_blob)
+    r.raise_for_status()
+    print("autoscaler create ".format(r.json()))
+
+@parser.command(
+    argument("autojob_id", help="id of job to update", type=int),
+    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
+    argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
+    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 4.0)", type=float),
+    argument("--template_hash",   help="template hash", type=str),
+    argument("--template_id",   help="template id", type=int),
+    argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
+    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=float),
+    argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
+    argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=float),
+    usage="vastai autoscaler update 4242 --min_load 4.5 --target_util 0.9 --cold_mult 4.0 --template_hash TEMPLATE_HASH --template_id 4242 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name ENDPOINT_NAME",
+    help="Update an existing autoscaler job",
+)
+def update_autojobs(args):
+    url = apiurl(args, "/autojobs/" )
+    json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram", args.gpu_ram, "endpoint_name": endpoint_name}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
+    r.raise_for_status()
+    print("autoscaler create ".format(r.json()))
+
+@parser.command(
+    argument("autojob_id", help="minimum load to allow", type=int),
+    usage="vastai autoscaler get [--api-key API_KEY]",
+    help="fetch and list autoscaler jobs",
+    epilog=deindent("""
+        Example: ./vast.py autoscaler get 
+    """),
+)
+def get_autojobs(args):
+    url = apiurl(args, "/autojobs/" )
+    json_blob = {"client_id": "me", "api_key": args.autojob_id}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.get(url, json=json_blob)
+    r.raise_for_status()
+    print("autoscaler create ".format(r.json()))
+
 
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
