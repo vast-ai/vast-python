@@ -34,9 +34,9 @@ except NameError:
 
 
 #server_url_default = "https://vast.ai"
-server_url_default = "https://console.vast.ai"
+#server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-#server_url_default = "http://localhost:5002"
+server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -2346,15 +2346,24 @@ def reset__api_key(args):
     usage="vastai autoscaler create --min_load 4.5 --target_util 0.9 --cold_mult 4.0 --template_hash TEMPLATE_HASH --template_id 4242 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name ENDPOINT_NAME",
     help="Create a new autoscale job",
 )
-def create_autojobs(args):
+def autoscaler__create(args):
     url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": endpoint_name}
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
     if (args.explain):
         print("request json: ")
         print(json_blob)
     r = requests.post(url, json=json_blob)
     r.raise_for_status()
-    print("autoscaler create ".format(r.json()))
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("autoscaler create {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
 
 
 @parser.command(
@@ -2365,7 +2374,7 @@ def create_autojobs(args):
         Example: ./vast.py autoscaler delete 4242
     """),
 )
-def delete_autojobs(args):
+def autoscaler__delete(args):
     url = apiurl(args, "/autojobs/" )
     json_blob = {"client_id": "me", "autojob_id": args.autojob_id}
     if (args.explain):
@@ -2373,7 +2382,16 @@ def delete_autojobs(args):
         print(json_blob)
     r = requests.delete(url, json=json_blob)
     r.raise_for_status()
-    print("autoscaler create ".format(r.json()))
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("autoscaler delete {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
 
 @parser.command(
     argument("autojob_id", help="id of job to update", type=int),
@@ -2389,33 +2407,41 @@ def delete_autojobs(args):
     usage="vastai autoscaler update 4242 --min_load 4.5 --target_util 0.9 --cold_mult 4.0 --template_hash TEMPLATE_HASH --template_id 4242 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name ENDPOINT_NAME",
     help="Update an existing autoscaler job",
 )
-def update_autojobs(args):
+def autoscaler__update(args):
     url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": endpoint_name}
+    json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
     if (args.explain):
         print("request json: ")
         print(json_blob)
     r = requests.put(url, json=json_blob)
     r.raise_for_status()
-    print("autoscaler create ".format(r.json()))
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("autoscaler update {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
 
 @parser.command(
-    argument("autojob_id", help="minimum load to allow", type=int),
-    usage="vastai autoscaler get [--api-key API_KEY]",
+    usage="vastai autoscaler list [--api-key API_KEY]",
     help="fetch and list autoscaler jobs",
     epilog=deindent("""
-        Example: ./vast.py autoscaler get 
+        Example: ./vast.py autoscaler list 
     """),
 )
-def get_autojobs(args):
+def autoscaler__list(args):
     url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "api_key": args.autojob_id}
+    json_blob = {"client_id": "me"}
     if (args.explain):
         print("request json: ")
         print(json_blob)
     r = requests.get(url, json=json_blob)
     r.raise_for_status()
-    print("autoscaler create ".format(r.json()))
+    print("autoscaler list ".format(r.json()))
 
 
 @parser.command(
