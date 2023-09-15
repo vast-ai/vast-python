@@ -35,6 +35,7 @@ except NameError:
 
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
+#server_url_default = "host.docker.internal"
 #server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
@@ -2347,7 +2348,7 @@ def reset__api_key(args):
 )
 def create_autojobs(args):
     url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram", args.gpu_ram, "endpoint_name": endpoint_name}
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": endpoint_name}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -2390,7 +2391,7 @@ def delete_autojobs(args):
 )
 def update_autojobs(args):
     url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram", args.gpu_ram, "endpoint_name": endpoint_name}
+    json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": endpoint_name}
     if (args.explain):
         print("request json: ")
         print(json_blob)
