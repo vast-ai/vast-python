@@ -2171,12 +2171,10 @@ def set__defjob(args):
         print(json_blob)
     r = requests.put(req_url, json=json_blob)
     if (r.status_code == 200):
-
         rj = r.json();
         if (rj["success"]):
             print(
-                "bids created for machine {args.id},  @ ${args.price_gpu}/gpu/day, ${args.price_inetu}/GB up, ${args.price_inetd}/GB down".format(
-                    **locals()));
+                "bids created for machine {args.id},  @ ${args.price_gpu}/gpu/day, ${args.price_inetu}/GB up, ${args.price_inetd}/GB down".format(**locals()));
         else:
             print(rj["msg"]);
     else:
@@ -2441,7 +2439,14 @@ def autoscaler__list(args):
         print(json_blob)
     r = requests.get(url, json=json_blob)
     r.raise_for_status()
-    print("autoscaler list ".format(r.json()))
+    #print("autoscaler list ".format(r.json()))
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print(rj["results"])
+        else:
+            print(rj["msg"]);
 
 
 @parser.command(
