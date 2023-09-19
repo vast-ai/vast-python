@@ -2373,7 +2373,8 @@ def autoscaler__create(args):
     """),
 )
 def autoscaler__delete(args):
-    url = apiurl(args, "/autojobs/" )
+    id  = args.autojob_id
+    url = apiurl(args, f"/autojobs/{id}/" )
     json_blob = {"client_id": "me", "autojob_id": args.autojob_id}
     if (args.explain):
         print("request json: ")
@@ -2406,7 +2407,8 @@ def autoscaler__delete(args):
     help="Update an existing autoscaler job",
 )
 def autoscaler__update(args):
-    url = apiurl(args, "/autojobs/" )
+    id  = args.autojob_id
+    url = apiurl(args, f"/autojobs/{id}/" )
     json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
     if (args.explain):
         print("request json: ")
