@@ -1380,7 +1380,7 @@ def stop__instances(args):
             dlperf:                 float     DL-perf score  (see FAQ for explanation)
             dlperf_usd:             float     DL-perf/$
             dph:                    float     $/hour rental cost
-            driver_version          string    driver version in use on a host.
+            driver_version          int       machine's nvidia driver version as 9 digit integer ("535.86.05") = 535086005)
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
@@ -2439,7 +2439,7 @@ def autoscaler__list(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.get(url, json=json_blob)
+    r = requests.get(url) #, json=json_blob)
     r.raise_for_status()
     #print("autoscaler list ".format(r.json()))
 
