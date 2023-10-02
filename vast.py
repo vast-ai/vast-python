@@ -507,6 +507,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
     if joined != query_str:
         raise ValueError(
             "Unconsumed text. Did you forget to quote your query? " + repr(joined) + " != " + repr(query_str))
+
     for field, op, _, value, _ in opts:
         value = value.strip(",[]")
         v = res.setdefault(field, {})
@@ -514,7 +515,10 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         op_name = op_names.get(op)
 
         if field in field_alias:
-            field = field_alias[field];
+            field = field_alias[field]
+
+        if (field == "driver_version"):
+            value = numeric_version(value)
 
         if not field in fields:
             print("Warning: Unrecognized field: {}, see list of recognized fields.".format(field), file=sys.stderr);
@@ -552,7 +556,8 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
             elif isinstance(value, str):
                 v[op_name] = value.replace('_', ' ')
             else:
-                v[op_name] = [v.replace('_', ' ') for v in value]
+                #v[op_name] = [v.replace('_', ' ') for v in value]
+                v[op_name] = value
 
         res[field] = v;
 
@@ -1330,6 +1335,28 @@ def stop__instances(args):
         stop_instance(id, args)
 
 
+def numeric_version(version_str):
+    try:
+        # Split the version string by the period
+        major, minor, patch = version_str.split('.')
+
+        # Pad each part with leading zeros to make it 3 digits
+        major = major.zfill(3)
+        minor = minor.zfill(3)
+        patch = patch.zfill(3)
+
+        # Concatenate the padded parts
+        numeric_version_str = f"{major}{minor}{patch}"
+
+        # Convert the concatenated string to an integer
+        result = int(numeric_version_str)
+        print(result)
+        return result
+
+    except ValueError:
+        print("Invalid version string format. Expected format: X.X.X")
+        return None
+
 @parser.command(
     argument("-t", "--type", default="on-demand", help="Show 'on-demand', 'reserved', or 'bid'(interruptible) pricing. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
@@ -1372,7 +1399,7 @@ def stop__instances(args):
             cpu_cores:              int       # virtual cpus
             cpu_cores_effective:    float     # virtual cpus you get
             cpu_ram:                float     system RAM in gigabytes
-            cuda_vers:              float     cuda version
+            cuda_vers:              float     machine max supported cuda version (based on driver version)
             datacenter:             bool      show only datacenter offers
             direct_port_count       int       open ports on host's router
             disk_bw:                float     disk read bandwidth, in MB/s
@@ -1380,7 +1407,7 @@ def stop__instances(args):
             dlperf:                 float     DL-perf score  (see FAQ for explanation)
             dlperf_usd:             float     DL-perf/$
             dph:                    float     $/hour rental cost
-            driver_version          int       machine's nvidia driver version as 9 digit integer ("535.86.05") = 535086005)
+            driver_version          string    machine's nvidia driver version as 3 digit string ex. "535.86.05"
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
@@ -2400,7 +2427,7 @@ def autoscaler__delete(args):
     argument("--template_hash",   help="template hash", type=str),
     argument("--template_id",   help="template id", type=int),
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
-    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=float),
+    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
     argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=float),
     usage="vastai autoscaler update 4242 --min_load 4.5 --target_util 0.9 --cold_mult 4.0 --template_hash TEMPLATE_HASH --template_id 4242 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name ENDPOINT_NAME",
@@ -2435,18 +2462,23 @@ def autoscaler__update(args):
 )
 def autoscaler__list(args):
     url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me"}
+    json_blob = {"client_id": "me", "api_key": args.api_key}
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.get(url) #, json=json_blob)
+    r = requests.get(url, json=json_blob)
     r.raise_for_status()
     #print("autoscaler list ".format(r.json()))
 
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print(rj["results"])
+            rows = rj["results"] 
+            if args.raw:
+                print(json.dumps(rows, indent=1, sort_keys=True))
+            else:
+                #print(rows)
+                print(json.dumps(rows, indent=1, sort_keys=True))
         else:
             print(rj["msg"]);
 
