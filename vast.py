@@ -517,7 +517,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         if field in field_alias:
             field = field_alias[field]
 
-        if (field == "driver_version"):
+        if (field == "driver_version") and ('.' in value):
             value = numeric_version(value)
 
         if not field in fields:
@@ -1350,7 +1350,7 @@ def numeric_version(version_str):
 
         # Convert the concatenated string to an integer
         result = int(numeric_version_str)
-        print(result)
+        #print(result)
         return result
 
     except ValueError:
