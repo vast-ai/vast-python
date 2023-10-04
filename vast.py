@@ -1506,6 +1506,26 @@ def search__offers(args):
                 if filter_op == "notin" and country_code not in geo_target:
                     new_rows.append(row)  
         rows = new_rows
+    # TODO: add this post-query geolocation filter to the database call rather than handling it locally
+    if 'rented' in query:
+        filter_q  = query['rented']
+        filter_op = list(filter_q.keys())[0]
+        target    = filter_q[filter_op]
+        new_rows  = []
+        for row in rows:
+            rented = False
+            if row["rented"] is not None:
+                rented = row["rented"]
+            if filter_op == "eq" and rented == target:
+                new_rows.append(row)
+            if filter_op == "neq" and rented != target:
+                new_rows.append(row)
+            if filter_op == "in" and rented in target:
+                new_rows.append(row)
+            if filter_op == "notin" and rented not in target:
+                new_rows.append(row)
+        rows = new_rows
+
     if args.raw:
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
