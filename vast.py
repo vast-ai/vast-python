@@ -1378,6 +1378,7 @@ def numeric_version(version_str):
             field = <name of a field>
             op = one of: <, <=, ==, !=, >=, >, in, notin
             value = <bool, int, float, etc> | 'any'
+            bool: True, False
 
         note: to pass '>' and '<' on the command line, make sure to use quotes
         note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
@@ -1385,10 +1386,15 @@ def numeric_version(version_str):
 
         Examples:
 
-            ./vast search offers 'compute_cap > 610 total_flops < 5 datacenter=true'
-            ./vast search offers 'reliability > 0.99  num_gpus>=4 verified=false' -o 'num_gpus-'
-            ./vast search offers 'rentable = any'
-            ./vast search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090'
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            ./vast search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090 rented=False'
+
+            # search for datacenter gpus with minimal compute_cap and total_flops
+            ./vast search offers 'compute_cap > 610 total_flops > 5 datacenter=True'
+
+            # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
+            ./vast search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
+
 
         Available fields:
 
@@ -1430,7 +1436,7 @@ def numeric_version(version_str):
             pcie_bw:                float     PCIE bandwidth (CPU to GPU)
             reliability:            float     machine reliability score (see FAQ for explanation)
             rentable:               bool      is the instance currently rentable
-            rented:                 bool      is the instance currently rented
+            rented:                 bool      allow/disallow duplicates and potential conflicts with existing stopped instances
             storage_cost:           float     storage cost in $/GB/month
             static_ip:              bool      is the IP addr static/stable
             total_flops:            float     total TFLOPs from all GPUs
@@ -1456,7 +1462,8 @@ def search__offers(args):
         if args.no_default:
             query = {}
         else:
-            query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}}
+            query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+            #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True} }
 
         if args.query is not None:
             query = parse_query(args.query, query)
@@ -1488,6 +1495,7 @@ def search__offers(args):
     r = requests.get(url);
     r.raise_for_status()
     rows = r.json()["offers"]
+
     # TODO: add this post-query geolocation filter to the database call rather than handling it locally
     if 'geolocation' in query:
         geo_filter = query['geolocation']
@@ -1506,6 +1514,7 @@ def search__offers(args):
                 if filter_op == "notin" and country_code not in geo_target:
                     new_rows.append(row)  
         rows = new_rows
+
     # TODO: add this post-query geolocation filter to the database call rather than handling it locally
     if 'rented' in query:
         filter_q  = query['rented']
