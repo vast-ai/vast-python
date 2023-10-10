@@ -640,6 +640,90 @@ def parse_vast_url(url_str):
     return (instance_id, path)
 
 
+@parser.command(
+    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
+    usage="vastai cancel copy DST",
+    help=" Cancel a remote copy in progress, specified by DST id",
+    epilog=deindent("""
+        Use this command to cancel any/all current remote copy operations copying to a specific named instance, given by DST.
+        Examples:
+         vast cancel copy 12371
+
+        The first example cancels all copy operations currently copying data into instance 12371
+
+    """),
+)
+def cancel__copy(args: argparse.Namespace):
+    """
+    Cancel a remote copy in progress, specified by DST id"
+
+    @param dst: ID of copy instance Target to cancel.
+    """
+
+    url = apiurl(args, f"/commands/rsync/")
+    dst_id = args.dst
+    if (dst_id is None):
+        print("invalid arguments")
+        return
+
+    print(f"canceling remote copies to {dst_id} ")
+
+    req_json = { "client_id": "me", "dst_id": dst_id, }
+    r = requests.delete(url, json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("dst", help="instance_id:/path to target of sync operation.", type=str),
+    usage="vastai cancel sync DST",
+    help=" Cancel a remote copy in progress, specified by DST id",
+    epilog=deindent("""
+        Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
+        Examples:
+         vast cancel sync 12371
+
+        The first example cancels all copy operations currently copying data into instance 12371
+
+    """),
+)
+def cancel__sync(args: argparse.Namespace):
+    """
+    Cancel a remote cloud sync in progress, specified by DST id"
+
+    @param dst: ID of cloud sync instance Target to cancel.
+    """
+
+    url = apiurl(args, f"/commands/rclone/")
+    dst_id = args.dst
+    if (dst_id is None):
+        print("invalid arguments")
+        return
+
+    print(f"canceling remote copies to {dst_id} ")
+
+    req_json = { "client_id": "me", "dst_id": dst_id, }
+    r = requests.delete(url, json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
 
 @parser.command(
     argument("id", help="id of instance type to change bid", type=int),
@@ -753,88 +837,6 @@ def copy(args: argparse.Namespace):
         print("failed with error {r.status_code}".format(**locals()));
 
 
-@parser.command(
-    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
-    usage="vastai cancel copy DST",
-    help=" Cancel a remote copy in progress, specified by DST id",
-    epilog=deindent("""
-        Use this command to cancel any/all current remote copy operations copying to a specific named instance, given by DST.
-        Examples:
-         vast cancel copy 12371
-
-        The first example cancels all copy operations currently copying data into instance 12371
-
-    """),
-)
-def cancel__copy(args: argparse.Namespace):
-    """
-    Cancel a remote copy in progress, specified by DST id"
-
-    @param dst: ID of copy instance Target to cancel.
-    """
-
-    url = apiurl(args, f"/commands/rsync/")
-    dst_id = args.dst
-    if (dst_id is None):
-        print("invalid arguments")
-        return
-
-    print(f"canceling remote copies to {dst_id} ")
-
-    req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, json=req_json)
-    r.raise_for_status()
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-@parser.command(
-    argument("dst", help="instance_id:/path to target of sync operation.", type=str),
-    usage="vastai cancel sync DST",
-    help=" Cancel a remote copy in progress, specified by DST id",
-    epilog=deindent("""
-        Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
-        Examples:
-         vast cancel sync 12371
-
-        The first example cancels all copy operations currently copying data into instance 12371
-
-    """),
-)
-def cancel__sync(args: argparse.Namespace):
-    """
-    Cancel a remote cloud sync in progress, specified by DST id"
-
-    @param dst: ID of cloud sync instance Target to cancel.
-    """
-
-    url = apiurl(args, f"/commands/rclone/")
-    dst_id = args.dst
-    if (dst_id is None):
-        print("invalid arguments")
-        return
-
-    print(f"canceling remote copies to {dst_id} ")
-
-    req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, json=req_json)
-    r.raise_for_status()
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("Remote copy canceled - check instance status bar for progress updates (~30 seconds delayed).")
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
@@ -892,7 +894,43 @@ def cloud__copy(args: argparse.Namespace):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
-    
+
+
+@parser.command(
+    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
+    argument("--target_util", help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
+    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
+    argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
+    argument("--template_hash", help="template hash (optional)", type=str),
+    argument("--template_id",   help="template id (optional)", type=int),
+    argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
+    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
+    argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
+    usage="vastai autoscaler create [OPTIONS]",
+    help="Create a new autoscale group",
+    epilog=deindent("""
+        Example: vastai create autoscaler --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama"
+    """),
+)
+def create__autoscaler(args):
+    url = apiurl(args, "/autojobs/" )
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.post(url, json=json_blob)
+    r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("autoscaler create {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
+
 
 @parser.command(
     argument("id", help="id of instance type to launch", type=int),
@@ -1021,6 +1059,36 @@ def create__subaccount(args):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
+
+
+
+@parser.command(
+    argument("ID", help="id of group to delete", type=int),
+    usage="vastai autoscaler delete AUTOGROUP_ID ",
+    help="Delete an autoscaler group",
+    epilog=deindent("""
+        Example: vastai delete autoscaler 4242
+    """),
+)
+def delete__autoscaler(args):
+    id  = args.ID
+    url = apiurl(args, f"/autojobs/{id}/" )
+    json_blob = {"client_id": "me", "autojob_id": args.ID}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.delete(url, json=json_blob)
+    r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("autoscaler delete {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
 
 
 def destroy_instance(id,args):
@@ -1268,6 +1336,11 @@ def start_instance(id,args):
     argument("id", help="id of instance to start/restart", type=int),
     usage="vastai start instance <id> [--raw]",
     help="Start a stopped instance",
+    epilog=deindent("""
+        Examples: 
+            vastai start instances $(vastai show instances -q)
+            vastai start instances 329838 984849
+    """),
 )
 def start__instance(args):
     """
@@ -1279,7 +1352,7 @@ def start__instance(args):
 
 @parser.command(
     argument("ids", help="ids of instance to start", type=int, nargs='+'),
-    usage="vastai start instances [--raw] <id>",
+    usage="vastai start instances [--raw] ID0 ID1 ID2...",
     help="Start a list of instances",
 )
 def start__instances(args):
@@ -1311,7 +1384,7 @@ def stop_instance(id,args):
 
 @parser.command(
     argument("id", help="id of instance to stop", type=int),
-    usage="vastai stop instance [--raw] <id>",
+    usage="vastai stop instance [--raw] ID",
     help="Stop a running instance",
 )
 def stop__instance(args):
@@ -1324,8 +1397,13 @@ def stop__instance(args):
 
 @parser.command(
     argument("ids", help="ids of instance to stop", type=int, nargs='+'),
-    usage="vastai stop instance [--raw] <id>",
+    usage="vastai stop instances [--raw] ID0 ID1 ID2...",
     help="Stop a list of instances",
+    epilog=deindent("""
+        Examples: 
+            vastai stop instances $(vastai show instances -q)
+            vastai stop instances 329838 984849
+    """),
 )
 def stop__instances(args):
     """
@@ -1624,6 +1702,57 @@ def _ssh_url(args, protocol):
 
 
 @parser.command(
+    usage="vastai show autoscalers [--api-key API_KEY]",
+    help="Display user's current autoscaler groups",
+    epilog=deindent("""
+        Example: vastai show autoscalers 
+    """),
+)
+def show__autoscalers(args):
+    url = apiurl(args, "/autojobs/" )
+    json_blob = {"client_id": "me", "api_key": args.api_key}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.get(url, json=json_blob)
+    r.raise_for_status()
+    #print("autoscaler list ".format(r.json()))
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            rows = rj["results"] 
+            if args.raw:
+                print(json.dumps(rows, indent=1, sort_keys=True))
+            else:
+                #print(rows)
+                print(json.dumps(rows, indent=1, sort_keys=True))
+        else:
+            print(rj["msg"]);
+
+@parser.command(
+    usage="./vast show connections [--api-key API_KEY] [--raw]",
+    help="Displays user's cloud connections"
+)
+def show__connections(args):
+    """
+    Shows the stats on the machine the user is renting.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/users/cloud_integrations/");
+    print(req_url)
+    r = requests.get(req_url);
+    r.raise_for_status()
+    rows = r.json()
+
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, connection_fields)
+
+@parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     argument("-s", "--start_date", help="start date and time for report. Many formats accepted", type=str),
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted ", type=str),
@@ -1783,27 +1912,7 @@ def show__instances(args):
     else:
         display_table(rows, instance_fields)
 
-@parser.command(
-    usage="./vast show connections [--api-key API_KEY] [--raw]",
-    help="Displays user's cloud connections"
-)
-def show__connections(args):
-    """
-    Shows the stats on the machine the user is renting.
 
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    req_url = apiurl(args, "/users/cloud_integrations/");
-    print(req_url)
-    r = requests.get(req_url);
-    r.raise_for_status()
-    rows = r.json()
-
-    if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
-    else:
-        display_table(rows, connection_fields)
 
 
 @parser.command(
@@ -1940,6 +2049,48 @@ def transfer__credit(args: argparse.Namespace):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
+
+
+
+
+
+@parser.command(
+    argument("ID", help="id of autoscale group to update", type=int),
+    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
+    argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
+    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
+    argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
+    argument("--template_hash",   help="template hash", type=str),
+    argument("--template_id",   help="template id", type=int),
+    argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
+    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
+    argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
+    usage="vastai update autoscaler ID [OPTIONS]",
+    help="Update an existing autoscale group",
+    epilog=deindent("""
+        Example: vastai update autoscaler 4242 --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama"
+    """),
+)
+def update__autoscaler(args):
+    id  = args.ID
+    url = apiurl(args, f"/autojobs/{id}/" )
+    json_blob = {"client_id": "me", "autojob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.put(url, json=json_blob)
+    r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("autoscaler update {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
+
 
 
 
@@ -2342,7 +2493,7 @@ def set__min_bid(args):
     usage="vastai schedule maintenance id [--sdate START_DATE --duration DURATION]",
     help="[Host] Schedule upcoming maint window",
     epilog=deindent("""
-        Example: ./vast.py schedule maint 8207 --sdate 1677562671 --duration 0.5
+        Example: vastai schedule maint 8207 --sdate 1677562671 --duration 0.5
     """),
     )
 def schedule__maint(args):
@@ -2387,129 +2538,8 @@ def reset__api_key(args):
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
-@parser.command(
-    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
-    argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
-    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 4.0)", type=float),
-    argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash",   help="template hash", type=str),
-    argument("--template_id",   help="template id", type=int),
-    argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
-    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
-    argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
-    usage="vastai autoscaler create [OPTIONS]",
-    help="Create a new autoscale job",
-)
-def autoscaler__create(args):
-    url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = requests.post(url, json=json_blob)
-    r.raise_for_status()
-    if 'application/json' in r.headers.get('Content-Type', ''):
-        try:
-            print("autoscaler create {}".format(r.json()))
-        except requests.exceptions.JSONDecodeError:
-            print("The response is not valid JSON.")
-            print(r)
-            print(r.text)  # Print the raw response to help with debugging.
-    else:
-        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
-        print(r.text)
 
 
-@parser.command(
-    argument("autojob_id", help="id of job to delete", type=int),
-    usage="vastai autoscaler delete AUTOJOB_ID ",
-    help="Delete an autoscaler job",
-    epilog=deindent("""
-        Example: ./vast.py autoscaler delete 4242
-    """),
-)
-def autoscaler__delete(args):
-    id  = args.autojob_id
-    url = apiurl(args, f"/autojobs/{id}/" )
-    json_blob = {"client_id": "me", "autojob_id": args.autojob_id}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = requests.delete(url, json=json_blob)
-    r.raise_for_status()
-    if 'application/json' in r.headers.get('Content-Type', ''):
-        try:
-            print("autoscaler delete {}".format(r.json()))
-        except requests.exceptions.JSONDecodeError:
-            print("The response is not valid JSON.")
-            print(r)
-            print(r.text)  # Print the raw response to help with debugging.
-    else:
-        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
-        print(r.text)
-
-@parser.command(
-    argument("autojob_id", help="id of job to update", type=int),
-    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
-    argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
-    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 4.0)", type=float),
-    argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash",   help="template hash", type=str),
-    argument("--template_id",   help="template id", type=int),
-    argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
-    argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
-    argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
-    usage="vastai autoscaler update 4242 --min_load 4.5 --target_util 0.9 --cold_mult 4.0 --template_hash TEMPLATE_HASH --template_id 4242 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name ENDPOINT_NAME",
-    help="Update an existing autoscaler job",
-)
-def autoscaler__update(args):
-    id  = args.autojob_id
-    url = apiurl(args, f"/autojobs/{id}/" )
-    json_blob = {"client_id": "me", "autojob_id": args.autojob_id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = requests.put(url, json=json_blob)
-    r.raise_for_status()
-    if 'application/json' in r.headers.get('Content-Type', ''):
-        try:
-            print("autoscaler update {}".format(r.json()))
-        except requests.exceptions.JSONDecodeError:
-            print("The response is not valid JSON.")
-            print(r)
-            print(r.text)  # Print the raw response to help with debugging.
-    else:
-        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
-        print(r.text)
-
-@parser.command(
-    usage="vastai autoscaler list [--api-key API_KEY]",
-    help="fetch and list autoscaler jobs",
-    epilog=deindent("""
-        Example: ./vast.py autoscaler list 
-    """),
-)
-def autoscaler__list(args):
-    url = apiurl(args, "/autojobs/" )
-    json_blob = {"client_id": "me", "api_key": args.api_key}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = requests.get(url, json=json_blob)
-    r.raise_for_status()
-    #print("autoscaler list ".format(r.json()))
-
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            rows = rj["results"] 
-            if args.raw:
-                print(json.dumps(rows, indent=1, sort_keys=True))
-            else:
-                #print(rows)
-                print(json.dumps(rows, indent=1, sort_keys=True))
-        else:
-            print(rj["msg"]);
 
 
 @parser.command(
