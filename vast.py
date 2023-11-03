@@ -339,10 +339,10 @@ ipaddr_fields = (
 )
 
 invoice_fields = (
-    ("amount", "Amount", "{}", None, True),
     ("description", "Description", "{}", None, True),
     ("quantity", "Quantity", "{}", None, True),
     ("rate", "Rate", "{}", None, True),
+    ("amount", "Amount", "{}", None, True),
     ("timestamp", "Timestamp", "{:0.1f}", None, True),
     ("type", "Type", "{}", None, True)
 )
@@ -933,7 +933,7 @@ def create__autoscaler(args):
 
 
 @parser.command(
-    argument("id", help="id of instance type to launch", type=int),
+    argument("id", help="id of instance type to launch (returned from search offers)", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
@@ -1683,14 +1683,21 @@ def _ssh_url(args, protocol):
 
         ports     = instance.get("ports",{})
         port_22d  = ports.get("22/tcp",None)
-        if (port_22d is not None):
-            ipaddr = instance["public_ipaddr"]
-            port   = port_22d[0]["HostPort"]
-        else:        
-            ipaddr = instance["ssh_host"]
-            port   = int(instance["ssh_port"])+1
+        port      = -1
+        try:
+            if (port_22d is not None):
+                ipaddr = instance["public_ipaddr"]
+                port   = port_22d[0]["HostPort"]
+            else:        
+                ipaddr = instance["ssh_host"]
+                port   = int(instance["ssh_port"])+1
+        except:
+            port = -1
 
-    print(f'{protocol}root@{ipaddr}:{port}')
+    if (port > 0):
+        print(f'{protocol}root@{ipaddr}:{port}')
+    else:
+        print(f'error: ssh port not found')
 
    
     # Writing to sample.json
@@ -1811,6 +1818,20 @@ def show__earnings(args):
     print(json.dumps(rows, indent=1, sort_keys=True))
 
 
+def sum(X, k):
+    y = 0
+    for x in X:
+        a = float(x.get(k,0))
+        y += a
+    return y
+
+def select(X,k):
+    Y = set()
+    for x in X:
+        v = x.get(k,None)
+        if v is not None:
+            Y.add(v)
+    return Y
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
@@ -1818,6 +1839,7 @@ def show__earnings(args):
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
+    argument("--instance_label", help="Filter charges on a particular instance label (useful for autoscaler groups)"),
     usage="vastai show invoices [OPTIONS]",
     help="Get billing history reports",
 )
@@ -1829,7 +1851,10 @@ def show__invoices(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, "/users/me/invoices", {"owner": "me", "inc_charges" : not args.only_credits});
+
+    sdate,edate = convert_dates_to_timestamps(args)
+    req_url = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate, "inc_charges" : not args.only_credits});
+
     r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()["invoices"]
@@ -1837,6 +1862,39 @@ def show__invoices(args):
     invoice_filter_data = filter_invoice_items(args, rows)
     rows = invoice_filter_data["rows"]
     filter_header = invoice_filter_data["header_text"]
+
+    contract_ids = None
+
+    if (args.instance_label):
+        #print(rows)
+        contract_ids = select(rows, 'instance_id')
+        #print(contract_ids)
+
+        url = apiurl(args, f"/contracts/fetch/")
+
+        req_json = {
+            "label": args.instance_label,
+            "contract_ids": list(contract_ids)
+        }
+
+        if (args.explain):
+            print("request json: ")
+            print(req_json)
+        
+        result = requests.post(url, json=req_json)
+        result.raise_for_status()
+        filtered_rows = result.json()["contracts"]
+        #print(rows)
+
+        contract_ids = select(filtered_rows, 'id')
+        #print(contract_ids)
+
+        rows2 = []
+        for row in rows:
+            id = row.get("instance_id", None)
+            if id in contract_ids:
+                rows2.append(row)
+        rows = rows2
 
     current_charges = r.json()["current"]
     if args.quiet:
@@ -1850,6 +1908,7 @@ def show__invoices(args):
     else:
         print(filter_header)
         display_table(rows, invoice_fields)
+        print(f"Total: ${sum(rows, 'amount')}")
         print("Current: ", current_charges)
 
 
@@ -1978,8 +2037,6 @@ def show__user(args):
     :rtype:
     """
     req_url = apiurl(args, "/users/current", {"owner": "me"});
-    print(f"URL: {req_url}")
-    print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh\n")
     r = http_get(args, req_url);
     r.raise_for_status()
     user_blob = r.json()
@@ -2092,6 +2149,33 @@ def update__autoscaler(args):
         print(r.text)
 
 
+def convert_dates_to_timestamps(args):
+    selector_flag = ""
+    end_timestamp: float = 9999999999
+    start_timestamp: float = 0
+    start_date_txt = ""
+    end_date_txt = ""
+
+    import dateutil
+    from dateutil import parser
+
+    if args.end_date:
+        try:
+            end_date = dateutil.parser.parse(str(args.end_date))
+            end_date_txt = end_date.isoformat()
+            end_timestamp = time.mktime(end_date.timetuple())
+        except ValueError:
+            print("Warning: Invalid end date format! Ignoring end date!")
+    
+    if args.start_date:
+        try:
+            start_date = dateutil.parser.parse(str(args.start_date))
+            start_date_txt = start_date.isoformat()
+            start_timestamp = time.mktime(start_date.timetuple())
+        except ValueError:
+            print("Warning: Invalid start date format! Ignoring start date!")    
+
+    return start_timestamp, end_timestamp
 
 
 def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
@@ -2223,7 +2307,9 @@ def generate__pdf_invoices(args):
         directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
         package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
-    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me"})
+    sdate,edate = convert_dates_to_timestamps(args)
+    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate})
+
     r_inv = requests.get(req_url_inv)
     r_inv.raise_for_status()
     rows_inv = r_inv.json()["invoices"]
