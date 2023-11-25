@@ -42,6 +42,16 @@ api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
 api_key_guard = object()
 
+if os.path.exists(api_key_file):
+    with open(api_key_file, "r") as reader:
+        bearer_token = reader.read().strip()
+else:
+    bearer_token = None
+
+headers = {}
+if bearer_token:
+    headers["Authorization"] = "Bearer " + bearer_token
+
 class Object(object):
     pass
 
@@ -69,11 +79,10 @@ class hidden_aliases(object):
     def append(self, x):
         self.l.append(x)
 
-
 def http_get(args, req_url):
     t = 0.1
     for i in range(0, args.retry):
-        r = requests.get(req_url)
+        r = requests.get(req_url, headers=headers)
         if (r.status_code == 429):
             time.sleep(t)
             t *= 1.5
@@ -81,6 +90,9 @@ def http_get(args, req_url):
             break
     return r
 
+def load_permissions_from_file(file_path):
+    with open(file_path, 'r') as file:
+        return json.load(file)
 
 class apwrap(object):
     def __init__(self, *args, **kwargs):
@@ -236,6 +248,17 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         print(result)
         print("")
     return result
+
+def apiheaders(args: argparse.Namespace) -> typing.Dict:
+    """Creates the headers for a given combination of parameters.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    :rtype Dict:
+    """
+    result = {}
+    if args.api_key is not None:
+        result["Authorization"] = "Bearer " + args.api_key
+    return result 
 
 
 def deindent(message: str) -> str:
@@ -669,7 +692,7 @@ def cancel__copy(args: argparse.Namespace):
     print(f"canceling remote copies to {dst_id} ")
 
     req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, json=req_json)
+    r = requests.delete(url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         rj = r.json();
@@ -711,7 +734,7 @@ def cancel__sync(args: argparse.Namespace):
     print(f"canceling remote copies to {dst_id} ")
 
     req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, json=req_json)
+    r = requests.delete(url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         rj = r.json();
@@ -747,7 +770,7 @@ def change__bid(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
     print("Per gpu bid price changed".format(r.json()))
 
@@ -801,7 +824,7 @@ def copy(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(req_json)
-    r = requests.put(url, json=req_json)
+    r = requests.put(url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         rj = r.json();
@@ -886,7 +909,7 @@ def cloud__copy(args: argparse.Namespace):
         print("request json: ")
         print(req_json)
     
-    r = requests.post(url, json=req_json)
+    r = requests.post(url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         print("Cloud Copy Started - check instance status bar for progress updates (~30 seconds delayed).")
@@ -918,7 +941,7 @@ def create__autoscaler(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.post(url, json=json_blob)
+    r = requests.post(url, headers=headers,json=json_blob)
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
@@ -1020,7 +1043,7 @@ def create__instance(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
     if args.raw:
         print(json.dumps(r.json(), indent=1))
@@ -1050,7 +1073,7 @@ def create__subaccount(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.post(url, json=json_blob)
+    r = requests.post(url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1077,7 +1100,7 @@ def delete__autoscaler(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.delete(url, json=json_blob)
+    r = requests.delete(url, headers=headers,json=json_blob)
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
@@ -1093,7 +1116,7 @@ def delete__autoscaler(args):
 
 def destroy_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
-    r = requests.delete(url, json={})
+    r = requests.delete(url, headers=headers,json={})
     r.raise_for_status()
     if args.raw:
         print(json.dumps(r.json(), indent=1))
@@ -1160,7 +1183,7 @@ def execute(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob )
+    r = requests.put(url, headers=headers,json=json_blob )
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1172,7 +1195,7 @@ def execute(args):
                 if (url is None):
                     api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
                     url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
-                r = requests.get(url);
+                r = requests.get(url, headers=headers);
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
                     print(filtered_text)
@@ -1203,7 +1226,7 @@ def label__instance(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     rj = r.json();
@@ -1233,7 +1256,7 @@ def logs(args):
         print("request json: ")
         print(json_blob)
 
-    r = requests.put(url, json=json_blob )
+    r = requests.put(url, headers=headers,json=json_blob )
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1245,7 +1268,7 @@ def logs(args):
             api_key_id_h = hashlib.md5( (args.api_key + str(args.INSTANCE_ID)).encode('utf-8') ).hexdigest()
             url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + ".log"
             print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
-            r = requests.get(url);
+            r = requests.get(url, headers=headers);
             if (r.status_code == 200):
                 print(r.text)
                 break
@@ -1273,7 +1296,7 @@ def prepay__instance(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     rj = r.json();
@@ -1299,7 +1322,7 @@ def reboot__instance(args):
     :rtype:
     """
     url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
-    r = requests.put(url, json={})
+    r = requests.put(url, headers=headers,json={})
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1319,7 +1342,7 @@ def start_instance(id,args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1368,7 +1391,7 @@ def stop_instance(id,args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1570,7 +1593,7 @@ def search__offers(args):
         return 1
     
     url = apiurl(args, "/bundles", {"q": query})
-    r = requests.get(url);
+    r = requests.get(url, headers=headers);
     r.raise_for_status()
     rows = r.json()["offers"]
 
@@ -1721,7 +1744,7 @@ def show__autoscalers(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.get(url, json=json_blob)
+    r = requests.get(url, headers=headers,json=json_blob)
     r.raise_for_status()
     #print("autoscaler list ".format(r.json()))
 
@@ -1750,7 +1773,7 @@ def show__connections(args):
     """
     req_url = apiurl(args, "/users/cloud_integrations/");
     print(req_url)
-    r = requests.get(req_url);
+    r = requests.get(req_url, headers=headers);
     r.raise_for_status()
     rows = r.json()
 
@@ -1881,7 +1904,7 @@ def show__invoices(args):
             print("request json: ")
             print(req_json)
         
-        result = requests.post(url, json=req_json)
+        result = requests.post(url, headers=headers,json=req_json)
         result.raise_for_status()
         filtered_rows = result.json()["contracts"]
         #print(rows)
@@ -2094,7 +2117,7 @@ def transfer__credit(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -2135,7 +2158,7 @@ def update__autoscaler(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
@@ -2310,7 +2333,7 @@ def generate__pdf_invoices(args):
     sdate,edate = convert_dates_to_timestamps(args)
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate})
 
-    r_inv = requests.get(req_url_inv)
+    r_inv = requests.get(req_url_inv, headers=headers)
     r_inv.raise_for_status()
     rows_inv = r_inv.json()["invoices"]
     invoice_filter_data = filter_invoice_items(args, rows_inv)
@@ -2567,7 +2590,7 @@ def set__min_bid(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
     print("Per gpu min bid price changed".format(r.json()))
 
@@ -2601,7 +2624,7 @@ def schedule__maint(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
     print(f"Maintenance window scheduled for {dt} success".format(r.json()))
 
@@ -2620,13 +2643,180 @@ def reset__api_key(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, json=json_blob)
+    r = requests.put(url, headers=headers,json=json_blob)
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
+@parser.command(
+    argument("id", help="id of apikey to get", type=int),
+    usage="vastai get api-key",
+    help="Get an api-key",
+)
+def get__api_key(args):
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
+@parser.command(
+    usage="vastai get api-keys",
+    help="List your api-keys associated with your account",
+)
+def get__api_keys(args):
+    url = apiurl(args, "/auth/apikeys/")
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
+@parser.command(
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai create api-key",
+    help="Create a new api-key with restricted permissions. Can be sent to other users and temmates in the future",
+)
+def create__api_key(args):
 
+    url = apiurl(args, "/auth/apikeys/")
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.post(url, headers=headers, json={"permissions": permissions})
+    r.raise_for_status()
+    print("api-key created {}".format(r.json()))
+
+@parser.command(
+    argument("id", help="id of apikey to remove", type=int),
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai update api-key id",
+    help="Update an api-key with new permissions. Permissions cannot be greater than what you already possess",
+)
+def update__api_key(args):
+
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.put(url, headers=headers, json={"permissions": permissions})
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("id", help="id of apikey to remove", type=int),
+    usage="vastai delete api-key id",
+    help="Remove an api-key",
+)
+def delete__api_key(args):
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    usage="vast ai get team role",
+    help="Get your team role",
+)
+def get__team_role(args):
+    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    usage="vastai get team roles",
+    help="get roles for a team"
+)
+def get__team_roles(args):
+    url = apiurl(args, "/team/roles/")
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai add role name"
+    help="Add a new role to your",
+)
+def add__team_role(args):
+    url = apiurl(args, "/team/role/")
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai update role name"
+    help="Update an existing team role",
+)
+def update__team_role(args):
+    url = apiurl(args, "/team/roles/")
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    usage="vastai remove role name"
+    help="Remove a role from your team",
+)
+def remove__team_role(args):
+    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("team_name", help="name of the team", type=str),
+    usage="vastai create team name",
+    help="Create a new team",
+)
+def create__team(args):
+    url = apiurl(args, "/team/")
+    r = requests.post(url, headers=headers, json={"team_name": args.team_name})
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    usage="vastai delete team",
+    help="Delete your team",
+)
+def delete__team(args):
+    url = apiurl(args, "/team/")
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("user_id", help="id of user to be removed", type=str),
+    usage="vastai get team members",
+    help="Get your team members",
+)
+def get__team_members(args):
+    url = apiurl(args, "/team/member/{id}/".format(id=args.user_id))
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    usage="vastai remove team member",
+    help="Remove a team member",
+)
+def remove__team_member(args):
+    url = apiurl(args, "/team/member/")
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("email", help="email of user to be invited", type=str),
+    argument("role", help="role of user to be invited", type=str),
+    usage="vastai invite team member",
+    help="Invite a team member",
+)
+def invite__team_member(args):
+    url = apiurl(args, "/team/invite/", json={"email": args.email, "role": args.role})
+    r = requests.post(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
@@ -2641,7 +2831,6 @@ def set__api_key(args):
     with open(api_key_file, "w") as writer:
         writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
-
 
 login_deprecated_message = """
 login via the command line is no longer supported.
