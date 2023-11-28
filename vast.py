@@ -34,9 +34,9 @@ except NameError:
 
 
 #server_url_default = "https://vast.ai"
-server_url_default = "https://console.vast.ai"
+#server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-#server_url_default = "http://localhost:5002"
+server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -2683,20 +2683,6 @@ def create__api_key(args):
 
 @parser.command(
     argument("id", help="id of apikey to remove", type=int),
-    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update api-key id",
-    help="Update an api-key with new permissions. Permissions cannot be greater than what you already possess",
-)
-def update__api_key(args):
-
-    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
-    permissions = load_permissions_from_file(args.permissions)
-    r = requests.put(url, headers=headers, json={"permissions": permissions})
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("id", help="id of apikey to remove", type=int),
     usage="vastai delete api-key id",
     help="Remove an api-key",
 )
@@ -2730,7 +2716,7 @@ def get__team_roles(args):
 @parser.command(
     argument("name", help="name of the template", type=str),
     argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai add role name"
+    usage="vastai add role name",
     help="Add a new role to your",
 )
 def add__team_role(args):
@@ -2743,7 +2729,7 @@ def add__team_role(args):
 @parser.command(
     argument("name", help="name of the template", type=str),
     argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update role name"
+    usage="vastai update role name",
     help="Update an existing team role",
 )
 def update__team_role(args):
@@ -2755,7 +2741,7 @@ def update__team_role(args):
 
 @parser.command(
     argument("name", help="name of the template", type=str),
-    usage="vastai remove role name"
+    usage="vastai remove role name",
     help="Remove a role from your team",
 )
 def remove__team_role(args):
@@ -2769,6 +2755,7 @@ def remove__team_role(args):
     usage="vastai create team name",
     help="Create a new team",
 )
+
 def create__team(args):
     url = apiurl(args, "/team/")
     r = requests.post(url, headers=headers, json={"team_name": args.team_name})
@@ -2786,14 +2773,15 @@ def delete__team(args):
     print(r.json())
 
 @parser.command(
-    argument("user_id", help="id of user to be removed", type=str),
     usage="vastai get team members",
     help="Get your team members",
 )
 def get__team_members(args):
-    url = apiurl(args, "/team/member/{id}/".format(id=args.user_id))
+    url = apiurl(args, "/team/members/")
+    print(url)
     r = requests.get(url, headers=headers)
     r.raise_for_status()
+    #print(r.text)
     print(r.json())
 
 @parser.command(
