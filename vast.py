@@ -941,6 +941,7 @@ def create__autoscaler(args):
     argument("--label", help="label to set on the instance", type=str),
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--entrypoint", help="override entrypoint for args launch instance", type=str),
     argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
     argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
     argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
@@ -970,6 +971,8 @@ def create__instance(args: argparse.Namespace):
     if args.onstart:
         with open(args.onstart, "r") as reader:
             args.onstart_cmd = reader.read()
+    if args.onstart_cmd is None:
+        args.onstart_cmd = args.entrypoint
     runtype = 'ssh'
     if args.args:
         runtype = 'args'
