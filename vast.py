@@ -1563,6 +1563,7 @@ def search__offers(args):
 
         query["order"] = order
         query["type"] = args.type
+        query["allocated_storage"] = args.storage
         # For backwards compatibility, support --type=interruptible option
         if query["type"] == 'interruptible':
             query["type"] = 'bid'
