@@ -918,6 +918,18 @@ def cloud__copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+@parser.command(
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai create api-key",
+    help="Create a new api-key with restricted permissions. Can be sent to other users and temmates in the future",
+)
+def create__api_key(args):
+
+    url = apiurl(args, "/auth/apikeys/")
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.post(url, headers=headers, json={"permissions": permissions})
+    r.raise_for_status()
+    print("api-key created {}".format(r.json()))
 
 @parser.command(
     argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
@@ -1086,6 +1098,41 @@ def create__subaccount(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+@parser.command(
+    argument("team_name", help="name of the team", type=str),
+    usage="vastai create team name",
+    help="Create a new team",
+)
+
+def create__team(args):
+    url = apiurl(args, "/team/")
+    r = requests.post(url, headers=headers, json={"team_name": args.team_name})
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai create role name",
+    help="Add a new role to your",
+)
+def create__team_role(args):
+    url = apiurl(args, "/team/role/")
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("id", help="id of apikey to remove", type=int),
+    usage="vastai delete api-key id",
+    help="Remove an api-key",
+)
+def delete__api_key(args):
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 
 @parser.command(
@@ -1157,6 +1204,16 @@ def destroy__instances(args):
     for id in args.ids:
         destroy_instance(id, args)
 
+@parser.command(
+    usage="vastai destroy team",
+    help="Destroy your team",
+)
+def destroy__team(args):
+    url = apiurl(args, "/team/")
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
 
 @parser.command(
     argument("ID", help="id of instance to execute on", type=int),
@@ -1209,8 +1266,17 @@ def execute(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
-
-
+@parser.command(
+    argument("email", help="email of user to be invited", type=str),
+    argument("role", help="role of user to be invited", type=str),
+    usage="vastai invite team member",
+    help="Invite a team member",
+)
+def invite__team_member(args):
+    url = apiurl(args, "/team/invite/", json={"email": args.email, "role": args.role})
+    r = requests.post(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 @parser.command(
     argument("id", help="id of instance to label", type=int),
@@ -1734,6 +1800,26 @@ def _ssh_url(args, protocol):
     except:
         pass
 
+@parser.command(
+    argument("id", help="id of apikey to get", type=int),
+    usage="vastai show api-key",
+    help="Show an api-key",
+)
+def show__api_key(args):
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    usage="vastai show api-keys",
+    help="List your api-keys associated with your account",
+)
+def show__api_keys(args):
+    url = apiurl(args, "/auth/apikeys/")
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 @parser.command(
     usage="vastai show autoscalers [--api-key API_KEY]",
@@ -2096,6 +2182,39 @@ def show__subaccounts(args):
         display_table(rows, user_fields)
 
 @parser.command(
+    usage="vastai show team members",
+    help="Show your team members",
+)
+def show__team_members(args):
+    url = apiurl(args, "/team/members/")
+    print(url)
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    #print(r.text)
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    usage="vast ai show team role",
+    help="Show your team role",
+)
+def show__team_role(args):
+    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    usage="vastai show team roles",
+    help="Show roles for a team"
+)
+def show__team_roles(args):
+    url = apiurl(args, "/team/roles-full/")
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
     argument("recipient", help="email of recipient account", type=str),
     argument("amount",    help="$dollars of credit to transfer ", type=float),
     usage="vastai transfer credit RECIPIENT AMOUNT",
@@ -2456,6 +2575,27 @@ def remove__defjob(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+@parser.command(
+    usage="vastai remove team member",
+    help="Remove a team member",
+)
+def remove__team_member(args):
+    url = apiurl(args, "/team/member/")
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("name", help="name of the template", type=str),
+    usage="vastai remove role name",
+    help="Remove a role from your team",
+)
+def remove__team_role(args):
+    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
 
 def set_ask(args):
     """
@@ -2652,165 +2792,6 @@ def reset__api_key(args):
     print("api-key reset ".format(r.json()))
 
 @parser.command(
-    argument("id", help="id of apikey to get", type=int),
-    usage="vastai get api-key",
-    help="Get an api-key",
-)
-def get__api_key(args):
-    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    usage="vastai get api-keys",
-    help="List your api-keys associated with your account",
-)
-def get__api_keys(args):
-    url = apiurl(args, "/auth/apikeys/")
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai create api-key",
-    help="Create a new api-key with restricted permissions. Can be sent to other users and temmates in the future",
-)
-def create__api_key(args):
-
-    url = apiurl(args, "/auth/apikeys/")
-    permissions = load_permissions_from_file(args.permissions)
-    r = requests.post(url, headers=headers, json={"permissions": permissions})
-    r.raise_for_status()
-    print("api-key created {}".format(r.json()))
-
-@parser.command(
-    argument("id", help="id of apikey to remove", type=int),
-    usage="vastai delete api-key id",
-    help="Remove an api-key",
-)
-def delete__api_key(args):
-    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
-    r = requests.delete(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("name", help="name of the template", type=str),
-    usage="vast ai get team role",
-    help="Get your team role",
-)
-def get__team_role(args):
-    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    usage="vastai get team roles",
-    help="get roles for a team"
-)
-def get__team_roles(args):
-    url = apiurl(args, "/team/roles/")
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("name", help="name of the template", type=str),
-    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai add role name",
-    help="Add a new role to your",
-)
-def add__team_role(args):
-    url = apiurl(args, "/team/role/")
-    permissions = load_permissions_from_file(args.permissions)
-    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("name", help="name of the template", type=str),
-    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update role name",
-    help="Update an existing team role",
-)
-def update__team_role(args):
-    url = apiurl(args, "/team/roles/")
-    permissions = load_permissions_from_file(args.permissions)
-    r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("name", help="name of the template", type=str),
-    usage="vastai remove role name",
-    help="Remove a role from your team",
-)
-def remove__team_role(args):
-    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
-    r = requests.delete(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("team_name", help="name of the team", type=str),
-    usage="vastai create team name",
-    help="Create a new team",
-)
-
-def create__team(args):
-    url = apiurl(args, "/team/")
-    r = requests.post(url, headers=headers, json={"team_name": args.team_name})
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    usage="vastai delete team",
-    help="Delete your team",
-)
-def delete__team(args):
-    url = apiurl(args, "/team/")
-    r = requests.delete(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    usage="vastai get team members",
-    help="Get your team members",
-)
-def get__team_members(args):
-    url = apiurl(args, "/team/members/")
-    print(url)
-    r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    #print(r.text)
-    print(r.json())
-
-@parser.command(
-    usage="vastai remove team member",
-    help="Remove a team member",
-)
-def remove__team_member(args):
-    url = apiurl(args, "/team/member/")
-    r = requests.delete(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("email", help="email of user to be invited", type=str),
-    argument("role", help="role of user to be invited", type=str),
-    usage="vastai invite team member",
-    help="Invite a team member",
-)
-def invite__team_member(args):
-    url = apiurl(args, "/team/invite/", json={"email": args.email, "role": args.role})
-    r = requests.post(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
     usage="vastai set api-key APIKEY",
     help="Set api-key (get your api-key from the console/CLI)",
@@ -2823,6 +2804,20 @@ def set__api_key(args):
     with open(api_key_file, "w") as writer:
         writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
+
+@parser.command(
+    argument("id", help="id of the role", type=int),
+    argument("name", help="name of the template", type=str),
+    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai update role name",
+    help="Update an existing team role",
+)
+def update__team_role(args):
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.id)
+    permissions = load_permissions_from_file(args.permissions)
+    r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    print(r.json())
 
 login_deprecated_message = """
 login via the command line is no longer supported.
