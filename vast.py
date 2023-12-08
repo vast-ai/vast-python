@@ -2813,7 +2813,7 @@ def set__api_key(args):
     help="Update an existing team role",
 )
 def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.id)
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.id))
     permissions = load_permissions_from_file(args.permissions)
     r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
