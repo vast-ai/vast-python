@@ -1099,7 +1099,7 @@ def create__subaccount(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    argument("team_name", help="name of the team", type=str),
+    argument("--team_name", help="name of the team", type=str),
     usage="vastai create team name",
     help="Create a new team",
 )
@@ -1111,8 +1111,8 @@ def create__team(args):
     print(r.json())
 
 @parser.command(
-    argument("name", help="name of the template", type=str),
-    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    argument("--name", help="name of the role", type=str),
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
     usage="vastai create role name",
     help="Add a new role to your",
 )
@@ -1267,8 +1267,8 @@ def execute(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    argument("email", help="email of user to be invited", type=str),
-    argument("role", help="role of user to be invited", type=str),
+    argument("--email", help="email of user to be invited", type=str),
+    argument("--role", help="role of user to be invited", type=str),
     usage="vastai invite team member",
     help="Invite a team member",
 )
@@ -2194,12 +2194,12 @@ def show__team_members(args):
     print(r.json())
 
 @parser.command(
-    argument("name", help="name of the template", type=str),
-    usage="vast ai show team role",
+    argument("name", help="name of the role", type=str),
+    usage="vast ai show team role name",
     help="Show your team role",
 )
 def show__team_role(args):
-    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.name))
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     print(r.json())
@@ -2576,22 +2576,23 @@ def remove__defjob(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    usage="vastai remove team member",
+    argument("ID", help="id of user to remove", type=int),
+    usage="vastai remove team member ID",
     help="Remove a team member",
 )
 def remove__team_member(args):
-    url = apiurl(args, "/team/member/")
+    url = apiurl(args, "/team/members/{id}/".format(id=args.ID))
     r = requests.delete(url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
 @parser.command(
-    argument("name", help="name of the template", type=str),
+    argument("NAME", help="name of the role", type=str),
     usage="vastai remove role name",
     help="Remove a role from your team",
 )
 def remove__team_role(args):
-    url = apiurl(args, "/team/role/{id}/".format(id=args.name))
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
     r = requests.delete(url, headers=headers)
     r.raise_for_status()
     print(r.json())
@@ -2807,8 +2808,8 @@ au
 
 @parser.command(
     argument("id", help="id of the role", type=int),
-    argument("name", help="name of the template", type=str),
-    argument("permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    argument("--name", help="name of the template", type=str),
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
     usage="vastai update role name",
     help="Update an existing team role",
 )
