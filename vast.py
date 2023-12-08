@@ -968,7 +968,7 @@ def create__autoscaler(args):
 
 
 @parser.command(
-    argument("id", help="id of instance type to launch (returned from search offers)", type=int),
+    argument("ID", help="id of instance type to launch (returned from search offers)", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
@@ -989,7 +989,7 @@ def create__autoscaler(args):
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
-    usage="vastai create instance id [OPTIONS] [--args ...]",
+    usage="vastai create instance ID [OPTIONS] [--args ...]",
     help="Create a new instance",
     epilog=deindent("""
         Examples:
@@ -1027,7 +1027,7 @@ def create__instance(args: argparse.Namespace):
         runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
     #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{id}/".format(id=args.id))
+    url = apiurl(args, "/asks/{ID}/".format(id=args.ID))
 
     #print(".")
     json_blob ={
@@ -1137,7 +1137,7 @@ def delete__api_key(args):
 
 @parser.command(
     argument("ID", help="id of group to delete", type=int),
-    usage="vastai autoscaler delete AUTOGROUP_ID ",
+    usage="vastai delete autoscaler ID ",
     help="Delete an autoscaler group",
     epilog=deindent("""
         Example: vastai delete autoscaler 4242
@@ -2798,7 +2798,7 @@ def reset__api_key(args):
 )
 def set__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.
-
+au
     :param argparse.Namespace args: should supply all the command-line options
     """
     with open(api_key_file, "w") as writer:
@@ -2813,7 +2813,7 @@ def set__api_key(args):
     help="Update an existing team role",
 )
 def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.id)
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.id))
     permissions = load_permissions_from_file(args.permissions)
     r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
