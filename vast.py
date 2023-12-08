@@ -1100,7 +1100,7 @@ def create__subaccount(args):
 
 @parser.command(
     argument("--team_name", help="name of the team", type=str),
-    usage="vastai create team name",
+    usage="vastai create-team --team_name TEAM_NAME",
     help="Create a new team",
 )
 
@@ -1113,7 +1113,7 @@ def create__team(args):
 @parser.command(
     argument("--name", help="name of the role", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai create role name",
+    usage="vastai create team-role name --permissions PERMISSIONS",
     help="Add a new role to your",
 )
 def create__team_role(args):
@@ -1124,12 +1124,12 @@ def create__team_role(args):
     print(r.json())
 
 @parser.command(
-    argument("id", help="id of apikey to remove", type=int),
-    usage="vastai delete api-key id",
+    argument("ID", help="id of apikey to remove", type=int),
+    usage="vastai delete api-key ID",
     help="Remove an api-key",
 )
 def delete__api_key(args):
-    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.ID))
     r = requests.delete(url, headers=headers)
     r.raise_for_status()
     print(r.json())
@@ -1269,7 +1269,7 @@ def execute(args):
 @parser.command(
     argument("--email", help="email of user to be invited", type=str),
     argument("--role", help="role of user to be invited", type=str),
-    usage="vastai invite team member",
+    usage="vastai invite team-member --email EMAIL --role ROLE",
     help="Invite a team member",
 )
 def invite__team_member(args):
@@ -2182,7 +2182,7 @@ def show__subaccounts(args):
         display_table(rows, user_fields)
 
 @parser.command(
-    usage="vastai show team members",
+    usage="vastai show team-members",
     help="Show your team members",
 )
 def show__team_members(args):
@@ -2194,18 +2194,18 @@ def show__team_members(args):
     print(r.json())
 
 @parser.command(
-    argument("name", help="name of the role", type=str),
-    usage="vast ai show team role name",
+    argument("NAME", help="name of the role", type=str),
+    usage="vast ai show team-role NAME",
     help="Show your team role",
 )
 def show__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.name))
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
 @parser.command(
-    usage="vastai show team roles",
+    usage="vastai show team-roles",
     help="Show roles for a team"
 )
 def show__team_roles(args):
@@ -2577,7 +2577,7 @@ def remove__defjob(args):
 
 @parser.command(
     argument("ID", help="id of user to remove", type=int),
-    usage="vastai remove team member ID",
+    usage="vastai remove team-member ID",
     help="Remove a team member",
 )
 def remove__team_member(args):
@@ -2588,7 +2588,7 @@ def remove__team_member(args):
 
 @parser.command(
     argument("NAME", help="name of the role", type=str),
-    usage="vastai remove role name",
+    usage="vastai remove team-role NAME",
     help="Remove a role from your team",
 )
 def remove__team_role(args):
@@ -2807,14 +2807,14 @@ au
     print("Your api key has been saved in {}".format(api_key_file_base))
 
 @parser.command(
-    argument("id", help="id of the role", type=int),
+    argument("ID", help="id of the role", type=int),
     argument("--name", help="name of the template", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update role name",
+    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
     help="Update an existing team role",
 )
 def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.id))
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
     permissions = load_permissions_from_file(args.permissions)
     r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
