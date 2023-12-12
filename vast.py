@@ -521,6 +521,7 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "storage_cost",
         "static_ip",
         "total_flops",
+        "ubuntu_version",
         "verification",
         "verified",
         "geolocation"
@@ -1647,6 +1648,7 @@ def numeric_version(version_str):
             storage_cost:           float     storage cost in $/GB/month
             static_ip:              bool      is the IP addr static/stable
             total_flops:            float     total TFLOPs from all GPUs
+            ubuntu_version          string    host machine ubuntu OS version
             verified:               bool      is the machine verified
     """),
     aliases=hidden_aliases(["search instances"]),
