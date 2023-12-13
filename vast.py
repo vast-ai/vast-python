@@ -2742,28 +2742,6 @@ def smart_split(s, char):
 
     return parts
 
-# def smarter_split(s, char):
-#     in_double_quotes = False
-#     in_single_quotes = False #note that isn't designed to work with nested quotes within the env
-#     parts = []
-#     current = []
-
-#     for c in s:
-#         if c == char and not (in_double_quotes or in_single_quotes):
-#             parts.append(''.join(current))
-#             current = []
-#         elif c == '\'':
-#             in_single_quotes = not in_single_quotes
-#             current.append(c)
-#         elif c == '\"':
-#             in_double_quotes = not in_double_quotes
-#             current.append(c)
-#         else:
-#             current.append(c)
-
-#     parts.append(''.join(current))  # add last part
-
-#     return parts
 
 
 
@@ -2773,7 +2751,7 @@ def parse_env(envs):
         return result
     #env  = envs.split(' ')
     env = smart_split(envs,' ')
-    print(env)
+    # print(env)
     prev = None
     for e in env:
         if (prev is None):
