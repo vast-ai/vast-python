@@ -1028,7 +1028,7 @@ def create__instance(args: argparse.Namespace):
         runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
     #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{ID}/".format(id=args.ID))
+    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
 
     #print(".")
     json_blob ={
