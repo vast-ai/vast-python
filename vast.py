@@ -1436,6 +1436,31 @@ def reboot__instance(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
+@parser.command(
+    argument("id", help="machine id", type=int),
+    usage="vastai reports id",
+    help="Get the logs for an instance",
+)
+def reports(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/machines/{id}/reports/".format(id=args.id))
+    json_blob = {"machine_id" : args.id}
+
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    
+    r = requests.get(url, headers=headers, json=json_blob)
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        print(f"reports: {r.text}")
+
+
+
 def start_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
     json_blob ={"state": "running"}

@@ -147,24 +147,13 @@ def parse_commands(lines):
     return commands
 
 main_help_text = run_cmd_and_capture_output("", "")
-# print("main help text:")
-# print(main_help_text)
-# print("end main help text")
 
 snipped_help_text = snip_lines_from_text(main_help_text, start_line=7, end_line=None)
 snipped_help_text = sorted(list(map(str.strip, snipped_help_text)))
 
-# print("snipped help text:")
-# print(snipped_help_text)
-# print("end snipped help text")
-
-# command_help_text = run_help_for_commands(snipped_help_text)
-# print("command_help_text:")
-# print(command_help_text)
-
 commands = parse_commands(snipped_help_text)
-with open("commands.json", "w") as f:
-    json.dump(commands, f)
+# with open("commands.json", "w") as f:
+#     json.dump(commands, f)
 
 command_help_text = ""
 command_help_text += f"\n# Client Commands \n\n"
@@ -174,7 +163,7 @@ for c in commands:
         name = c['name']
         summary = c['summary']
         details = c['details']
-        if name == "" or name[:1] == "-":
+        if name == "" or name[:1] == "-" or details == "":
             continue
         command_help_text += f"\n## {name} \n\n {summary}\n\n"
         command_help_text += f"```\n{details}\n```\n\n"
