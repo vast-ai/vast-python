@@ -1136,7 +1136,7 @@ def create__team(args):
     help="Add a new role to your",
 )
 def create__team_role(args):
-    url = apiurl(args, "/team/role/")
+    url = apiurl(args, "/team/roles/")
     permissions = load_permissions_from_file(args.permissions)
     r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
