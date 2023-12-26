@@ -17,15 +17,19 @@ import os
 import pty
 import subprocess
 import shutil
+import json
 
 
-def snip_lines_from_text(text: str, start_line: int, end_line: int, invert: bool = False):
+def snip_lines_from_text(text: str, start_line: int, end_line: int = None, invert: bool = False):
     text_lines = text.split("\n")
-    for x in text_lines:
-        print(x)
+    # for x in text_lines:
+    #     print(x)
     if invert:
         return text_lines[:start_line] + text_lines[end_line:]
-    return text_lines[start_line:end_line]
+    if end_line is not None:
+        return text_lines[start_line:end_line]
+    else:
+        return text_lines[start_line:]
 
 
 def make_lines_into_links(text_lines: list):
@@ -143,13 +147,13 @@ def parse_commands(lines):
     return commands
 
 main_help_text = run_cmd_and_capture_output("", "")
-print(main_help_text)
 
-snipped_help_text = snip_lines_from_text(main_help_text, 7, 39)
+snipped_help_text = snip_lines_from_text(main_help_text, start_line=7, end_line=None)
 snipped_help_text = sorted(list(map(str.strip, snipped_help_text)))
 
-#command_help_text = run_help_for_commands(snipped_help_text)
 commands = parse_commands(snipped_help_text)
+# with open("commands.json", "w") as f:
+#     json.dump(commands, f)
 
 command_help_text = ""
 command_help_text += f"\n# Client Commands \n\n"
@@ -159,6 +163,8 @@ for c in commands:
         name = c['name']
         summary = c['summary']
         details = c['details']
+        if name == "" or name[:1] == "-" or details == "":
+            continue
         command_help_text += f"\n## {name} \n\n {summary}\n\n"
         command_help_text += f"```\n{details}\n```\n\n"
 

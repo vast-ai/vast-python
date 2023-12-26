@@ -806,6 +806,10 @@ def change__bid(args: argparse.Namespace):
         Copies a directory from a source location to a target location. Each of source and destination
         directories can be either local or remote, subject to appropriate read and write
         permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
+                    
+        You should not copy to /root or / as a destination directory, as this can mess up the permissions on your instance ssh folder, breaking future copy operations (as they use ssh authentication)
+        You can see more information about constraints here: https://vast.ai/docs/gpu-instances/data-movement#constraints
+                    
         Examples:
          vast copy 6003036:/workspace/ 6003038:/workspace/
          vast copy 11824:/data/test data/test
@@ -887,12 +891,14 @@ def copy(args: argparse.Namespace):
     argument("--instance", help="id of the instance", type=str),
     argument("--connection", help="id of cloud connection on your account", type=str),
     argument("--transfer", help="type of transfer, possible options include Instance To Cloud and Cloud To Instance", type=str, default="Instance to Cloud"),
-    usage="./vast cloud_copy SRC DST CLOUD_SERVICE INSTANCE_ID CLOUD_SERVICE_SELECTED TRANSFER",
+    usage="vastai cloud_copy SRC DST CLOUD_SERVICE INSTANCE_ID CLOUD_SERVICE_SELECTED TRANSFER",
     help=" Copy files/folders to and from cloud providers",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
         directories can be either local or remote, subject to appropriate read and write
         permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
+        You can find more information about the cloud copy operation here: https://vast.ai/docs/gpu-instances/cloud-sync
+                    
         Examples:
          vast cloud_copy --src folder --dst /workspace --cloud_service "Amazon S3" --instance_id 6003036 --cloud_service_selected 52 --transfer "Instance To Cloud"
 
@@ -963,6 +969,8 @@ def create__api_key(args):
     usage="vastai autoscaler create [OPTIONS]",
     help="Create a new autoscale group",
     epilog=deindent("""
+        Create a new autoscaling group to manage a pool of worker instances.
+                    
         Example: vastai create autoscaler --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama"
     """),
 )
@@ -1011,10 +1019,17 @@ def create__autoscaler(args):
     usage="vastai create instance ID [OPTIONS] [--args ...]",
     help="Create a new instance",
     epilog=deindent("""
+        Performs the same action as pressing the "RENT" button on the website at https://console.vast.ai/create/ 
+        Creates an instance from an offer ID (which is returned from "search offers"). Each offer ID can only be used to create one instance.
+        Besides the offer ID, you must pass in an '--image' argument as a minimum. 
+        
         Examples:
         vastai create instance 6995713 --image pytorch/pytorch --disk 40 --env '-p 8081:80801/udp -h billybob' --ssh --direct --onstart-cmd "env | grep _ >> /etc/environment; echo 'starting up'";                
         vastai create instance 384827  --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
-        vastai create instance 344521  --image anthonytatowicz/eth-cuda-miner --price 0.1 --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
+                    
+        Return value:
+        Returns a json reporting the instance ID of the newly created instance. 
+        Example: {'success': True, 'new_contract': 7835610} 
     """),
 )
 def create__instance(args: argparse.Namespace):
@@ -1046,7 +1061,7 @@ def create__instance(args: argparse.Namespace):
         runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
     #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{ID}/".format(id=args.ID))
+    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
 
     #print(".")
     json_blob ={
@@ -1091,6 +1106,9 @@ def create__instance(args: argparse.Namespace):
     argument("--type", help="host/client", type=str),
     usage="vastai create subaccount --email EMAIL --username USERNAME --password PASSWORD --type TYPE",
     help="Create a subaccount",
+    epilog=deindent("""
+       Creates a new account that is considered a child of your current account as defined via the API key. 
+    """),
 )
 def create__subaccount(args):
     """Creates a new account that is considered a child of your current account as defined via the API key.
@@ -1159,6 +1177,7 @@ def delete__api_key(args):
     usage="vastai delete autoscaler ID ",
     help="Delete an autoscaler group",
     epilog=deindent("""
+        Note that deleteing an autoscaler group doesn't automatically destroy all the instances that are associated with your autoscaler group.
         Example: vastai delete autoscaler 4242
     """),
 )
@@ -1204,6 +1223,10 @@ def destroy_instance(id,args):
     argument("id", help="id of instance to delete", type=int),
     usage="vastai destroy instance id [-h] [--api-key API_KEY] [--raw]",
     help="Destroy an instance (irreversible, deletes data)",
+    epilog=deindent("""
+        Perfoms the same action as pressing the "DESTROY" button on the website at https://console.vast.ai/instances/
+        Example: vastai destroy instance 4242
+    """),
 )
 def destroy__instance(args):
     """Perfoms the same action as pressing the "DESTROY" button on the website at https://console.vast.ai/instances/.
@@ -1241,15 +1264,17 @@ def destroy__team(args):
     help="Execute a (constrained) remote command on a machine",
     epilog=deindent("""
         examples:
-          ./vast execute 99999 'ls -l -o -r'
-          ./vast execute 99999 'rm -r home/delete_this.txt'
-          ./vast execute 99999 'du -d2 -h'
+          vastai execute 99999 'ls -l -o -r'
+          vastai execute 99999 'rm -r home/delete_this.txt'
+          vastai execute 99999 'du -d2 -h'
 
         available commands:
           ls                 List directory contents
           rm                 Remote files or directories
           du                 Summarize device usage for a set of files
 
+        Return value:
+        Returns the output of the command which was executed on the instance, if successful. May take a few seconds to retrieve the results.
 
     """),
 )
@@ -1266,7 +1291,7 @@ def execute(args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        rj = r.json();
+        rj = r.json()
         if (rj["success"]):
             for i in range(0,30):
                 time.sleep(0.3)
@@ -1274,7 +1299,9 @@ def execute(args):
                 if (url is None):
                     api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
                     url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
-                r = requests.get(url, headers=headers);
+                # print(f"trying {url}")
+                r = requests.get(url) #headers=headers
+                # print(f"got: {r.status_code}")
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
                     print(filtered_text)
@@ -1403,6 +1430,9 @@ def prepay__instance(args):
     argument("id", help="id of instance to reboot", type=int),
     usage="vastai reboot instance <id> [--raw]",
     help="Reboot (stop/start) an instance",
+    epilog=deindent("""
+        Instance is stopped and started without any risk of losing GPU priority.
+    """),
 )
 def reboot__instance(args):
     """
@@ -1422,6 +1452,31 @@ def reboot__instance(args):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("id", help="machine id", type=int),
+    usage="vastai reports id",
+    help="Get the logs for an instance",
+)
+def reports(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/machines/{id}/reports/".format(id=args.id))
+    json_blob = {"machine_id" : args.id}
+
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    
+    r = requests.get(url, headers=headers, json=json_blob)
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        print(f"reports: {r.text}")
+
 
 
 def start_instance(id,args):
@@ -1448,9 +1503,11 @@ def start_instance(id,args):
     usage="vastai start instance <id> [--raw]",
     help="Start a stopped instance",
     epilog=deindent("""
+        This command attempts to bring an instance from the "stopped" state into the "running" state. This is subject to resource availability on the machine that the instance is located on.
+        If your instance is stuck in the "scheduling" state for more than 30 seconds after running this, it likely means that the required resources on the machine to run your instance are currently unavailable.
         Examples: 
             vastai start instances $(vastai show instances -q)
-            vastai start instances 329838 984849
+            vastai start instance 329838
     """),
 )
 def start__instance(args):
@@ -1497,6 +1554,11 @@ def stop_instance(id,args):
     argument("id", help="id of instance to stop", type=int),
     usage="vastai stop instance [--raw] ID",
     help="Stop a running instance",
+    epilog=deindent("""
+        This command brings an instance from the "running" state into the "stopped" state. When an instance is "stopped" all of your data on the instance is preserved, 
+        and you can resume use of your instance by starting it again. Once stopped, starting an instance is subject to resource availability on the machine that the instance is located on.
+        There are ways to move data off of a stopped instance, which are described here: https://vast.ai/docs/gpu-instances/data-movement
+    """)
 )
 def stop__instance(args):
     """
@@ -1576,13 +1638,13 @@ def numeric_version(version_str):
         Examples:
 
             # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
-            ./vast search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090 rented=False'
+            vastai search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090 rented=False'
 
             # search for datacenter gpus with minimal compute_cap and total_flops
-            ./vast search offers 'compute_cap > 610 total_flops > 5 datacenter=True'
+            vastai search offers 'compute_cap > 610 total_flops > 5 datacenter=True'
 
             # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
-            ./vast search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
+            vastai search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
 
 
         Available fields:
@@ -1871,7 +1933,7 @@ def show__autoscalers(args):
             print(rj["msg"]);
 
 @parser.command(
-    usage="./vast show connections [--api-key API_KEY] [--raw]",
+    usage="vastai show connections [--api-key API_KEY] [--raw]",
     help="Displays user's cloud connections"
 )
 def show__connections(args):
@@ -2160,7 +2222,10 @@ def show__machines(args):
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
     usage="vastai show user [OPTIONS]",
-    help="   Get current user data"
+    help="   Get current user data",
+    epilog=deindent("""
+        Shows stats for logged-in user. These include user balance, email, and ssh key. Does not show API key.
+    """)
 )
 def show__user(args):
     """
@@ -2453,7 +2518,7 @@ def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
     argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
     argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vastai generate pdf_invoices [OPTIONS]",
+    usage="vastai generate pdf-invoices [OPTIONS]",
 )
 def generate__pdf_invoices(args):
     """
@@ -2549,6 +2614,13 @@ def list_machine(args, id):
     argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
     usage="vastai list machine ID [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
     help="[Host] list a machine for rent",
+    epilog=deindent("""
+        Performs the same action as pressing the "LIST" button on the site https://cloud.vast.ai/host/machines.
+        On the end date the listing will expire and your machine will unlist. However any existing client jobs will still remain until ended by their owners.
+        Once you list your machine and it is rented, it is extremely important that you don't interfere with the machine in any way. 
+        If your machine has an active client job and then goes offline, crashes, or has performance problems, this could permanently lower your reliability rating. 
+        We strongly recommend you test the machine first and only list when ready.
+    """)
 )
 def list__machine(args):
     """
@@ -2606,6 +2678,7 @@ def unlist__machine(args):
 
 @parser.command(
     argument("id", help="id of machine to remove default instance from", type=int),
+    usage="vastai remove defjob id",
     help="[Host] Delete default jobs",
 )
 def remove__defjob(args):
@@ -2672,6 +2745,11 @@ def set_ask(args):
     argument("--args", nargs=argparse.REMAINDER, help="list of arguments passed to container launch"),
     usage="vastai set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]",
     help="[Host] Create default jobs for a machine",
+    epilog=deindent("""
+        Performs the same action as creating a background job at https://cloud.vast.ai/host/create.       
+                    
+    """)
+    
 )
 def set__defjob(args):
     """
@@ -2718,13 +2796,14 @@ def smart_split(s, char):
 
 
 
+
 def parse_env(envs):
     result = {}
     if (envs is None):
         return result
     #env  = envs.split(' ')
     env = smart_split(envs,' ')
-    #print(env)
+    # print(env)
     prev = None
     for e in env:
         if (prev is None):
@@ -2740,8 +2819,8 @@ def parse_env(envs):
             else:
                 return result
           elif (prev == "-e"):
-            if True: #set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
-                kv = e.split('=')
+            kv = e.split('=')
+            if len(kv) >= 2: #set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
                 val = kv[1].strip("'\"")
                 result[kv[0]] = val
             else:
@@ -2801,6 +2880,9 @@ def set__min_bid(args):
     usage="vastai schedule maintenance id [--sdate START_DATE --duration DURATION]",
     help="[Host] Schedule upcoming maint window",
     epilog=deindent("""
+        The proper way to perform maintenance on your machine is to wait until all active contracts have expired or the machine is vacant.
+        For unplanned or unscheduled maintenance, use this schedule maint command. That will notify the client that you have to take the machine down and that they should save their work. 
+        You can specify a date and duration.           
         Example: vastai schedule maint 8207 --sdate 1677562671 --duration 0.5
     """),
     )
