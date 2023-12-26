@@ -42,18 +42,25 @@ api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
 api_key_guard = object()
 
-if os.path.exists(api_key_file):
-    with open(api_key_file, "r") as reader:
-        bearer_token = reader.read().strip()
-else:
-    bearer_token = None
 
 headers = {}
-if bearer_token:
-    headers["Authorization"] = "Bearer " + bearer_token
+
 
 class Object(object):
     pass
+
+
+
+def string_to_unix_epoch(date_string):
+    try:
+        # Check if the input is a float or integer representing Unix time
+        return float(date_string)
+    except ValueError:
+        # If not, parse it as a date string
+        date_object = datetime.strptime(date_string, "%m/%d/%Y")
+        return time.mktime(date_object.timetuple())
+
+
 
 
 class argument(object):
@@ -80,9 +87,20 @@ class hidden_aliases(object):
         self.l.append(x)
 
 def http_get(args, req_url):
-    t = 0.1
+    t = 0.15
     for i in range(0, args.retry):
         r = requests.get(req_url, headers=headers)
+        if (r.status_code == 429):
+            time.sleep(t)
+            t *= 1.5
+        else:
+            break
+    return r
+
+def http_put(args, req_url, headers, json):
+    t = 0.3
+    for i in range(0, int(args.retry)):
+        r = requests.put(req_url, headers=headers, json=json)
         if (r.status_code == 429):
             time.sleep(t)
             t *= 1.5
@@ -771,7 +789,7 @@ def change__bid(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url, headers=headers, json=json_blob)
     r.raise_for_status()
     print("Per gpu bid price changed".format(r.json()))
 
@@ -825,7 +843,7 @@ def copy(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(req_json)
-    r = requests.put(url, headers=headers,json=req_json)
+    r = http_put(args, url,  headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         rj = r.json();
@@ -1059,7 +1077,7 @@ def create__instance(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
     if args.raw:
         print(json.dumps(r.json(), indent=1))
@@ -1244,7 +1262,7 @@ def execute(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob )
+    r = http_put(args, url,  headers=headers,json=json_blob )
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1296,7 +1314,7 @@ def label__instance(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
 
     rj = r.json();
@@ -1326,7 +1344,7 @@ def logs(args):
         print("request json: ")
         print(json_blob)
 
-    r = requests.put(url, headers=headers,json=json_blob )
+    r = http_put(args, url,  headers=headers,json=json_blob )
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1366,7 +1384,7 @@ def prepay__instance(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
 
     rj = r.json();
@@ -1392,7 +1410,7 @@ def reboot__instance(args):
     :rtype:
     """
     url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
-    r = requests.put(url, headers=headers,json={})
+    r = http_put(args, url,  headers=headers,json={})
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1412,7 +1430,7 @@ def start_instance(id,args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1461,7 +1479,7 @@ def stop_instance(id,args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1809,7 +1827,7 @@ def _ssh_url(args, protocol):
 )
 def show__api_key(args):
     url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
-    r = requests.get(url, headers=headers)
+    r = http_get(url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1819,7 +1837,7 @@ def show__api_key(args):
 )
 def show__api_keys(args):
     url = apiurl(args, "/auth/apikeys/")
-    r = requests.get(url, headers=headers)
+    r = http_get(url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1836,7 +1854,7 @@ def show__autoscalers(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.get(url, headers=headers,json=json_blob)
+    r = http_get(url, headers=headers,json=json_blob)
     r.raise_for_status()
     #print("autoscaler list ".format(r.json()))
 
@@ -1865,7 +1883,7 @@ def show__connections(args):
     """
     req_url = apiurl(args, "/users/cloud_integrations/");
     print(req_url)
-    r = requests.get(req_url, headers=headers);
+    r = http_get(req_url, headers=headers);
     r.raise_for_status()
     rows = r.json()
 
@@ -2043,7 +2061,7 @@ def show__instance(args):
     #req_url = apiurl(args, "/instance", {"owner": "me"});
     req_url = apiurl(args, "/instances/{id}/".format(id=args.id) , {"owner": "me"} )
    
-    #r = requests.get(req_url)
+    #r = http_get(req_url)
     r = http_get(args, req_url)
     r.raise_for_status()
     row = r.json()["instances"]
@@ -2068,7 +2086,7 @@ def show__instances(args):
     :rtype:
     """
     req_url = apiurl(args, "/instances", {"owner": "me"});
-    #r = requests.get(req_url)
+    #r = http_get(req_url)
     r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()["instances"]
@@ -2128,7 +2146,7 @@ def show__machines(args):
     r.raise_for_status()
     rows = r.json()["machines"]
     if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        print(json.dumps(r.json(), indent=1, sort_keys=True))
     else:
         for machine in rows:
             if args.quiet:
@@ -2190,7 +2208,7 @@ def show__subaccounts(args):
 def show__team_members(args):
     url = apiurl(args, "/team/members/")
     print(url)
-    r = requests.get(url, headers=headers)
+    r = http_get(url, headers=headers)
     r.raise_for_status()
     #print(r.text)
     print(r.json())
@@ -2202,7 +2220,7 @@ def show__team_members(args):
 )
 def show__team_role(args):
     url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
-    r = requests.get(url, headers=headers)
+    r = http_get(url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -2212,7 +2230,7 @@ def show__team_role(args):
 )
 def show__team_roles(args):
     url = apiurl(args, "/team/roles-full/")
-    r = requests.get(url, headers=headers)
+    r = http_get(url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -2242,7 +2260,7 @@ def transfer__credit(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -2283,7 +2301,7 @@ def update__autoscaler(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
@@ -2458,7 +2476,7 @@ def generate__pdf_invoices(args):
     sdate,edate = convert_dates_to_timestamps(args)
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate})
 
-    r_inv = requests.get(req_url_inv, headers=headers)
+    r_inv = http_get(req_url_inv, headers=headers)
     r_inv.raise_for_status()
     rows_inv = r_inv.json()["invoices"]
     invoice_filter_data = filter_invoice_items(args, rows_inv)
@@ -2478,8 +2496,49 @@ def generate__pdf_invoices(args):
         vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data)
 
 
+
+def list_machine(args, id):
+    req_url = apiurl(args, "/machines/create_asks/")
+
+    json_blob = {'machine': id, 'price_gpu': args.price_gpu,
+                        'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
+                        'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
+                        'end_date': string_to_unix_epoch(args.end_date), 'credit_discount_max': args.discount_rate}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_put(args, req_url, headers=headers, json=json_blob)
+
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            price_gpu_ = str(args.price_gpu) if args.price_gpu is not None else "def"
+            price_inetu_ = str(args.price_inetu)
+            price_inetd_ = str(args.price_inetd)
+            min_chunk_ = str(args.min_chunk)
+            end_date_ = string_to_unix_epoch(args.end_date)
+            discount_rate_ = str(args.discount_rate)
+            if args.raw:
+                print(json.dumps(r.json(), indent=1))
+            else:
+                print("offers created/updated for machine {id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, max discount_rate {discount_rate_}, till {end_date_}".format(**locals()))
+                num_extended = rj.get("extended", 0)
+
+                if num_extended > 0:
+                    print(f"extended {num_extended} client contracts to {args.end_date}")
+
+        else:
+            if args.raw:
+                print(json.dumps(r.json(), indent=1))
+            else:
+                print(rj["msg"])
+    else:
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()))
+
+
 @parser.command(
-    argument("id", help="id of machine to list", type=int),
+    argument("ID", help="id of machine to list", type=int),
     argument("-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float),
     argument("-s", "--price_disk",
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
@@ -2487,44 +2546,37 @@ def generate__pdf_invoices(args):
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
     argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
-    argument("-e", "--end_date", help="unix timestamp of the available until date (optional)", type=int),
-    usage="vastai list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
+    usage="vastai list machine ID [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
     help="[Host] list a machine for rent",
 )
 def list__machine(args):
     """
 
-
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, "/machines/create_asks/")
+    list_machine(args, args.ID)
 
-    json_blob = {'machine': args.id, 'price_gpu': args.price_gpu,
-                        'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
-                        'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
-                        'end_date': args.end_date, 'credit_discount_max': args.discount_rate}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = requests.put(req_url, json=json_blob)
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            price_gpu_ = str(args.price_gpu) if args.price_gpu is not None else "def";
-            price_inetu_ = str(args.price_inetu);
-            price_inetd_ = str(args.price_inetd);
-            min_chunk_ = str(args.min_chunk);
-            end_date_ = str(args.end_date);
-            discount_rate_ = str(args.discount_rate)
-            print(
-                "offers created for machine {args.id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, max discount_rate {discount_rate_}, till {end_date_}".format(
-                    **locals()));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+
+@parser.command(
+    argument("IDs", help="ids of instance to destroy", type=int, nargs='+'),
+    argument("-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float),
+    argument("-s", "--price_disk",
+             help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
+    argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
+    argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
+    argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
+    argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
+    argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
+    usage="vastai list machines IDs [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    help="[Host] list machines for rent",
+)
+def list__machines(args):
+    """
+    """
+    for id in args.IDs:
+        list_machine(args, id)
 
 
 @parser.command(
@@ -2632,7 +2684,7 @@ def set__defjob(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(req_url, json=json_blob)
+    r = http_put(args, req_url, headers=headers, json=json_blob)
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
@@ -2737,7 +2789,7 @@ def set__min_bid(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
     print("Per gpu min bid price changed".format(r.json()))
 
@@ -2771,7 +2823,7 @@ def schedule__maint(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
     print(f"Maintenance window scheduled for {dt} success".format(r.json()))
 
@@ -2790,7 +2842,7 @@ def reset__api_key(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.put(url, headers=headers,json=json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
@@ -2818,7 +2870,7 @@ au
 def update__team_role(args):
     url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
     permissions = load_permissions_from_file(args.permissions)
-    r = requests.put(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     print(r.json())
 
@@ -2860,6 +2912,9 @@ def main():
                 args.api_key = reader.read().strip()
         else:
             args.api_key = None
+    if args.api_key:
+        headers["Authorization"] = "Bearer " + args.api_key
+
     try:
         sys.exit(args.func(args) or 0)
     except requests.exceptions.HTTPError as e:
