@@ -1455,17 +1455,17 @@ def reboot__instance(args):
 
 
 @parser.command(
-    argument("id", help="machine id", type=int),
+    argument("ID", help="machine id", type=int),
     usage="vastai reports id",
-    help="Get the logs for an instance",
+    help="Get the reports for a machine",
 )
 def reports(args):
     """
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/machines/{id}/reports/".format(id=args.id))
-    json_blob = {"machine_id" : args.id}
+    url = apiurl(args, "/machines/{ID}/reports/".format(id=args.ID))
+    json_blob = {"machine_id" : args.ID}
 
     if (args.explain):
         print("request json: ")
@@ -1499,8 +1499,8 @@ def start_instance(id,args):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    argument("id", help="id of instance to start/restart", type=int),
-    usage="vastai start instance <id> [--raw]",
+    argument("ID", help="ID of instance to start/restart", type=int),
+    usage="vastai start instance <ID> [--raw]",
     help="Start a stopped instance",
     epilog=deindent("""
         This command attempts to bring an instance from the "stopped" state into the "running" state. This is subject to resource availability on the machine that the instance is located on.
@@ -1516,17 +1516,17 @@ def start__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    start_instance(args.id,args)
+    start_instance(args.ID,args)
 
 @parser.command(
-    argument("ids", help="ids of instance to start", type=int, nargs='+'),
+    argument("IDs", help="ids of instance to start", type=int, nargs='+'),
     usage="vastai start instances [--raw] ID0 ID1 ID2...",
     help="Start a list of instances",
 )
 def start__instances(args):
     """
     """
-    for id in args.ids:
+    for id in args.IDs:
         start_instance(id, args)
 
 
@@ -1551,7 +1551,7 @@ def stop_instance(id,args):
 
 
 @parser.command(
-    argument("id", help="id of instance to stop", type=int),
+    argument("ID", help="id of instance to stop", type=int),
     usage="vastai stop instance [--raw] ID",
     help="Stop a running instance",
     epilog=deindent("""
@@ -1566,10 +1566,10 @@ def stop__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    stop_instance(args.id,args)
+    stop_instance(args.ID,args)
 
 @parser.command(
-    argument("ids", help="ids of instance to stop", type=int, nargs='+'),
+    argument("IDs", help="ids of instance to stop", type=int, nargs='+'),
     usage="vastai stop instances [--raw] ID0 ID1 ID2...",
     help="Stop a list of instances",
     epilog=deindent("""
@@ -1582,7 +1582,7 @@ def stop__instances(args):
     """
     """
 
-    for id in args.ids:
+    for id in args.IDs:
         stop_instance(id, args)
 
 
