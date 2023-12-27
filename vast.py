@@ -2643,6 +2643,11 @@ def list__machine(args):
     argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
     usage="vastai list machines IDs [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
     help="[Host] list machines for rent",
+    epilog=deindent("""
+        This variant can be used to list or update the listings for multiple machines at once with the same args.
+        You could extend the end dates of all your machines using a command combo like this:
+        ./vast.py list machines $(./vast.py show machines -q) -e 12/31/2024 --retry 6
+    """)
 )
 def list__machines(args):
     """
