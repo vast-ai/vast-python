@@ -1437,9 +1437,9 @@ def reboot__instance(args):
 
 
 @parser.command(
-    argument("id", help="machine id", type=int),
-    usage="vastai reports id",
-    help="Get the logs for an instance",
+    argument("m_id", help="machine id", type=int),
+    usage="vastai reports m_id",
+    help="Get the user reports for a given machine",
 )
 def reports(args):
     """
