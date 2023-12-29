@@ -86,10 +86,10 @@ class hidden_aliases(object):
     def append(self, x):
         self.l.append(x)
 
-def http_get(args, req_url):
+def http_get(args, req_url, headers = None, json = None):
     t = 0.15
     for i in range(0, args.retry):
-        r = requests.get(req_url, headers=headers)
+        r = requests.get(req_url, headers=headers, json=json)
         if (r.status_code == 429):
             time.sleep(t)
             t *= 1.5
@@ -1889,7 +1889,7 @@ def _ssh_url(args, protocol):
 )
 def show__api_key(args):
     url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
-    r = http_get(url, headers=headers)
+    r = http_get(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1899,7 +1899,7 @@ def show__api_key(args):
 )
 def show__api_keys(args):
     url = apiurl(args, "/auth/apikeys/")
-    r = http_get(url, headers=headers)
+    r = http_get(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1916,7 +1916,7 @@ def show__autoscalers(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = http_get(url, headers=headers,json=json_blob)
+    r = http_get(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
     #print("autoscaler list ".format(r.json()))
 
@@ -1945,7 +1945,7 @@ def show__connections(args):
     """
     req_url = apiurl(args, "/users/cloud_integrations/");
     print(req_url)
-    r = http_get(req_url, headers=headers);
+    r = http_get(args, req_url, headers=headers);
     r.raise_for_status()
     rows = r.json()
 
@@ -2273,7 +2273,7 @@ def show__subaccounts(args):
 def show__team_members(args):
     url = apiurl(args, "/team/members/")
     print(url)
-    r = http_get(url, headers=headers)
+    r = http_get(args, url, headers=headers)
     r.raise_for_status()
     #print(r.text)
     print(r.json())
@@ -2285,7 +2285,7 @@ def show__team_members(args):
 )
 def show__team_role(args):
     url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
-    r = http_get(url, headers=headers)
+    r = http_get(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -2295,7 +2295,7 @@ def show__team_role(args):
 )
 def show__team_roles(args):
     url = apiurl(args, "/team/roles-full/")
-    r = http_get(url, headers=headers)
+    r = http_get(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -2541,7 +2541,7 @@ def generate__pdf_invoices(args):
     sdate,edate = convert_dates_to_timestamps(args)
     req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate})
 
-    r_inv = http_get(req_url_inv, headers=headers)
+    r_inv = http_get(args, req_url_inv, headers=headers)
     r_inv.raise_for_status()
     rows_inv = r_inv.json()["invoices"]
     invoice_filter_data = filter_invoice_items(args, rows_inv)
