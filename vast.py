@@ -2612,7 +2612,7 @@ def list_machine(args, id):
     argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
-    usage="vastai list machine ID [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    usage="vastai list machine ID [options]",
     help="[Host] list a machine for rent",
     epilog=deindent("""
         Performs the same action as pressing the "LIST" button on the site https://cloud.vast.ai/host/machines.
@@ -2641,7 +2641,7 @@ def list__machine(args):
     argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
-    usage="vastai list machines IDs [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]",
+    usage="vastai list machines IDs [options]",
     help="[Host] list machines for rent",
     epilog=deindent("""
         This variant can be used to list or update the listings for multiple machines at once with the same args.
