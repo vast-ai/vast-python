@@ -1121,6 +1121,14 @@ def create__subaccount(args):
     argument("--team_name", help="name of the team", type=str),
     usage="vastai create-team --team_name TEAM_NAME",
     help="Create a new team",
+    epilog=deindent("""
+        As of right now creating a team account will convert your current account into a team account. 
+        Once you convert your user account into a team account, this change is permanent and cannot be reversed. 
+        The created team account will inherit all aspects of your existing user account, including billing information, cloud services, and any other account settings.
+        The user who initiates the team creation becomes the team owner. 
+        Carefully evaluate the decision to convert your user account into a team account, as this change is permanent.
+        For more information see: https://vast.ai/docs/team/introduction
+    """)
 )
 
 def create__team(args):
