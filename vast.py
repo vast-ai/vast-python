@@ -370,7 +370,7 @@ instance_fields = (
     ("inet_down", "Net down", "{:0.1f}", None, True),
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("label", "Label", "{}", None, True),
-    ("duration", "duration(sec)", "{:0.2f}",  lambda x: x/(60.0), True),
+    ("duration", "age(hours)", "{:0.2f}",  lambda x: x/(3600.0), True),
 )
 
 ipaddr_fields = (
