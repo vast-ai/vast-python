@@ -1327,7 +1327,7 @@ def execute(args):
     help="Invite a team member",
 )
 def invite__team_member(args):
-    url = apiurl(args, "/team/invite/", json={"email": args.email, "role": args.role})
+    url = apiurl(args, "/team/invite/", query_args={"email": args.email, "role": args.role})
     r = requests.post(url, headers=headers)
     r.raise_for_status()
     print(r.json())
