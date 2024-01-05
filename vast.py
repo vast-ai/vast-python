@@ -944,15 +944,16 @@ def cloud__copy(args: argparse.Namespace):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
+    argument("--name", help="name of the api-key", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai create api-key",
-    help="Create a new api-key with restricted permissions. Can be sent to other users and temmates in the future",
+    usage="vastai create api-key --name NAME --permissions PERMISSIONS",
+    help="Create a new api-key with restricted permissions. Can be sent to other users and teammates in the future",
 )
 def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
     permissions = load_permissions_from_file(args.permissions)
-    r = requests.post(url, headers=headers, json={"permissions": permissions})
+    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
 
@@ -1158,7 +1159,7 @@ def create__team(args):
 @parser.command(
     argument("--name", help="name of the role", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai create team-role name --permissions PERMISSIONS",
+    usage="vastai create team-role --name NAME --permissions PERMISSIONS",
     help="Add a new role to your",
 )
 def create__team_role(args):
