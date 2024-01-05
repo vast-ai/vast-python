@@ -1364,7 +1364,7 @@ def label__instance(args):
 @parser.command(
     argument("INSTANCE_ID", help="id of instance", type=int),
     argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
-    usage="vastai logs [OPTIONS] INSTANCE_ID",
+    usage="vastai logs INSTANCE_ID [OPTIONS] ",
     help="Get the logs for an instance",
 )
 def logs(args):
@@ -1407,7 +1407,7 @@ def logs(args):
 @parser.command(
     argument("id", help="id of instance to prepay for", type=int),
     argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
-    usage="vastai prepay instance <id> <amount>",
+    usage="vastai prepay instance ID AMOUNT",
     help="Deposit credits into reserved instance.",
 )
 def prepay__instance(args):
@@ -1415,7 +1415,7 @@ def prepay__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url       = apiurl(args, "/instances/prepay/{id}/".format(id=args.id))
+    url       = apiurl(args, "/instances/prepay/{id}/".format(id=args.ID))
     json_blob = { "amount": args.amount }
     if (args.explain):
         print("request json: ")
@@ -1427,7 +1427,7 @@ def prepay__instance(args):
     if rj["success"]:
         timescale = round( rj["timescale"], 3)
         discount_rate = 100.0*round( rj["discount_rate"], 3)
-        print("prepaid for {timescale} months of instance {args.id} applying ${args.amount} credits for a discount of {discount_rate}%.".format(**(locals())));
+        print("prepaid for {timescale} months of instance {args.ID} applying ${args.amount} credits for a discount of {discount_rate}%.".format(**(locals())));
     else:
         print(rj["msg"]);
 
@@ -1436,11 +1436,11 @@ def prepay__instance(args):
 
 
 @parser.command(
-    argument("id", help="id of instance to reboot", type=int),
-    usage="vastai reboot instance <id> [--raw]",
+    argument("ID", help="id of instance to reboot", type=int),
+    usage="vastai reboot instance ID [OPTIONS]",
     help="Reboot (stop/start) an instance",
     epilog=deindent("""
-        Instance is stopped and started without any risk of losing GPU priority.
+        Stops and starts container without any risk of losing GPU priority.
     """),
 )
 def reboot__instance(args):
@@ -1448,14 +1448,14 @@ def reboot__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
+    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.ID))
     r = http_put(args, url,  headers=headers,json={})
     r.raise_for_status()
 
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print("Rebooting instance {args.id}.".format(**(locals())));
+            print("Rebooting instance {args.ID}.".format(**(locals())));
         else:
             print(rj["msg"]);
     else:
@@ -1464,8 +1464,36 @@ def reboot__instance(args):
 
 
 @parser.command(
-    argument("m_id", help="machine id", type=int),
-    usage="vastai reports m_id",
+    argument("ID", help="id of instance to reboot", type=int),
+    usage="vastai recycle instance ID [OPTIONS]",
+    help="Recycle (destroy/create) an instance",
+    epilog=deindent("""
+        Destroys and recreates container in place (from newly pulled image) without any risk of losing GPU priority.
+    """),
+)
+def recycle__instance(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/recycle/{id}/".format(id=args.ID))
+    r = http_put(args, url,  headers=headers,json={})
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print("Recycling instance {args.ID}.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+@parser.command(
+    argument("ID", help="machine id", type=int),
+    usage="vastai reports ID",
     help="Get the user reports for a given machine",
 )
 def reports(args):
@@ -1473,7 +1501,7 @@ def reports(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/machines/{ID}/reports/".format(id=args.ID))
+    url = apiurl(args, "/machines/{id}/reports/".format(id=args.ID))
     json_blob = {"machine_id" : args.ID}
 
     if (args.explain):
@@ -1509,7 +1537,7 @@ def start_instance(id,args):
 
 @parser.command(
     argument("ID", help="ID of instance to start/restart", type=int),
-    usage="vastai start instance <ID> [--raw]",
+    usage="vastai start instance ID [OPTIONS]",
     help="Start a stopped instance",
     epilog=deindent("""
         This command attempts to bring an instance from the "stopped" state into the "running" state. This is subject to resource availability on the machine that the instance is located on.
@@ -1529,7 +1557,7 @@ def start__instance(args):
 
 @parser.command(
     argument("IDs", help="ids of instance to start", type=int, nargs='+'),
-    usage="vastai start instances [--raw] ID0 ID1 ID2...",
+    usage="vastai start instances [OPTIONS] ID0 ID1 ID2...",
     help="Start a list of instances",
 )
 def start__instances(args):
@@ -1561,7 +1589,7 @@ def stop_instance(id,args):
 
 @parser.command(
     argument("ID", help="id of instance to stop", type=int),
-    usage="vastai stop instance [--raw] ID",
+    usage="vastai stop instance ID [OPTIONS]",
     help="Stop a running instance",
     epilog=deindent("""
         This command brings an instance from the "running" state into the "stopped" state. When an instance is "stopped" all of your data on the instance is preserved, 
@@ -1579,7 +1607,7 @@ def stop__instance(args):
 
 @parser.command(
     argument("IDs", help="ids of instance to stop", type=int, nargs='+'),
-    usage="vastai stop instances [--raw] ID0 ID1 ID2...",
+    usage="vastai stop instances [OPTIONS] ID0 ID1 ID2...",
     help="Stop a list of instances",
     epilog=deindent("""
         Examples: 
@@ -2391,8 +2419,8 @@ def update__autoscaler(args):
 
 def convert_dates_to_timestamps(args):
     selector_flag = ""
-    end_timestamp: float = 9999999999
-    start_timestamp: float = 0
+    end_timestamp = time.time()
+    start_timestamp = time.time() - (24*60*60)
     start_date_txt = ""
     end_date_txt = ""
 
