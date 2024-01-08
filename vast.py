@@ -943,16 +943,17 @@ def cloud__copy(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+
 @parser.command(
     argument("--name", help="name of the api-key", type=str),
-    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai create api-key --name NAME --permissions PERMISSIONS",
+    argument("--permission_file", help="file path for json encoded permissions, see https://vast.ai/docs/cli/roles-and-permissions for more information", type=str),
+    usage="vastai create api-key --name NAME --permission_file PERMISSIONS",
     help="Create a new api-key with restricted permissions. Can be sent to other users and teammates in the future",
 )
 def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
-    permissions = load_permissions_from_file(args.permissions)
+    permissions = load_permissions_from_file(args.permission_file)
     r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
@@ -1017,6 +1018,7 @@ def create__autoscaler(args):
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
+    argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
     usage="vastai create instance ID [OPTIONS] [--args ...]",
     help="Create a new instance",
     epilog=deindent("""
@@ -1081,7 +1083,8 @@ def create__instance(args: argparse.Namespace):
         "use_jupyter_lab": args.jupyter_lab,
         "jupyter_dir": args.jupyter_dir,
         "create_from": args.create_from,
-        "force": args.force
+        "force": args.force,
+        "cancel_unavail": args.cancel_unavail
     }
     #print("..")
 
@@ -1405,7 +1408,7 @@ def logs(args):
 
 
 @parser.command(
-    argument("id", help="id of instance to prepay for", type=int),
+    argument("ID", help="id of instance to prepay for", type=int),
     argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
     usage="vastai prepay instance ID AMOUNT",
     help="Deposit credits into reserved instance.",
