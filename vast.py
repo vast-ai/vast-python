@@ -947,6 +947,7 @@ def cloud__copy(args: argparse.Namespace):
 @parser.command(
     argument("--name", help="name of the api-key", type=str),
     argument("--permission_file", help="file path for json encoded permissions, see https://vast.ai/docs/cli/roles-and-permissions for more information", type=str),
+    argument("--key_params", help="optional wildcard key params for advanced keys", type=str),
     usage="vastai create api-key --name NAME --permission_file PERMISSIONS",
     help="Create a new api-key with restricted permissions. Can be sent to other users and teammates in the future",
 )
@@ -954,7 +955,7 @@ def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
     permissions = load_permissions_from_file(args.permission_file)
-    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
 
