@@ -1335,7 +1335,12 @@ def invite__team_member(args):
     url = apiurl(args, "/team/invite/", query_args={"email": args.email, "role": args.role})
     r = requests.post(url, headers=headers)
     r.raise_for_status()
-    print(r.json())
+    if (r.status_code == 200):
+        print(f"successfully invited {args.email} to your current team")
+    else:
+        print(r.text);
+        print(f"failed with error {r.status_code}")
+
 
 @parser.command(
     argument("id", help="id of instance to label", type=int),
@@ -2313,11 +2318,10 @@ def show__subaccounts(args):
 )
 def show__team_members(args):
     url = apiurl(args, "/team/members/")
-    print(url)
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
     #print(r.text)
-    print(r.json())
+    print(json.dumps(r.json(), indent=1, sort_keys=True))
 
 @parser.command(
     argument("NAME", help="name of the role", type=str),
@@ -2328,7 +2332,7 @@ def show__team_role(args):
     url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    print(r.json())
+    print(json.dumps(r.json(), indent=1, sort_keys=True))
 
 @parser.command(
     usage="vastai show team-roles",
@@ -2338,7 +2342,7 @@ def show__team_roles(args):
     url = apiurl(args, "/team/roles-full/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    print(r.json())
+    print(json.dumps(r.json(), indent=1, sort_keys=True))
 
 @parser.command(
     argument("recipient", help="email of recipient account", type=str),
