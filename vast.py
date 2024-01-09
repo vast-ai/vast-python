@@ -2000,6 +2000,25 @@ def show__connections(args):
     else:
         display_table(rows, connection_fields)
 
+
+@parser.command(
+    argument("ID", help="id of instance to get info for", type=int),
+    usage="vastai show deposit ID [options]",
+    help="Display reserve deposit info for an instance"
+)
+def show__deposit(args):
+    """
+    Shows reserve deposit info for an instance.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/instances/balance/{id}/".format(id=args.ID) , {"owner": "me"} )
+    r = http_get(args, req_url)
+    r.raise_for_status()
+    print(json.dumps(r.json(), indent=1, sort_keys=True))
+
+
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     argument("-s", "--start_date", help="start date and time for report. Many formats accepted", type=str),
