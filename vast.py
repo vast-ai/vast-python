@@ -1521,7 +1521,7 @@ def reports(args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        print(f"reports: {r.text}")
+        print(f"reports: {json.dumps(r.json(), indent=2)}")
 
 
 
