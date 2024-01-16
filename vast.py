@@ -1674,7 +1674,7 @@ def numeric_version(version_str):
             comparison = field op value
             field = <name of a field>
             op = one of: <, <=, ==, !=, >=, >, in, notin
-            value = <bool, int, float, etc> | 'any'
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
             bool: True, False
 
         note: to pass '>' and '<' on the command line, make sure to use quotes
@@ -1688,6 +1688,9 @@ def numeric_version(version_str):
 
             # search for datacenter gpus with minimal compute_cap and total_flops
             vastai search offers 'compute_cap > 610 total_flops > 5 datacenter=True'
+
+            # search for reliable 4 gpu offers in Taiwan or Sweden
+            vastai search offers 'reliability>0.99 num_gpus=4 geolocation in [TW,SE]'
 
             # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
             vastai search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
