@@ -1499,6 +1499,27 @@ def recycle__instance(args):
         print(r.text)
         print("failed with error {r.status_code}".format(**locals()));
 
+@parser.command(
+    argument("ID", help="id of user to remove", type=int),
+    usage="vastai remove team-member ID",
+    help="Remove a team member",
+)
+def remove__team_member(args):
+    url = apiurl(args, "/team/members/{id}/".format(id=args.ID))
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
+    argument("NAME", help="name of the role", type=str),
+    usage="vastai remove team-role NAME",
+    help="Remove a role from your team",
+)
+def remove__team_role(args):
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
+    r = requests.delete(url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 @parser.command(
     argument("ID", help="machine id", type=int),
@@ -1524,6 +1545,23 @@ def reports(args):
         print(f"reports: {json.dumps(r.json(), indent=2)}")
 
 
+@parser.command(
+    usage="vastai reset api-key",
+    help="Reset your api-key (get new key from website).",
+)
+def reset__api_key(args):
+    """Caution: a bad API key will make it impossible to connect to the servers.
+    """
+    print('fml')
+    #url = apiurl(args, "/users/current/reset-apikey/", {"owner": "me"})
+    url = apiurl(args, "/commands/reset_apikey/" )
+    json_blob = {"client_id": "me",}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
+    r.raise_for_status()
+    print("api-key reset ".format(r.json()))
 
 def start_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
@@ -1844,6 +1882,22 @@ def search__offers(args):
             display_table(rows, displayable_fields_reserved)
         else:
             display_table(rows, displayable_fields)
+
+
+@parser.command(
+    argument("new_api_key", help="Api key to set as currently logged in user"),
+    usage="vastai set api-key APIKEY",
+    help="Set api-key (get your api-key from the console/CLI)",
+)
+def set__api_key(args):
+    """Caution: a bad API key will make it impossible to connect to the servers.
+au
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    with open(api_key_file, "w") as writer:
+        writer.write(args.new_api_key)
+    print("Your api key has been saved in {}".format(api_key_file_base))
+
 
 
 @parser.command(
@@ -2259,33 +2313,6 @@ def show__ipaddrs(args):
         display_table(rows, ipaddr_fields)
 
 
-@parser.command(
-    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    usage="vastai show machines [OPTIONS]",
-    help="[Host] Show hosted machines",
-)
-def show__machines(args):
-    """
-    Show the machines user is offering for rent.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    req_url = apiurl(args, "/machines", {"owner": "me"});
-    r = http_get(args, req_url);
-    r.raise_for_status()
-    rows = r.json()["machines"]
-    if args.raw:
-        print(json.dumps(r.json(), indent=1, sort_keys=True))
-    else:
-        for machine in rows:
-            if args.quiet:
-                print("{id}".format(id=machine["id"]))
-            else:
-                print("{N} machines: ".format(N=len(rows)));
-                print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
-
-
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
@@ -2407,8 +2434,6 @@ def transfer__credit(args: argparse.Namespace):
 
 
 
-
-
 @parser.command(
     argument("ID", help="id of autoscale group to update", type=int),
     argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
@@ -2445,6 +2470,21 @@ def update__autoscaler(args):
     else:
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
+
+
+@parser.command(
+    argument("ID", help="id of the role", type=int),
+    argument("--name", help="name of the template", type=str),
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
+    help="Update an existing team role",
+)
+def update__team_role(args):
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
+    permissions = load_permissions_from_file(args.permissions)
+    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    print(r.json())
 
 
 def convert_dates_to_timestamps(args):
@@ -2724,31 +2764,6 @@ def list__machines(args):
 
 
 @parser.command(
-    argument("id", help="id of machine to unlist", type=int),
-    usage="vastai unlist machine <id>",
-    help="[Host] Unlist a listed machine",
-)
-def unlist__machine(args):
-    """
-    Removes machine from list of machines for rent.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
-    r = requests.delete(req_url)
-    if (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("all offers for machine {machine_id} removed, machine delisted.".format(machine_id=args.id));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
-
-@parser.command(
     argument("id", help="id of machine to remove default instance from", type=int),
     usage="vastai remove defjob id",
     help="[Host] Delete default jobs",
@@ -2774,27 +2789,6 @@ def remove__defjob(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
-@parser.command(
-    argument("ID", help="id of user to remove", type=int),
-    usage="vastai remove team-member ID",
-    help="Remove a team member",
-)
-def remove__team_member(args):
-    url = apiurl(args, "/team/members/{id}/".format(id=args.ID))
-    r = requests.delete(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
-
-@parser.command(
-    argument("NAME", help="name of the role", type=str),
-    usage="vastai remove team-role NAME",
-    help="Remove a role from your team",
-)
-def remove__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
-    r = requests.delete(url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
 
 
 def set_ask(args):
@@ -2804,7 +2798,6 @@ def set_ask(args):
     :rtype:
     """
     print("set asks!\n");
-
 
 
 
@@ -2983,50 +2976,58 @@ def schedule__maint(args):
 
 
 @parser.command(
-    usage="vastai reset api-key",
-    help="Reset your api-key (get new key from website).",
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    usage="vastai show machines [OPTIONS]",
+    help="[Host] Show hosted machines",
 )
-def reset__api_key(args):
-    """Caution: a bad API key will make it impossible to connect to the servers.
+def show__machines(args):
     """
-    print('fml')
-    #url = apiurl(args, "/users/current/reset-apikey/", {"owner": "me"})
-    url = apiurl(args, "/commands/reset_apikey/" )
-    json_blob = {"client_id": "me",}
-    if (args.explain):
-        print("request json: ")
-        print(json_blob)
-    r = http_put(args, url,  headers=headers,json=json_blob)
-    r.raise_for_status()
-    print("api-key reset ".format(r.json()))
+    Show the machines user is offering for rent.
 
-@parser.command(
-    argument("new_api_key", help="Api key to set as currently logged in user"),
-    usage="vastai set api-key APIKEY",
-    help="Set api-key (get your api-key from the console/CLI)",
-)
-def set__api_key(args):
-    """Caution: a bad API key will make it impossible to connect to the servers.
-au
     :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
     """
-    with open(api_key_file, "w") as writer:
-        writer.write(args.new_api_key)
-    print("Your api key has been saved in {}".format(api_key_file_base))
+    req_url = apiurl(args, "/machines", {"owner": "me"});
+    r = http_get(args, req_url);
+    r.raise_for_status()
+    rows = r.json()["machines"]
+    if args.raw:
+        print(json.dumps(r.json(), indent=1, sort_keys=True))
+    else:
+        for machine in rows:
+            if args.quiet:
+                print("{id}".format(id=machine["id"]))
+            else:
+                print("{N} machines: ".format(N=len(rows)));
+                print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
+
 
 @parser.command(
-    argument("ID", help="id of the role", type=int),
-    argument("--name", help="name of the template", type=str),
-    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
-    help="Update an existing team role",
+    argument("id", help="id of machine to unlist", type=int),
+    usage="vastai unlist machine <id>",
+    help="[Host] Unlist a listed machine",
 )
-def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
-    permissions = load_permissions_from_file(args.permissions)
-    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
-    r.raise_for_status()
-    print(r.json())
+def unlist__machine(args):
+    """
+    Removes machine from list of machines for rent.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
+    r = requests.delete(req_url)
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("all offers for machine {machine_id} removed, machine delisted.".format(machine_id=args.id));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
+
 
 login_deprecated_message = """
 login via the command line is no longer supported.
