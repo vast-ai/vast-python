@@ -949,7 +949,7 @@ def cloud__copy(args: argparse.Namespace):
     argument("--permission_file", help="file path for json encoded permissions, see https://vast.ai/docs/cli/roles-and-permissions for more information", type=str),
     argument("--key_params", help="optional wildcard key params for advanced keys", type=str),
     usage="vastai create api-key --name NAME --permission_file PERMISSIONS",
-    help="Create a new api-key with restricted permissions. Can be sent to other users and teammates in the future",
+    help="Create a new api-key with restricted permissions. Can be sent to other users and teammates",
 )
 def create__api_key(args):
 
@@ -2667,6 +2667,44 @@ def generate__pdf_invoices(args):
         display_table(rows_inv, invoice_fields)
         vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data)
 
+
+def cleanup_machine(args, machine_id):
+    req_url = apiurl(args, f"/machines/{machine_id}/cleanup/")
+
+    if (args.explain):
+        print("request json: ")
+    r = http_put(args, req_url, headers=headers, json={})
+
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print(json.dumps(r.json(), indent=1))
+        else:
+            if args.raw:
+                print(json.dumps(r.json(), indent=1))
+            else:
+                print(rj["msg"])
+    else:
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()))
+
+@parser.command(
+    argument("ID", help="id of machine to cleanup", type=int),
+    usage="vastai cleanup machine ID [options]",
+    help="[Host] Remove all expired storage instances from the machine, freeing up space.",
+    epilog=deindent("""
+        Instances expire on their end date. Expired instances still pay storage fees, but can not start.
+        Since hosts are still paid storage fees for expired instances, we do not auto delete them.
+        Instead you can use this CLI/API function to delete all expired storage instances for a machine.
+        This is useful if you are running low on storage, want to do maintenance, or are subsidizing storage, etc.
+    """)
+)
+def cleanup__machine(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    cleanup_machine(args, args.ID)
 
 
 def list_machine(args, id):
