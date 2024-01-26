@@ -1529,7 +1529,7 @@ def reports(args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        print(f"reports: {r.text}")
+        print(f"reports: {json.dumps(r.json(), indent=2)}")
 
 
 
@@ -1682,7 +1682,7 @@ def numeric_version(version_str):
             comparison = field op value
             field = <name of a field>
             op = one of: <, <=, ==, !=, >=, >, in, notin
-            value = <bool, int, float, etc> | 'any'
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
             bool: True, False
 
         note: to pass '>' and '<' on the command line, make sure to use quotes
@@ -1696,6 +1696,9 @@ def numeric_version(version_str):
 
             # search for datacenter gpus with minimal compute_cap and total_flops
             vastai search offers 'compute_cap > 610 total_flops > 5 datacenter=True'
+
+            # search for reliable 4 gpu offers in Taiwan or Sweden
+            vastai search offers 'reliability>0.99 num_gpus=4 geolocation in [TW,SE]'
 
             # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
             vastai search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
@@ -2010,6 +2013,25 @@ def show__connections(args):
         print(json.dumps(rows, indent=1, sort_keys=True))
     else:
         display_table(rows, connection_fields)
+
+
+@parser.command(
+    argument("ID", help="id of instance to get info for", type=int),
+    usage="vastai show deposit ID [options]",
+    help="Display reserve deposit info for an instance"
+)
+def show__deposit(args):
+    """
+    Shows reserve deposit info for an instance.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/instances/balance/{id}/".format(id=args.ID) , {"owner": "me"} )
+    r = http_get(args, req_url)
+    r.raise_for_status()
+    print(json.dumps(r.json(), indent=1, sort_keys=True))
+
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
