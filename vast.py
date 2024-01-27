@@ -1016,7 +1016,7 @@ def create__autoscaler(args):
     argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
     argument("--extra", help=argparse.SUPPRESS),
     argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
-    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose."),
+    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
@@ -1025,7 +1025,12 @@ def create__autoscaler(args):
     epilog=deindent("""
         Performs the same action as pressing the "RENT" button on the website at https://console.vast.ai/create/ 
         Creates an instance from an offer ID (which is returned from "search offers"). Each offer ID can only be used to create one instance.
-        Besides the offer ID, you must pass in an '--image' argument as a minimum. 
+        Besides the offer ID, you must pass in an '--image' argument as a minimum.
+
+        If you use args/entrypoint launch mode, we create a container from your image as is, without attempting to inject ssh and or jupyter.
+        If you use the args launch mode, you can override the entrypoint with --entrypoint, and pass arguments to the entrypoint with --args.
+        If you use --args, that must be the last argument, as any following tokens are consumed into the args string.
+        For ssh/jupyter launch types, use --onstart-cmd to pass in startup script, instead of --entrypoint and --args.
         
         Examples:
 
