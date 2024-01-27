@@ -1028,12 +1028,19 @@ def create__autoscaler(args):
         Besides the offer ID, you must pass in an '--image' argument as a minimum. 
         
         Examples:
-        vastai create instance 6995713 --image pytorch/pytorch --disk 40 --env '-p 8081:80801/udp -h billybob' --ssh --direct --onstart-cmd "env | grep _ >> /etc/environment; echo 'starting up'";                
+
+        # create an instance with the pytorch/pytorch image, 40GB of disk, open 8081 udp, direct ssh, set hostname to billybob, and a small onstart script
+        vastai create instance 6995713 --image pytorch/pytorch --disk 40 --env '-p 8081:8081/udp -h billybob' --ssh --direct --onstart-cmd "env | grep _ >> /etc/environment; echo 'starting up'";                
+
+        # create an instance with the bobsrepo/pytorch:latest image, 20GB of disk, open 22, 8080, jupyter ssh, and set some env variables
         vastai create instance 384827  --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
-                    
+
+        # create an instance with the pytorch/pytorch image, 40GB of disk, override the entrypoint to bash and pass bash a simple command to keep the instance running. (args launch without ssh/jupyter)
+        vastai create instance 5801802 --image pytorch/pytorch --disk 40 --onstart-cmd 'bash' --args -c 'echo hello; sleep infinity;'
+
         Return value:
-        Returns a json reporting the instance ID of the newly created instance. 
-        Example: {'success': True, 'new_contract': 7835610} 
+        Returns a json reporting the instance ID of the newly created instance:
+        {'success': True, 'new_contract': 7835610} 
     """),
 )
 def create__instance(args: argparse.Namespace):
