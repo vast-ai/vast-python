@@ -442,7 +442,72 @@ def version_string_sort(a, b) -> int:
     return 0
 
 
-def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
+offers_fields = {
+    "bw_nvlink",
+    "compute_cap",
+    "cpu_cores",
+    "cpu_cores_effective",
+    "cpu_ram",
+    "cuda_max_good",
+    "datacenter",
+    "direct_port_count",
+    "driver_version",
+    "disk_bw",
+    "disk_space",
+    "dlperf",
+    "dlperf_per_dphtotal",
+    "dph_total",
+    "duration",
+    "external",
+    "flops_per_dphtotal",
+    "gpu_display_active",
+    # "gpu_ram_free_min",
+    "gpu_mem_bw",
+    "gpu_name",
+    "gpu_ram",
+    "gpu_display_active",
+    "has_avx",
+    "host_id",
+    "id",
+    "inet_down",
+    "inet_down_cost",
+    "inet_up",
+    "inet_up_cost",
+    "machine_id",
+    "min_bid",
+    "mobo_name",
+    "num_gpus",
+    "pci_gen",
+    "pcie_bw",
+    "reliability2",
+    "rentable",
+    "rented",
+    "storage_cost",
+    "static_ip",
+    "total_flops",
+    "ubuntu_version",
+    "verification",
+    "verified",
+    "geolocation"
+}
+
+offers_alias = {
+    "cuda_vers": "cuda_max_good",
+    "display_active": "gpu_display_active",
+    "reliability": "reliability2",
+    "dlperf_usd": "dlperf_per_dphtotal",
+    "dph": "dph_total",
+    "flops_usd": "flops_per_dphtotal",
+}
+
+offers_mult = {
+    "cpu_ram": 1000,
+    "gpu_ram": 1000,
+    "duration": 24.0 * 60.0 * 60.0,
+}
+
+
+def parse_query(query_str: str, res: typing.Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> typing.Dict:
     """
     Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
     processes it into a dict of URL parameters to be sent to the server.
@@ -479,71 +544,9 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "not in": "notin",
         "nin": "notin",
         "in": "in",
-    };
-
-    field_alias = {
-        "cuda_vers": "cuda_max_good",
-        "display_active": "gpu_display_active",
-        "reliability": "reliability2",
-        "dlperf_usd": "dlperf_per_dphtotal",
-        "dph": "dph_total",
-        "flops_usd": "flops_per_dphtotal",
-    };
-
-    field_multiplier = {
-        "cpu_ram": 1000,
-        "gpu_ram": 1000,
-        "duration": 24.0 * 60.0 * 60.0,
     }
 
-    fields = {
-        "bw_nvlink",
-        "compute_cap",
-        "cpu_cores",
-        "cpu_cores_effective",
-        "cpu_ram",
-        "cuda_max_good",
-        "datacenter",
-        "direct_port_count",
-        "driver_version",
-        "disk_bw",
-        "disk_space",
-        "dlperf",
-        "dlperf_per_dphtotal",
-        "dph_total",
-        "duration",
-        "external",
-        "flops_per_dphtotal",
-        "gpu_display_active",
-        # "gpu_ram_free_min",
-        "gpu_mem_bw",
-        "gpu_name",
-        "gpu_ram",
-        "gpu_display_active",
-        "has_avx",
-        "host_id",
-        "id",
-        "inet_down",
-        "inet_down_cost",
-        "inet_up",
-        "inet_up_cost",
-        "machine_id",
-        "min_bid",
-        "mobo_name",
-        "num_gpus",
-        "pci_gen",
-        "pcie_bw",
-        "reliability2",
-        "rentable",
-        "rented",
-        "storage_cost",
-        "static_ip",
-        "total_flops",
-        "ubuntu_version",
-        "verification",
-        "verified",
-        "geolocation"
-    };
+
 
     joined = "".join("".join(x) for x in opts)
     if joined != query_str:
@@ -1704,6 +1707,184 @@ def numeric_version(version_str):
         print("Invalid version string format. Expected format: X.X.X")
         return None
 
+
+benchmarks_fields = {
+    "contract_id",#             int        ID of instance/contract reporting benchmark
+    "id",#                      int        benchmark unique ID
+    "image",#                   string     image used for benchmark
+    "last_update",#             float      date of benchmark
+    "machine_id",#              int        id of machine benchmarked
+    "model",#                   string     name of model used in benchmark
+    "name",#                    string     name of benchmark
+    "num_gpus",#                int        number of gpus used in benchmark
+    "score"#                   float      benchmark score result
+}
+
+@parser.command(
+    argument("query", help="Search query in simple query syntax (see below)", nargs="*", default=None),
+    usage="vastai search benchmarks [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for benchmark results using custom query",
+    epilog=deindent("""
+        Query syntax:
+
+            query = comparison comparison...
+            comparison = field op value
+            field = <name of a field>
+            op = one of: <, <=, ==, !=, >=, >, in, notin
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
+            bool: True, False
+
+        note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+
+        Examples:
+
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            vastai search benchmarks 'score > 100.0  model=llama2_70B  machine_id in [302,402]'
+
+        Available fields:
+
+              Name                  Type       Description
+
+            contract_id             int        ID of instance/contract reporting benchmark
+            id                      int        benchmark unique ID
+            image                   string     image used for benchmark
+            last_update             float      date of benchmark
+            machine_id              int        id of machine benchmarked
+            model                   string     name of model used in benchmark
+            name                    string     name of benchmark
+            num_gpus                int        number of gpus used in benchmark
+            score                   float      benchmark score result
+    """),
+    aliases=hidden_aliases(["search benchmarks"]),
+)
+def search__benchmarks(args):
+    """Creates a query based on search parameters as in the examples above.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    try:
+        query = {}
+        if args.query is not None:
+            query = parse_query(args.query, query, benchmarks_fields)
+
+    except ValueError as e:
+        print("Error: ", e)
+        return 1  
+    url = apiurl(args, "/benchmarks", {"select_cols" : ['id','last_update','machine_id','score'], "select_filters" : query})
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    rows = r.json()
+    if True: # args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
+
+
+invoices_fields = {
+    'id',#               int,                   
+    'user_id',#          int,      
+    'when',#             float,                     
+    'paid_on',#          float,                     
+    'payment_expected',# float,                     
+    'amount_cents',#     int,                   
+    'is_credit',#        bool,                   
+    'is_delayed',#       bool,                   
+    'balance_before',#   float,                     
+    'balance_after',#    float,                     
+    'original_amount',#  int,                   
+    'event_id',#         string,                    
+    'cut_amount',#       int,                   
+    'cut_percent',#      float,                     
+    'extra',#            json,           
+    'service',#          string,                    
+    'stripe_charge',#    json,           
+    'stripe_refund',#    json,           
+    'stripe_payout',#    json,           
+    'error',#            json,           
+    'paypal_email',#     string,                    
+    'transfer_group',#   string,                    
+    'failed',#           bool,                   
+    'refunded',#         bool,                   
+    'is_check',#         bool,                   
+}
+
+@parser.command(
+    argument("query", help="Search query in simple query syntax (see below)", nargs="*", default=None),
+    usage="vastai search invoices [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for benchmark results using custom query",
+    epilog=deindent("""
+        Query syntax:
+
+            query = comparison comparison...
+            comparison = field op value
+            field = <name of a field>
+            op = one of: <, <=, ==, !=, >=, >, in, notin
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
+            bool: True, False
+
+        note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+
+        Examples:
+
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            vastai search invoices 'amount_cents>3000  '
+
+        Available fields:
+
+      Name                  Type       Description
+
+    id                  int,            
+    user_id             int,            
+    when                float,          utc epoch timestamp of initial invoice creation
+    paid_on             float,          actual payment date (utc epoch timestamp )
+    payment_expected    float,          expected payment date (utc epoch timestamp )
+    amount_cents        int,            amount of payment in cents
+    is_credit           bool,           is a credit purchase
+    is_delayed          bool,           is not yet paid
+    balance_before      float,          balance before
+    balance_after       float,          balance after
+    original_amount     int,            original amount of payment
+    event_id            string,           
+    cut_amount          int,               
+    cut_percent         float,            
+    extra               json,           
+    service             string,         type of payment 
+    stripe_charge       json,           
+    stripe_refund       json,           
+    stripe_payout       json,           
+    error               json,           
+    paypal_email        string,         email for paypal/wise payments
+    transfer_group      string,         
+    failed              bool,                   
+    refunded            bool,                   
+    is_check            bool,                   
+    """),
+    aliases=hidden_aliases(["search invoices"]),
+)
+def search__invoices(args):
+    """Creates a query based on search parameters as in the examples above.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    try:
+        query = {}
+        if args.query is not None:
+            query = parse_query(args.query, query, invoices_fields)
+
+    except ValueError as e:
+        print("Error: ", e)
+        return 1  
+    url = apiurl(args, "/invoices", {"select_cols" : ['*'], "select_filters" : query})
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    rows = r.json()
+    if True: # args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
+
 @parser.command(
     argument("-t", "--type", default="on-demand", help="Show 'on-demand', 'reserved', or 'bid'(interruptible) pricing. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
@@ -1800,13 +1981,7 @@ def search__offers(args):
 
     :param argparse.Namespace args: should supply all the command-line options
     """
-    field_alias = {
-        "cuda_vers": "cuda_max_good",
-        "reliability": "reliability2",
-        "dlperf_usd": "dlperf_per_dphtotal",
-        "dph": "dph_total",
-        "flops_usd": "flops_per_dphtotal",
-    };
+
 
     try:
 
@@ -1817,7 +1992,7 @@ def search__offers(args):
             #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True} }
 
         if args.query is not None:
-            query = parse_query(args.query, query)
+            query = parse_query(args.query, query, offers_fields, offers_alias, offers_mult)
 
         order = []
         for name in args.order.split(","):
@@ -1827,8 +2002,8 @@ def search__offers(args):
             if name.strip("-") != name:
                 direction = "desc"
             field = name.strip("-");
-            if field in field_alias:
-                field = field_alias[field];
+            if field in offers_alias:
+                field = offers_alias[field];
             order.append([field, direction])
 
         query["order"] = order
@@ -1896,6 +2071,92 @@ def search__offers(args):
             display_table(rows, displayable_fields)
 
 
+
+templates_fields = {
+    "creator_id",#              int        ID of creator
+    "created_at",#              float      time of initial template creation (UTC epoch timestamp)
+    "count_created",#           int        #instances created (popularity)
+    "default_tag",#             string     image default tag
+    "docker_login_repo",#       string     image docker repository
+    "id",#                      int        template unique ID
+    "image",#                   string     image used for benchmark
+    "jup_direct",#              bool       supports jupyter direct
+    "hash_id",#                 string     unique hash ID of template
+    "name",#                    string     displayable name
+    "recent_create_date",#      float      last time of instance creation (UTC epoch timestamp)
+    "recommended_disk_space",#  float      min disk space required
+    "recommended",#             bool       is templated on our recommended list
+    "ssh_direct",#              bool       supports ssh direct
+    "tag",#                     string     image tag
+    "use_ssh",#                 string     supports ssh (direct or proxy)
+}
+
+@parser.command(
+    argument("query", help="Search query in simple query syntax (see below)", nargs="*", default=None),
+    usage="vastai search templates [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for template results using custom query",
+    epilog=deindent("""
+        Query syntax:
+
+            query = comparison comparison...
+            comparison = field op value
+            field = <name of a field>
+            op = one of: <, <=, ==, !=, >=, >, in, notin
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
+            bool: True, False
+
+        note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+
+        Examples:
+
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            vastai search templates 'count_created > 100  creator_id in [38382,48982]'
+
+        Available fields:
+
+      Name                  Type       Description
+
+    creator_id              int        ID of creator
+    created_at              float      time of initial template creation (UTC epoch timestamp)
+    count_created           int        #instances created (popularity)
+    default_tag             string     image default tag
+    docker_login_repo       string     image docker repository
+    id                      int        template unique ID
+    image                   string     image used for template
+    jup_direct              bool       supports jupyter direct
+    hash_id                 string     unique hash ID of template
+    name                    string     displayable name
+    recent_create_date      float      last time of instance creation (UTC epoch timestamp)
+    recommended_disk_space  float      min disk space required
+    recommended             bool       is templated on our recommended list
+    ssh_direct              bool       supports ssh direct
+    tag                     string     image tag
+    use_ssh                 bool       supports ssh (direct or proxy)    """),
+    aliases=hidden_aliases(["search templates"]),
+)
+def search__templates(args):
+    """Creates a query based on search parameters as in the examples above.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    try:
+        query = {}
+        if args.query is not None:
+            query = parse_query(args.query, query, templates_fields)
+
+    except ValueError as e:
+        print("Error: ", e)
+        return 1  
+    url = apiurl(args, "/templates", {"select_cols" : ['*'], "select_filters" : query})
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    rows = r.json()
+    if True: # args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
+
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
     usage="vastai set api-key APIKEY",
@@ -1903,12 +2164,52 @@ def search__offers(args):
 )
 def set__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.
-au
     :param argparse.Namespace args: should supply all the command-line options
     """
     with open(api_key_file, "w") as writer:
         writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
+
+
+
+@parser.command(
+    argument("--file", help="file path for params in json format", type=str),
+    usage="vastai set user --file FILE",
+    help="Update user data from json file",
+    epilog=deindent("""
+
+    Available fields:
+
+    Name                            Type       Description
+
+    ssh_key                         string
+    paypal_email                    string
+    wise_email                      string
+    email                           string
+    normalized_email                string
+    username                        string
+    fullname                        string
+    billaddress_line1               string
+    billaddress_line2               string
+    billaddress_city                string
+    billaddress_zip                 string
+    billaddress_country             string
+    billaddress_taxinfo             string
+    balance_threshold_enabled       string
+    balance_threshold               string
+    autobill_threshold              string
+    phone_number                    string
+    tfa_enabled                     bool
+    """),
+)
+def set__user(args):
+    params = None
+    with open(args.file, 'r') as file:
+        params = json.load(file)
+    url = apiurl(args, "/users_/")
+    r = requests.put(url, headers=headers, json=params)
+    r.raise_for_status()
+    print(f"{r.json()}")
 
 
 
@@ -2125,8 +2426,8 @@ def show__earnings(args):
             end_date_txt = end_date.isoformat()
             end_timestamp = time.mktime(end_date.timetuple())
             eday = end_timestamp / Days
-        except ValueError:
-            print("Warning: Invalid end date format! Ignoring end date!")
+        except ValueError as e:
+            print(f"Warning: Invalid end date format! Ignoring end date! \n {str(e)}")
 
     if args.start_date:
         try:
@@ -2135,7 +2436,7 @@ def show__earnings(args):
             start_timestamp = time.mktime(start_date.timetuple())
             sday = start_timestamp / Days
         except ValueError:
-            print("Warning: Invalid start date format! Ignoring start date!")
+            print(f"Warning: Invalid start date format! Ignoring start date! \n {str(e)}")
 
 
 
@@ -2514,16 +2815,16 @@ def convert_dates_to_timestamps(args):
             end_date = dateutil.parser.parse(str(args.end_date))
             end_date_txt = end_date.isoformat()
             end_timestamp = time.mktime(end_date.timetuple())
-        except ValueError:
-            print("Warning: Invalid end date format! Ignoring end date!")
+        except ValueError as e:
+            print(f"Warning: Invalid end date format! Ignoring end date! \n {str(e)}")
     
     if args.start_date:
         try:
             start_date = dateutil.parser.parse(str(args.start_date))
             start_date_txt = start_date.isoformat()
             start_timestamp = time.mktime(start_date.timetuple())
-        except ValueError:
-            print("Warning: Invalid start date format! Ignoring start date!")    
+        except ValueError as e:
+            print(f"Warning: Invalid start date format! Ignoring end date! \n {str(e)}")
 
     return start_timestamp, end_timestamp
 
