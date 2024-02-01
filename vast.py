@@ -2286,7 +2286,7 @@ def _ssh_url(args, protocol):
         try:
             if (port_22d is not None):
                 ipaddr = instance["public_ipaddr"]
-                port   = port_22d[0]["HostPort"]
+                port   = int(port_22d[0]["HostPort"])
             else:        
                 ipaddr = instance["ssh_host"]
                 port   = int(instance["ssh_port"])+1
