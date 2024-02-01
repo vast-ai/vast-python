@@ -903,7 +903,7 @@ def copy(args: argparse.Namespace):
         You can find more information about the cloud copy operation here: https://vast.ai/docs/gpu-instances/cloud-sync
                     
         Examples:
-         vast cloud_copy --src folder --dst /workspace --cloud_service "Amazon S3" --instance_id 6003036 --cloud_service_selected 52 --transfer "Instance To Cloud"
+         vast cloud_copy --src folder --dst /workspace --instance_id 6003036 --connection 52 --transfer "Instance To Cloud"
 
         The example copies all contents of /folder into /workspace on instance 6003036 from Amazon S3.
     """),
@@ -953,11 +953,15 @@ def cloud__copy(args: argparse.Namespace):
     argument("--key_params", help="optional wildcard key params for advanced keys", type=str),
     usage="vastai create api-key --name NAME --permission_file PERMISSIONS",
     help="Create a new api-key with restricted permissions. Can be sent to other users and teammates",
+    epilog=deindent("""
+        In order to create api keys you must understand how permissions must be sent via json format. 
+        You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
+    """)
 )
 def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
-    permissions = load_permissions_from_file(args.permission_file)
+    permissions = load_permissions_from_file(args.permissions)
     r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
@@ -1180,6 +1184,10 @@ def create__team(args):
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
     usage="vastai create team-role --name NAME --permissions PERMISSIONS",
     help="Add a new role to your",
+    epilog=deindent("""
+        Creating a new team role involves understanding how permissions must be sent via json format.
+        You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
+    """)
 )
 def create__team_role(args):
     url = apiurl(args, "/team/roles/")
@@ -2317,7 +2325,10 @@ def show__api_keys(args):
     url = apiurl(args, "/auth/apikeys/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    print(r.json())
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 @parser.command(
     usage="vastai show autoscalers [--api-key API_KEY]",
@@ -2682,12 +2693,15 @@ def show__team_members(args):
     url = apiurl(args, "/team/members/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    #print(r.text)
-    print(json.dumps(r.json(), indent=1, sort_keys=True))
+
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 @parser.command(
     argument("NAME", help="name of the role", type=str),
-    usage="vast ai show team-role NAME",
+    usage="vastai show team-role NAME",
     help="Show your team role",
 )
 def show__team_role(args):
@@ -2704,7 +2718,11 @@ def show__team_roles(args):
     url = apiurl(args, "/team/roles-full/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    print(json.dumps(r.json(), indent=1, sort_keys=True))
+
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 @parser.command(
     argument("recipient", help="email of recipient account", type=str),
@@ -3379,6 +3397,22 @@ def unlist__machine(args):
 
 
 
+@parser.command(
+    argument("ID", help="id of the role", type=int),
+    argument("--name", help="name of the template", type=str),
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
+    help="Update an existing team role",
+)
+def update__team_role(args):
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
+    permissions = load_permissions_from_file(args.permissions)
+    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 login_deprecated_message = """
 login via the command line is no longer supported.
