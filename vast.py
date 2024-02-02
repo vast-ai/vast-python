@@ -975,7 +975,6 @@ def create__api_key(args):
     argument("--template_id",   help="template id (optional)", type=int),
     argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
-    # argument("--launch_args_dict",   help="launch args dict for create instance  ex: \"{'onstart' : 'onstart_wget.sh', 'env' : '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh', 'image' : 'atinoda/text-generation-webui:default-nightly', 'disk' : 64}\"", type=str),
     argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
     usage="vastai autoscaler create [OPTIONS]",
     help="Create a new autoscale group",
@@ -1123,7 +1122,6 @@ def create__instance(args: argparse.Namespace):
         print(json_blob)
     r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
-    print(f"text: {r.text}")
     if args.raw:
         print(json.dumps(r.json(), indent=1))
     else:
