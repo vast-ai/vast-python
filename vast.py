@@ -36,7 +36,7 @@ except NameError:
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-#server_url_default = "http://localhost:5002"
+# server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -971,7 +971,7 @@ def create__api_key(args):
     argument("--target_util", help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash", help="template hash (optional)", type=str),
+    argument("--template_hash", help="template hash (optional, but **Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id (optional)", type=int),
     argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
@@ -986,7 +986,13 @@ def create__api_key(args):
 )
 def create__autoscaler(args):
     url = apiurl(args, "/autojobs/" )
+
+    # if args.launch_args_dict:
+    #     launch_args_dict = json.loads(args.launch_args_dict)
+    #     json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args_dict": launch_args_dict, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    
     json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -1027,6 +1033,7 @@ def create__autoscaler(args):
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
+    argument("--template_hash", help="Create instance from template info", type=str),
     usage="vastai create instance ID [OPTIONS] [--args ...]",
     help="Create a new instance",
     epilog=deindent("""
@@ -1060,6 +1067,7 @@ def create__instance(args: argparse.Namespace):
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     """
+
     if args.onstart:
         with open(args.onstart, "r") as reader:
             args.onstart_cmd = reader.read()
@@ -1083,10 +1091,6 @@ def create__instance(args: argparse.Namespace):
     if args.ssh:
         runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
-    #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
-
-    #print(".")
     json_blob ={
         "client_id": "me",
         "image": args.image,
@@ -1104,14 +1108,14 @@ def create__instance(args: argparse.Namespace):
         "jupyter_dir": args.jupyter_dir,
         "create_from": args.create_from,
         "force": args.force,
-        "cancel_unavail": args.cancel_unavail
+        "cancel_unavail": args.cancel_unavail,
+        "template_hash_id" : args.template_hash
     }
-    #print("..")
-
-    #print(args.args)
-
     if (args.args != None):
-     json_blob["args"] = args.args
+        json_blob["args"] = args.args
+
+    #print(f"put asks/{args.id}/  runtype:{runtype}")
+    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
 
     if (args.explain):
         print("request json: ")
@@ -2029,6 +2033,11 @@ def search__offers(args):
     url = apiurl(args, "/bundles", {"q": query})
     r = requests.get(url, headers=headers);
     r.raise_for_status()
+   
+    if (r.headers.get('Content-Type') != 'application/json'):
+        print(f"invalid return Content-Type: {r.headers.get('Content-Type')}")
+        return
+    
     rows = r.json()["offers"]
 
     # TODO: add this post-query geolocation filter to the database call rather than handling it locally
@@ -2772,7 +2781,7 @@ def transfer__credit(args: argparse.Namespace):
     argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash",   help="template hash", type=str),
+    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id", type=int),
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
