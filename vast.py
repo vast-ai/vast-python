@@ -2090,6 +2090,7 @@ templates_fields = {
     "image",#                   string     image used for benchmark
     "jup_direct",#              bool       supports jupyter direct
     "hash_id",#                 string     unique hash ID of template
+    "private",#                 bool       true: only your templates, None: public templates
     "name",#                    string     displayable name
     "recent_create_date",#      float      last time of instance creation (UTC epoch timestamp)
     "recommended_disk_space",#  float      min disk space required
@@ -2214,7 +2215,7 @@ def set__user(args):
     params = None
     with open(args.file, 'r') as file:
         params = json.load(file)
-    url = apiurl(args, "/users_/")
+    url = apiurl(args, "/users/")
     r = requests.put(url, headers=headers, json=params)
     r.raise_for_status()
     print(f"{r.json()}")
