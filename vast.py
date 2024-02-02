@@ -36,7 +36,7 @@ except NameError:
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-#server_url_default = "http://localhost:5002"
+# server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -442,7 +442,72 @@ def version_string_sort(a, b) -> int:
     return 0
 
 
-def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
+offers_fields = {
+    "bw_nvlink",
+    "compute_cap",
+    "cpu_cores",
+    "cpu_cores_effective",
+    "cpu_ram",
+    "cuda_max_good",
+    "datacenter",
+    "direct_port_count",
+    "driver_version",
+    "disk_bw",
+    "disk_space",
+    "dlperf",
+    "dlperf_per_dphtotal",
+    "dph_total",
+    "duration",
+    "external",
+    "flops_per_dphtotal",
+    "gpu_display_active",
+    # "gpu_ram_free_min",
+    "gpu_mem_bw",
+    "gpu_name",
+    "gpu_ram",
+    "gpu_display_active",
+    "has_avx",
+    "host_id",
+    "id",
+    "inet_down",
+    "inet_down_cost",
+    "inet_up",
+    "inet_up_cost",
+    "machine_id",
+    "min_bid",
+    "mobo_name",
+    "num_gpus",
+    "pci_gen",
+    "pcie_bw",
+    "reliability2",
+    "rentable",
+    "rented",
+    "storage_cost",
+    "static_ip",
+    "total_flops",
+    "ubuntu_version",
+    "verification",
+    "verified",
+    "geolocation"
+}
+
+offers_alias = {
+    "cuda_vers": "cuda_max_good",
+    "display_active": "gpu_display_active",
+    "reliability": "reliability2",
+    "dlperf_usd": "dlperf_per_dphtotal",
+    "dph": "dph_total",
+    "flops_usd": "flops_per_dphtotal",
+}
+
+offers_mult = {
+    "cpu_ram": 1000,
+    "gpu_ram": 1000,
+    "duration": 24.0 * 60.0 * 60.0,
+}
+
+
+def parse_query(query_str: str, res: typing.Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> typing.Dict:
     """
     Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
     processes it into a dict of URL parameters to be sent to the server.
@@ -479,71 +544,9 @@ def parse_query(query_str: str, res: typing.Dict = None) -> typing.Dict:
         "not in": "notin",
         "nin": "notin",
         "in": "in",
-    };
-
-    field_alias = {
-        "cuda_vers": "cuda_max_good",
-        "display_active": "gpu_display_active",
-        "reliability": "reliability2",
-        "dlperf_usd": "dlperf_per_dphtotal",
-        "dph": "dph_total",
-        "flops_usd": "flops_per_dphtotal",
-    };
-
-    field_multiplier = {
-        "cpu_ram": 1000,
-        "gpu_ram": 1000,
-        "duration": 24.0 * 60.0 * 60.0,
     }
 
-    fields = {
-        "bw_nvlink",
-        "compute_cap",
-        "cpu_cores",
-        "cpu_cores_effective",
-        "cpu_ram",
-        "cuda_max_good",
-        "datacenter",
-        "direct_port_count",
-        "driver_version",
-        "disk_bw",
-        "disk_space",
-        "dlperf",
-        "dlperf_per_dphtotal",
-        "dph_total",
-        "duration",
-        "external",
-        "flops_per_dphtotal",
-        "gpu_display_active",
-        # "gpu_ram_free_min",
-        "gpu_mem_bw",
-        "gpu_name",
-        "gpu_ram",
-        "gpu_display_active",
-        "has_avx",
-        "host_id",
-        "id",
-        "inet_down",
-        "inet_down_cost",
-        "inet_up",
-        "inet_up_cost",
-        "machine_id",
-        "min_bid",
-        "mobo_name",
-        "num_gpus",
-        "pci_gen",
-        "pcie_bw",
-        "reliability2",
-        "rentable",
-        "rented",
-        "storage_cost",
-        "static_ip",
-        "total_flops",
-        "ubuntu_version",
-        "verification",
-        "verified",
-        "geolocation"
-    };
+
 
     joined = "".join("".join(x) for x in opts)
     if joined != query_str:
@@ -900,7 +903,7 @@ def copy(args: argparse.Namespace):
         You can find more information about the cloud copy operation here: https://vast.ai/docs/gpu-instances/cloud-sync
                     
         Examples:
-         vast cloud_copy --src folder --dst /workspace --cloud_service "Amazon S3" --instance_id 6003036 --cloud_service_selected 52 --transfer "Instance To Cloud"
+         vast cloud_copy --src folder --dst /workspace --instance_id 6003036 --connection 52 --transfer "Instance To Cloud"
 
         The example copies all contents of /folder into /workspace on instance 6003036 from Amazon S3.
     """),
@@ -950,11 +953,15 @@ def cloud__copy(args: argparse.Namespace):
     argument("--key_params", help="optional wildcard key params for advanced keys", type=str),
     usage="vastai create api-key --name NAME --permission_file PERMISSIONS",
     help="Create a new api-key with restricted permissions. Can be sent to other users and teammates",
+    epilog=deindent("""
+        In order to create api keys you must understand how permissions must be sent via json format. 
+        You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
+    """)
 )
 def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
-    permissions = load_permissions_from_file(args.permission_file)
+    permissions = load_permissions_from_file(args.permissions)
     r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
@@ -964,7 +971,7 @@ def create__api_key(args):
     argument("--target_util", help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash", help="template hash (optional)", type=str),
+    argument("--template_hash", help="template hash (optional, but **Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id (optional)", type=int),
     argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
@@ -979,7 +986,13 @@ def create__api_key(args):
 )
 def create__autoscaler(args):
     url = apiurl(args, "/autojobs/" )
+
+    # if args.launch_args_dict:
+    #     launch_args_dict = json.loads(args.launch_args_dict)
+    #     json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args_dict": launch_args_dict, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    
     json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -1020,6 +1033,7 @@ def create__autoscaler(args):
     argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
+    argument("--template_hash", help="Create instance from template info", type=str),
     usage="vastai create instance ID [OPTIONS] [--args ...]",
     help="Create a new instance",
     epilog=deindent("""
@@ -1053,6 +1067,7 @@ def create__instance(args: argparse.Namespace):
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     """
+
     if args.onstart:
         with open(args.onstart, "r") as reader:
             args.onstart_cmd = reader.read()
@@ -1076,10 +1091,6 @@ def create__instance(args: argparse.Namespace):
     if args.ssh:
         runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
-    #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
-
-    #print(".")
     json_blob ={
         "client_id": "me",
         "image": args.image,
@@ -1097,14 +1108,14 @@ def create__instance(args: argparse.Namespace):
         "jupyter_dir": args.jupyter_dir,
         "create_from": args.create_from,
         "force": args.force,
-        "cancel_unavail": args.cancel_unavail
+        "cancel_unavail": args.cancel_unavail,
+        "template_hash_id" : args.template_hash
     }
-    #print("..")
-
-    #print(args.args)
-
     if (args.args != None):
-     json_blob["args"] = args.args
+        json_blob["args"] = args.args
+
+    #print(f"put asks/{args.id}/  runtype:{runtype}")
+    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
 
     if (args.explain):
         print("request json: ")
@@ -1177,6 +1188,10 @@ def create__team(args):
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
     usage="vastai create team-role --name NAME --permissions PERMISSIONS",
     help="Add a new role to your",
+    epilog=deindent("""
+        Creating a new team role involves understanding how permissions must be sent via json format.
+        You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
+    """)
 )
 def create__team_role(args):
     url = apiurl(args, "/team/roles/")
@@ -1704,6 +1719,184 @@ def numeric_version(version_str):
         print("Invalid version string format. Expected format: X.X.X")
         return None
 
+
+benchmarks_fields = {
+    "contract_id",#             int        ID of instance/contract reporting benchmark
+    "id",#                      int        benchmark unique ID
+    "image",#                   string     image used for benchmark
+    "last_update",#             float      date of benchmark
+    "machine_id",#              int        id of machine benchmarked
+    "model",#                   string     name of model used in benchmark
+    "name",#                    string     name of benchmark
+    "num_gpus",#                int        number of gpus used in benchmark
+    "score"#                   float      benchmark score result
+}
+
+@parser.command(
+    argument("query", help="Search query in simple query syntax (see below)", nargs="*", default=None),
+    usage="vastai search benchmarks [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for benchmark results using custom query",
+    epilog=deindent("""
+        Query syntax:
+
+            query = comparison comparison...
+            comparison = field op value
+            field = <name of a field>
+            op = one of: <, <=, ==, !=, >=, >, in, notin
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
+            bool: True, False
+
+        note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+
+        Examples:
+
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            vastai search benchmarks 'score > 100.0  model=llama2_70B  machine_id in [302,402]'
+
+        Available fields:
+
+              Name                  Type       Description
+
+            contract_id             int        ID of instance/contract reporting benchmark
+            id                      int        benchmark unique ID
+            image                   string     image used for benchmark
+            last_update             float      date of benchmark
+            machine_id              int        id of machine benchmarked
+            model                   string     name of model used in benchmark
+            name                    string     name of benchmark
+            num_gpus                int        number of gpus used in benchmark
+            score                   float      benchmark score result
+    """),
+    aliases=hidden_aliases(["search benchmarks"]),
+)
+def search__benchmarks(args):
+    """Creates a query based on search parameters as in the examples above.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    try:
+        query = {}
+        if args.query is not None:
+            query = parse_query(args.query, query, benchmarks_fields)
+
+    except ValueError as e:
+        print("Error: ", e)
+        return 1  
+    url = apiurl(args, "/benchmarks", {"select_cols" : ['id','last_update','machine_id','score'], "select_filters" : query})
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    rows = r.json()
+    if True: # args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
+
+
+invoices_fields = {
+    'id',#               int,                   
+    'user_id',#          int,      
+    'when',#             float,                     
+    'paid_on',#          float,                     
+    'payment_expected',# float,                     
+    'amount_cents',#     int,                   
+    'is_credit',#        bool,                   
+    'is_delayed',#       bool,                   
+    'balance_before',#   float,                     
+    'balance_after',#    float,                     
+    'original_amount',#  int,                   
+    'event_id',#         string,                    
+    'cut_amount',#       int,                   
+    'cut_percent',#      float,                     
+    'extra',#            json,           
+    'service',#          string,                    
+    'stripe_charge',#    json,           
+    'stripe_refund',#    json,           
+    'stripe_payout',#    json,           
+    'error',#            json,           
+    'paypal_email',#     string,                    
+    'transfer_group',#   string,                    
+    'failed',#           bool,                   
+    'refunded',#         bool,                   
+    'is_check',#         bool,                   
+}
+
+@parser.command(
+    argument("query", help="Search query in simple query syntax (see below)", nargs="*", default=None),
+    usage="vastai search invoices [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for benchmark results using custom query",
+    epilog=deindent("""
+        Query syntax:
+
+            query = comparison comparison...
+            comparison = field op value
+            field = <name of a field>
+            op = one of: <, <=, ==, !=, >=, >, in, notin
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
+            bool: True, False
+
+        note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+
+        Examples:
+
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            vastai search invoices 'amount_cents>3000  '
+
+        Available fields:
+
+      Name                  Type       Description
+
+    id                  int,            
+    user_id             int,            
+    when                float,          utc epoch timestamp of initial invoice creation
+    paid_on             float,          actual payment date (utc epoch timestamp )
+    payment_expected    float,          expected payment date (utc epoch timestamp )
+    amount_cents        int,            amount of payment in cents
+    is_credit           bool,           is a credit purchase
+    is_delayed          bool,           is not yet paid
+    balance_before      float,          balance before
+    balance_after       float,          balance after
+    original_amount     int,            original amount of payment
+    event_id            string,           
+    cut_amount          int,               
+    cut_percent         float,            
+    extra               json,           
+    service             string,         type of payment 
+    stripe_charge       json,           
+    stripe_refund       json,           
+    stripe_payout       json,           
+    error               json,           
+    paypal_email        string,         email for paypal/wise payments
+    transfer_group      string,         
+    failed              bool,                   
+    refunded            bool,                   
+    is_check            bool,                   
+    """),
+    aliases=hidden_aliases(["search invoices"]),
+)
+def search__invoices(args):
+    """Creates a query based on search parameters as in the examples above.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    try:
+        query = {}
+        if args.query is not None:
+            query = parse_query(args.query, query, invoices_fields)
+
+    except ValueError as e:
+        print("Error: ", e)
+        return 1  
+    url = apiurl(args, "/invoices", {"select_cols" : ['*'], "select_filters" : query})
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    rows = r.json()
+    if True: # args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
+
 @parser.command(
     argument("-t", "--type", default="on-demand", help="Show 'on-demand', 'reserved', or 'bid'(interruptible) pricing. default: on-demand"),
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
@@ -1803,13 +1996,7 @@ def search__offers(args):
 
     :param argparse.Namespace args: should supply all the command-line options
     """
-    field_alias = {
-        "cuda_vers": "cuda_max_good",
-        "reliability": "reliability2",
-        "dlperf_usd": "dlperf_per_dphtotal",
-        "dph": "dph_total",
-        "flops_usd": "flops_per_dphtotal",
-    };
+
 
     try:
 
@@ -1820,7 +2007,7 @@ def search__offers(args):
             #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True} }
 
         if args.query is not None:
-            query = parse_query(args.query, query)
+            query = parse_query(args.query, query, offers_fields, offers_alias, offers_mult)
 
         order = []
         for name in args.order.split(","):
@@ -1830,8 +2017,8 @@ def search__offers(args):
             if name.strip("-") != name:
                 direction = "desc"
             field = name.strip("-");
-            if field in field_alias:
-                field = field_alias[field];
+            if field in offers_alias:
+                field = offers_alias[field];
             order.append([field, direction])
 
         query["order"] = order
@@ -1849,6 +2036,11 @@ def search__offers(args):
     url = apiurl(args, "/bundles", {"q": query})
     r = requests.get(url, headers=headers);
     r.raise_for_status()
+   
+    if (r.headers.get('Content-Type') != 'application/json'):
+        print(f"invalid return Content-Type: {r.headers.get('Content-Type')}")
+        return
+    
     rows = r.json()["offers"]
 
     # TODO: add this post-query geolocation filter to the database call rather than handling it locally
@@ -1899,6 +2091,93 @@ def search__offers(args):
             display_table(rows, displayable_fields)
 
 
+
+templates_fields = {
+    "creator_id",#              int        ID of creator
+    "created_at",#              float      time of initial template creation (UTC epoch timestamp)
+    "count_created",#           int        #instances created (popularity)
+    "default_tag",#             string     image default tag
+    "docker_login_repo",#       string     image docker repository
+    "id",#                      int        template unique ID
+    "image",#                   string     image used for benchmark
+    "jup_direct",#              bool       supports jupyter direct
+    "hash_id",#                 string     unique hash ID of template
+    "private",#                 bool       true: only your templates, None: public templates
+    "name",#                    string     displayable name
+    "recent_create_date",#      float      last time of instance creation (UTC epoch timestamp)
+    "recommended_disk_space",#  float      min disk space required
+    "recommended",#             bool       is templated on our recommended list
+    "ssh_direct",#              bool       supports ssh direct
+    "tag",#                     string     image tag
+    "use_ssh",#                 string     supports ssh (direct or proxy)
+}
+
+@parser.command(
+    argument("query", help="Search query in simple query syntax (see below)", nargs="*", default=None),
+    usage="vastai search templates [--help] [--api-key API_KEY] [--raw] <query>",
+    help="Search for template results using custom query",
+    epilog=deindent("""
+        Query syntax:
+
+            query = comparison comparison...
+            comparison = field op value
+            field = <name of a field>
+            op = one of: <, <=, ==, !=, >=, >, in, notin
+            value = <bool, int, float, string> | 'any' | [value0, value1, ...]
+            bool: True, False
+
+        note: to pass '>' and '<' on the command line, make sure to use quotes
+        note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+
+        Examples:
+
+            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            vastai search templates 'count_created > 100  creator_id in [38382,48982]'
+
+        Available fields:
+
+      Name                  Type       Description
+
+    creator_id              int        ID of creator
+    created_at              float      time of initial template creation (UTC epoch timestamp)
+    count_created           int        #instances created (popularity)
+    default_tag             string     image default tag
+    docker_login_repo       string     image docker repository
+    id                      int        template unique ID
+    image                   string     image used for template
+    jup_direct              bool       supports jupyter direct
+    hash_id                 string     unique hash ID of template
+    name                    string     displayable name
+    recent_create_date      float      last time of instance creation (UTC epoch timestamp)
+    recommended_disk_space  float      min disk space required
+    recommended             bool       is templated on our recommended list
+    ssh_direct              bool       supports ssh direct
+    tag                     string     image tag
+    use_ssh                 bool       supports ssh (direct or proxy)    """),
+    aliases=hidden_aliases(["search templates"]),
+)
+def search__templates(args):
+    """Creates a query based on search parameters as in the examples above.
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    try:
+        query = {}
+        if args.query is not None:
+            query = parse_query(args.query, query, templates_fields)
+
+    except ValueError as e:
+        print("Error: ", e)
+        return 1  
+    url = apiurl(args, "/templates", {"select_cols" : ['*'], "select_filters" : query})
+    r = requests.get(url, headers=headers)
+    r.raise_for_status()
+    rows = r.json()
+    if True: # args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, displayable_fields)
+
+
 @parser.command(
     argument("new_api_key", help="Api key to set as currently logged in user"),
     usage="vastai set api-key APIKEY",
@@ -1906,12 +2185,52 @@ def search__offers(args):
 )
 def set__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.
-au
     :param argparse.Namespace args: should supply all the command-line options
     """
     with open(api_key_file, "w") as writer:
         writer.write(args.new_api_key)
     print("Your api key has been saved in {}".format(api_key_file_base))
+
+
+
+@parser.command(
+    argument("--file", help="file path for params in json format", type=str),
+    usage="vastai set user --file FILE",
+    help="Update user data from json file",
+    epilog=deindent("""
+
+    Available fields:
+
+    Name                            Type       Description
+
+    ssh_key                         string
+    paypal_email                    string
+    wise_email                      string
+    email                           string
+    normalized_email                string
+    username                        string
+    fullname                        string
+    billaddress_line1               string
+    billaddress_line2               string
+    billaddress_city                string
+    billaddress_zip                 string
+    billaddress_country             string
+    billaddress_taxinfo             string
+    balance_threshold_enabled       string
+    balance_threshold               string
+    autobill_threshold              string
+    phone_number                    string
+    tfa_enabled                     bool
+    """),
+)
+def set__user(args):
+    params = None
+    with open(args.file, 'r') as file:
+        params = json.load(file)
+    url = apiurl(args, "/users/")
+    r = requests.put(url, headers=headers, json=params)
+    r.raise_for_status()
+    print(f"{r.json()}")
 
 
 
@@ -1980,7 +2299,7 @@ def _ssh_url(args, protocol):
         try:
             if (port_22d is not None):
                 ipaddr = instance["public_ipaddr"]
-                port   = port_22d[0]["HostPort"]
+                port   = int(port_22d[0]["HostPort"])
             else:        
                 ipaddr = instance["ssh_host"]
                 port   = int(instance["ssh_port"])+1
@@ -2019,7 +2338,10 @@ def show__api_keys(args):
     url = apiurl(args, "/auth/apikeys/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    print(r.json())
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 @parser.command(
     usage="vastai show autoscalers [--api-key API_KEY]",
@@ -2128,8 +2450,8 @@ def show__earnings(args):
             end_date_txt = end_date.isoformat()
             end_timestamp = time.mktime(end_date.timetuple())
             eday = end_timestamp / Days
-        except ValueError:
-            print("Warning: Invalid end date format! Ignoring end date!")
+        except ValueError as e:
+            print(f"Warning: Invalid end date format! Ignoring end date! \n {str(e)}")
 
     if args.start_date:
         try:
@@ -2138,7 +2460,7 @@ def show__earnings(args):
             start_timestamp = time.mktime(start_date.timetuple())
             sday = start_timestamp / Days
         except ValueError:
-            print("Warning: Invalid start date format! Ignoring start date!")
+            print(f"Warning: Invalid start date format! Ignoring start date! \n {str(e)}")
 
 
 
@@ -2384,12 +2706,15 @@ def show__team_members(args):
     url = apiurl(args, "/team/members/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    #print(r.text)
-    print(json.dumps(r.json(), indent=1, sort_keys=True))
+
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 @parser.command(
     argument("NAME", help="name of the role", type=str),
-    usage="vast ai show team-role NAME",
+    usage="vastai show team-role NAME",
     help="Show your team role",
 )
 def show__team_role(args):
@@ -2406,7 +2731,11 @@ def show__team_roles(args):
     url = apiurl(args, "/team/roles-full/")
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
-    print(json.dumps(r.json(), indent=1, sort_keys=True))
+
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 @parser.command(
     argument("recipient", help="email of recipient account", type=str),
@@ -2455,7 +2784,7 @@ def transfer__credit(args: argparse.Namespace):
     argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash",   help="template hash", type=str),
+    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id", type=int),
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
@@ -2517,16 +2846,16 @@ def convert_dates_to_timestamps(args):
             end_date = dateutil.parser.parse(str(args.end_date))
             end_date_txt = end_date.isoformat()
             end_timestamp = time.mktime(end_date.timetuple())
-        except ValueError:
-            print("Warning: Invalid end date format! Ignoring end date!")
+        except ValueError as e:
+            print(f"Warning: Invalid end date format! Ignoring end date! \n {str(e)}")
     
     if args.start_date:
         try:
             start_date = dateutil.parser.parse(str(args.start_date))
             start_date_txt = start_date.isoformat()
             start_timestamp = time.mktime(start_date.timetuple())
-        except ValueError:
-            print("Warning: Invalid start date format! Ignoring start date!")    
+        except ValueError as e:
+            print(f"Warning: Invalid start date format! Ignoring end date! \n {str(e)}")
 
     return start_timestamp, end_timestamp
 
@@ -3081,6 +3410,22 @@ def unlist__machine(args):
 
 
 
+@parser.command(
+    argument("ID", help="id of the role", type=int),
+    argument("--name", help="name of the template", type=str),
+    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
+    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
+    help="Update an existing team role",
+)
+def update__team_role(args):
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
+    permissions = load_permissions_from_file(args.permissions)
+    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
+    r.raise_for_status()
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
 
 login_deprecated_message = """
 login via the command line is no longer supported.
