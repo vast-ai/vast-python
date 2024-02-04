@@ -1030,7 +1030,7 @@ def create__autoscaler(args):
     argument("--extra", help=argparse.SUPPRESS),
     argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
-    argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
+    #argument("--create-from", help="Existing instance id to use as basis for new instance. Instance configuration should usually be identical, as only the difference from the base image is copied.", type=str),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
     argument("--template_hash", help="Create instance from template info", type=str),
