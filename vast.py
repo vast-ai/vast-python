@@ -1938,7 +1938,9 @@ def search__invoices(args):
             # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
             vastai search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
 
-
+            # search based on cpu architecture
+            vastai search offers 'cpu_arch=amd64'
+            
         Available fields:
 
               Name                  Type       Description
@@ -1985,6 +1987,7 @@ def search__invoices(args):
             total_flops:            float     total TFLOPs from all GPUs
             ubuntu_version          string    host machine ubuntu OS version
             verified:               bool      is the machine verified
+            cpu_arch                string    host machine cpu architecture (e.g. amd64, arm64)
     """),
     aliases=hidden_aliases(["search instances"]),
 )
