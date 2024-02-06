@@ -445,6 +445,7 @@ def version_string_sort(a, b) -> int:
 offers_fields = {
     "bw_nvlink",
     "compute_cap",
+    "cpu_arch",
     "cpu_cores",
     "cpu_cores_effective",
     "cpu_ram",
