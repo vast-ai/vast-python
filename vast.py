@@ -60,7 +60,18 @@ def string_to_unix_epoch(date_string):
         date_object = datetime.strptime(date_string, "%m/%d/%Y")
         return time.mktime(date_object.timetuple())
 
+def fix_date_fields(query: typing.Dict[str, typing.Dict], date_fields: typing.List[str]) -> typing.Dict[str, typing.Dict]:
+    """Takes in a query and date fields to correct and returns query with appropriate epoch dates"""
+    new_query: typing.Dict[str, typing.Dict] = {}
+    for field, sub_query in query.items():
+        # fix date values for given date fields
+        if field in date_fields:
+            new_sub_query = {k: string_to_unix_epoch(v) for k, v in sub_query.items()}
+            new_query[field] = new_sub_query
+        # else, use the original
+        else: new_query[field] = sub_query
 
+    return new_query
 
 
 class argument(object):
@@ -1779,6 +1790,7 @@ def search__benchmarks(args):
         query = {}
         if args.query is not None:
             query = parse_query(args.query, query, benchmarks_fields)
+            query = fix_date_fields(query, ['last_update'])
 
     except ValueError as e:
         print("Error: ", e)
@@ -1884,6 +1896,7 @@ def search__invoices(args):
         query = {}
         if args.query is not None:
             query = parse_query(args.query, query, invoices_fields)
+            query = fix_date_fields(query, ['when', 'paid_on', 'payment_expected', 'balance_before', 'balance_after'])
 
     except ValueError as e:
         print("Error: ", e)
@@ -2165,6 +2178,7 @@ def search__templates(args):
         query = {}
         if args.query is not None:
             query = parse_query(args.query, query, templates_fields)
+            query = fix_date_fields(query, ['created_at', 'recent_create_date'])
 
     except ValueError as e:
         print("Error: ", e)
@@ -3340,7 +3354,6 @@ def schedule__maint(args):
     :rtype:
     """
     url = apiurl(args, "/machines/{id}/dnotify/".format(id=args.id))
-    #print(url)
 
     dt = datetime.utcfromtimestamp(args.sdate)
     print(f"Scheduling maintenance window starting {dt} lasting {args.duration} hours")
@@ -3349,7 +3362,7 @@ def schedule__maint(args):
     if ok.strip().lower() != "y":
         return
 
-    json_blob = {"client_id": "me", "sdate": args.sdate, "duration": args.duration}
+    json_blob = {"client_id": "me", "sdate": string_to_unix_epoch(args.sdate), "duration": args.duration}
     if (args.explain):
         print("request json: ")
         print(json_blob)
