@@ -8,7 +8,7 @@ import sys
 import argparse
 import os
 import time
-import typing
+from typing import Dict, List, Tuple
 import hashlib
 from datetime import date, datetime
 
@@ -60,9 +60,9 @@ def string_to_unix_epoch(date_string):
         date_object = datetime.strptime(date_string, "%m/%d/%Y")
         return time.mktime(date_object.timetuple())
 
-def fix_date_fields(query: typing.Dict[str, typing.Dict], date_fields: typing.List[str]) -> typing.Dict[str, typing.Dict]:
+def fix_date_fields(query: Dict[str, Dict], date_fields: List[str]):
     """Takes in a query and date fields to correct and returns query with appropriate epoch dates"""
-    new_query: typing.Dict[str, typing.Dict] = {}
+    new_query: Dict[str, Dict] = {}
     for field, sub_query in query.items():
         # fix date values for given date fields
         if field in date_fields:
@@ -214,7 +214,7 @@ class apwrap(object):
 
 parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
 
-def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
+def translate_null_strings_to_blanks(d: Dict) -> Dict:
     """Map over a dict and translate any null string values into ' '.
     Leave everything else as is. This is needed because you cannot add TableCell
     objects with only a null string or the client crashes.
@@ -234,7 +234,7 @@ def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
 
     req_url = apiurl(args, "/instances", {"owner": "me"});
 
-def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
+def apiurl(args: argparse.Namespace, subpath: str, query_args: Dict = None) -> str:
     """Creates the endpoint URL for a given combination of parameters.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
@@ -278,7 +278,7 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         print("")
     return result
 
-def apiheaders(args: argparse.Namespace) -> typing.Dict:
+def apiheaders(args: argparse.Namespace) -> Dict:
     """Creates the headers for a given combination of parameters.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
@@ -519,7 +519,7 @@ offers_mult = {
 }
 
 
-def parse_query(query_str: str, res: typing.Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> typing.Dict:
+def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> Dict:
     """
     Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
     processes it into a dict of URL parameters to be sent to the server.
@@ -622,7 +622,7 @@ def parse_query(query_str: str, res: typing.Dict = None, fields = {}, field_alia
     return res
 
 
-def display_table(rows: list, fields: typing.Tuple) -> None:
+def display_table(rows: list, fields: Tuple) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
     of it.
 
@@ -2875,7 +2875,7 @@ def convert_dates_to_timestamps(args):
     return start_timestamp, end_timestamp
 
 
-def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
+def filter_invoice_items(args: argparse.Namespace, rows: List) -> Dict:
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
     'only_charge' and 'only_credits' options.invoice_number
 
