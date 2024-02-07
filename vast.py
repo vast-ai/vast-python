@@ -2303,7 +2303,7 @@ def _ssh_url(args, protocol):
                 port   = int(port_22d[0]["HostPort"])
             else:        
                 ipaddr = instance["ssh_host"]
-                port   = int(instance["ssh_port"])+1
+                port   = int(instance["ssh_port"])+1 if "jupyter" in instance["image_runtype"] else int(instance["ssh_port"])
         except:
             port = -1
 
