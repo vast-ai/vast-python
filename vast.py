@@ -108,6 +108,29 @@ def http_put(args, req_url, headers, json):
             break
     return r
 
+def http_post(args, req_url, headers, json={}):
+    t = 0.3
+    for i in range(0, int(args.retry)):
+        r = requests.post(req_url, headers=headers, json=json)
+        if (r.status_code == 429):
+            time.sleep(t)
+            t *= 1.5
+        else:
+            break
+    return r
+
+def http_del(args, req_url, headers, json={}):
+    t = 0.3
+    for i in range(0, int(args.retry)):
+        r = requests.delete(req_url, headers=headers, json=json)
+        if (r.status_code == 429):
+            time.sleep(t)
+            t *= 1.5
+        else:
+            break
+    return r
+
+
 def load_permissions_from_file(file_path):
     with open(file_path, 'r') as file:
         return json.load(file)
@@ -715,7 +738,7 @@ def cancel__copy(args: argparse.Namespace):
     print(f"canceling remote copies to {dst_id} ")
 
     req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, headers=headers,json=req_json)
+    r = http_del(args, url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         rj = r.json();
@@ -757,7 +780,7 @@ def cancel__sync(args: argparse.Namespace):
     print(f"canceling remote copies to {dst_id} ")
 
     req_json = { "client_id": "me", "dst_id": dst_id, }
-    r = requests.delete(url, headers=headers,json=req_json)
+    r = http_del(args, url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         rj = r.json();
@@ -938,7 +961,7 @@ def cloud__copy(args: argparse.Namespace):
         print("request json: ")
         print(req_json)
     
-    r = requests.post(url, headers=headers,json=req_json)
+    r = http_post(args, url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         print("Cloud Copy Started - check instance status bar for progress updates (~30 seconds delayed).")
@@ -963,7 +986,7 @@ def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
     permissions = load_permissions_from_file(args.permissions)
-    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
+    r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
 
@@ -997,7 +1020,7 @@ def create__autoscaler(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.post(url, headers=headers,json=json_blob)
+    r = http_post(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
@@ -1154,7 +1177,7 @@ def create__subaccount(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.post(url, headers=headers,json=json_blob)
+    r = http_post(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
 
     if (r.status_code == 200):
@@ -1180,7 +1203,7 @@ def create__subaccount(args):
 
 def create__team(args):
     url = apiurl(args, "/team/")
-    r = requests.post(url, headers=headers, json={"team_name": args.team_name})
+    r = http_post(args, url, headers=headers, json={"team_name": args.team_name})
     r.raise_for_status()
     print(r.json())
 
@@ -1197,7 +1220,7 @@ def create__team(args):
 def create__team_role(args):
     url = apiurl(args, "/team/roles/")
     permissions = load_permissions_from_file(args.permissions)
-    r = requests.post(url, headers=headers, json={"name": args.name, "permissions": permissions})
+    r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     print(r.json())
 
@@ -1208,7 +1231,7 @@ def create__team_role(args):
 )
 def delete__api_key(args):
     url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.ID))
-    r = requests.delete(url, headers=headers)
+    r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1229,7 +1252,7 @@ def delete__autoscaler(args):
     if (args.explain):
         print("request json: ")
         print(json_blob)
-    r = requests.delete(url, headers=headers,json=json_blob)
+    r = http_del(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
@@ -1245,7 +1268,7 @@ def delete__autoscaler(args):
 
 def destroy_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
-    r = requests.delete(url, headers=headers,json={})
+    r = http_del(args, url, headers=headers,json={})
     r.raise_for_status()
     if args.raw:
         print(json.dumps(r.json(), indent=1))
@@ -1293,7 +1316,7 @@ def destroy__instances(args):
 )
 def destroy__team(args):
     url = apiurl(args, "/team/")
-    r = requests.delete(url, headers=headers)
+    r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1361,7 +1384,7 @@ def execute(args):
 )
 def invite__team_member(args):
     url = apiurl(args, "/team/invite/", query_args={"email": args.email, "role": args.role})
-    r = requests.post(url, headers=headers)
+    r = http_post(args, url, headers=headers)
     r.raise_for_status()
     if (r.status_code == 200):
         print(f"successfully invited {args.email} to your current team")
@@ -1534,7 +1557,7 @@ def recycle__instance(args):
 )
 def remove__team_member(args):
     url = apiurl(args, "/team/members/{id}/".format(id=args.ID))
-    r = requests.delete(url, headers=headers)
+    r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -1545,7 +1568,7 @@ def remove__team_member(args):
 )
 def remove__team_role(args):
     url = apiurl(args, "/team/roles/{id}/".format(id=args.NAME))
-    r = requests.delete(url, headers=headers)
+    r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
@@ -2536,7 +2559,7 @@ def show__invoices(args):
             print("request json: ")
             print(req_json)
         
-        result = requests.post(url, headers=headers,json=req_json)
+        result = http_post(args, url, headers=headers,json=req_json)
         result.raise_for_status()
         filtered_rows = result.json()["contracts"]
         #print(rows)
@@ -3160,7 +3183,7 @@ def remove__defjob(args):
     """
     req_url = apiurl(args, "/machines/{machine_id}/defjob/".format(machine_id=args.id));
     # print(req_url);
-    r = requests.delete(req_url);
+    r = http_del(args, req_url, headers=headers)
 
     if (r.status_code == 200):
         rj = r.json();
@@ -3398,7 +3421,7 @@ def unlist__machine(args):
     :rtype:
     """
     req_url = apiurl(args, "/machines/{machine_id}/asks/".format(machine_id=args.id));
-    r = requests.delete(req_url)
+    r = http_del(args, req_url, headers=headers)
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
