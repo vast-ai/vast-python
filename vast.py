@@ -8,7 +8,7 @@ import sys
 import argparse
 import os
 import time
-import typing
+from typing import Dict, List, Tuple
 import hashlib
 from datetime import date, datetime
 
@@ -60,7 +60,18 @@ def string_to_unix_epoch(date_string):
         date_object = datetime.strptime(date_string, "%m/%d/%Y")
         return time.mktime(date_object.timetuple())
 
+def fix_date_fields(query: Dict[str, Dict], date_fields: List[str]):
+    """Takes in a query and date fields to correct and returns query with appropriate epoch dates"""
+    new_query: Dict[str, Dict] = {}
+    for field, sub_query in query.items():
+        # fix date values for given date fields
+        if field in date_fields:
+            new_sub_query = {k: string_to_unix_epoch(v) for k, v in sub_query.items()}
+            new_query[field] = new_sub_query
+        # else, use the original
+        else: new_query[field] = sub_query
 
+    return new_query
 
 
 class argument(object):
@@ -226,7 +237,7 @@ class apwrap(object):
 
 parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
 
-def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
+def translate_null_strings_to_blanks(d: Dict) -> Dict:
     """Map over a dict and translate any null string values into ' '.
     Leave everything else as is. This is needed because you cannot add TableCell
     objects with only a null string or the client crashes.
@@ -246,7 +257,7 @@ def translate_null_strings_to_blanks(d: typing.Dict) -> typing.Dict:
 
     req_url = apiurl(args, "/instances", {"owner": "me"});
 
-def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = None) -> str:
+def apiurl(args: argparse.Namespace, subpath: str, query_args: Dict = None) -> str:
     """Creates the endpoint URL for a given combination of parameters.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
@@ -290,7 +301,7 @@ def apiurl(args: argparse.Namespace, subpath: str, query_args: typing.Dict = Non
         print("")
     return result
 
-def apiheaders(args: argparse.Namespace) -> typing.Dict:
+def apiheaders(args: argparse.Namespace) -> Dict:
     """Creates the headers for a given combination of parameters.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
@@ -531,7 +542,7 @@ offers_mult = {
 }
 
 
-def parse_query(query_str: str, res: typing.Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> typing.Dict:
+def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> Dict:
     """
     Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
     processes it into a dict of URL parameters to be sent to the server.
@@ -634,7 +645,7 @@ def parse_query(query_str: str, res: typing.Dict = None, fields = {}, field_alia
     return res
 
 
-def display_table(rows: list, fields: typing.Tuple) -> None:
+def display_table(rows: list, fields: Tuple) -> None:
     """Basically takes a set of field names and rows containing the corresponding data and prints a nice tidy table
     of it.
 
@@ -1802,6 +1813,7 @@ def search__benchmarks(args):
         query = {}
         if args.query is not None:
             query = parse_query(args.query, query, benchmarks_fields)
+            query = fix_date_fields(query, ['last_update'])
 
     except ValueError as e:
         print("Error: ", e)
@@ -1907,6 +1919,7 @@ def search__invoices(args):
         query = {}
         if args.query is not None:
             query = parse_query(args.query, query, invoices_fields)
+            query = fix_date_fields(query, ['when', 'paid_on', 'payment_expected', 'balance_before', 'balance_after'])
 
     except ValueError as e:
         print("Error: ", e)
@@ -2188,6 +2201,7 @@ def search__templates(args):
         query = {}
         if args.query is not None:
             query = parse_query(args.query, query, templates_fields)
+            query = fix_date_fields(query, ['created_at', 'recent_create_date'])
 
     except ValueError as e:
         print("Error: ", e)
@@ -2884,7 +2898,7 @@ def convert_dates_to_timestamps(args):
     return start_timestamp, end_timestamp
 
 
-def filter_invoice_items(args: argparse.Namespace, rows: typing.List) -> typing.Dict:
+def filter_invoice_items(args: argparse.Namespace, rows: List) -> Dict:
     """This applies various filters to the invoice items. Currently it filters on start and end date and applies the
     'only_charge' and 'only_credits' options.invoice_number
 
@@ -3363,7 +3377,6 @@ def schedule__maint(args):
     :rtype:
     """
     url = apiurl(args, "/machines/{id}/dnotify/".format(id=args.id))
-    #print(url)
 
     dt = datetime.utcfromtimestamp(args.sdate)
     print(f"Scheduling maintenance window starting {dt} lasting {args.duration} hours")
@@ -3372,7 +3385,7 @@ def schedule__maint(args):
     if ok.strip().lower() != "y":
         return
 
-    json_blob = {"client_id": "me", "sdate": args.sdate, "duration": args.duration}
+    json_blob = {"client_id": "me", "sdate": string_to_unix_epoch(args.sdate), "duration": args.duration}
     if (args.explain):
         print("request json: ")
         print(json_blob)
