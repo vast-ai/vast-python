@@ -34,9 +34,9 @@ except NameError:
 
 
 #server_url_default = "https://vast.ai"
-server_url_default = "https://console.vast.ai"
+# server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-# server_url_default = "http://localhost:5002"
+server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -3463,6 +3463,41 @@ def update__team_role(args):
         print(json.dumps(r.json(), indent=1))
     else:
         print(r.json())
+
+@parser.command(
+    argument("invoice_id", help="id of invoice to mark paid", type=int),
+    usage="vastai paid invoice INVOICE_ID",
+    help="[Admin] Mark Invoice as Paid",
+    aliases=hidden_aliases(["paid invoice"]),
+)
+def paid__invoice(args):
+    """
+    Marks an invoice as paid by sending a PUT request to the admin paid invoice endpoint.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    endpoint = "/api/admin/invoices/{invoice_id}/paid-invoice/".format(invoice_id=args.invoice_id)
+    req_url = server_url_default + endpoint
+
+    if (args.explain):
+        json_blob = {"invoice_id": args.invoice_id, "req_url": req_url}
+        print("request json: ")
+        print(json_blob)
+        
+    r = http_put(args, req_url, headers=headers, json={})
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print("Marking invoice {args.invoice_id} as paid.".format(**(locals())));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()));
+
+    
 
 login_deprecated_message = """
 login via the command line is no longer supported.
