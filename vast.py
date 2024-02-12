@@ -1046,6 +1046,42 @@ def create__autoscaler(args):
 
 
 @parser.command(
+    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
+    argument("--target_util", help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
+    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
+    argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
+    usage="vastai create endpoint [OPTIONS]",
+    help="Create a new endpoint group",
+    epilog=deindent("""
+        Create a new endpoint group to manage a set of pool of worker instances as defined by autogroups and make them available to client requests.
+                    
+        Example: vastai create endpoint --min_load 100 --target_util 0.9 --cold_mult 2.0 --endpoint_name "LLama"
+    """),
+)
+def create__endpoint(args):
+    url = apiurl(args, "/endptjobs/" )
+
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "endpoint_name": args.endpoint_name}
+    
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = requests.post(url, headers=headers,json=json_blob)
+    r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("create endpoint {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
+
+
+
+@parser.command(
     argument("ID", help="id of instance type to launch (returned from search offers)", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
@@ -1276,6 +1312,34 @@ def delete__autoscaler(args):
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
 
+@parser.command(
+    argument("ID", help="id of endpoint group to delete", type=int),
+    usage="vastai delete endpoint ID ",
+    help="Delete an endpoint group",
+    epilog=deindent("""
+        Note that deleting an endpoint group doesn't automatically destroy all the instances that are associated with your endpoint group, nor all the autogroups.
+        Example: vastai delete endpoint 4242
+    """),
+)
+def delete__endpoint(args):
+    id  = args.ID
+    url = apiurl(args, f"/endptjobs/{id}/" )
+    json_blob = {"client_id": "me", "endptjob_id": args.ID}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_del(args, url, headers=headers,json=json_blob)
+    r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("delete endpoint {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
 
 def destroy_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
@@ -2411,6 +2475,36 @@ def show__autoscalers(args):
             print(rj["msg"]);
 
 @parser.command(
+    usage="vastai show endpoints [--api-key API_KEY]",
+    help="Display user's current endpoint groups",
+    epilog=deindent("""
+        Example: vastai show endpoints
+    """),
+)
+def show__endpoints(args):
+    url = apiurl(args, "/endptjobs/" )
+    json_blob = {"client_id": "me", "api_key": args.api_key}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_get(args, url, headers=headers,json=json_blob)
+    r.raise_for_status()
+    #print("autoscaler list ".format(r.json()))
+
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            rows = rj["results"] 
+            if args.raw:
+                print(json.dumps(rows, indent=1, sort_keys=True))
+            else:
+                #print(rows)
+                print(json.dumps(rows, indent=1, sort_keys=True))
+        else:
+            print(rj["msg"]);
+
+
+@parser.command(
     usage="vastai show connections [--api-key API_KEY] [--raw]",
     help="Displays user's cloud connections"
 )
@@ -2845,6 +2939,38 @@ def update__autoscaler(args):
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
             print("autoscaler update {}".format(r.json()))
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
+
+@parser.command(
+    argument("ID", help="id of endpoint group to update", type=int),
+    argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
+    argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
+    argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
+    argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
+    usage="vastai update endpoint ID [OPTIONS]",
+    help="Update an existing endpoint group",
+    epilog=deindent("""
+        Example: vastai update endpoint 4242 --min_load 100 --target_util 0.9 --cold_mult 2.0 --endpoint_name "LLama"
+    """),
+)
+def update__endpoint(args):
+    id  = args.ID
+    url = apiurl(args, f"/endptjobs/{id}/" )
+    json_blob = {"client_id": "me", "endptjob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "endpoint_name": args.endpoint_name}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
+    r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print("update endpoint {}".format(r.json()))
         except requests.exceptions.JSONDecodeError:
             print("The response is not valid JSON.")
             print(r)
