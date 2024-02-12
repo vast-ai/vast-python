@@ -1130,7 +1130,7 @@ def create__instance(args: argparse.Namespace):
         "lang_utf8": args.lang_utf8,
         "use_jupyter_lab": args.jupyter_lab,
         "jupyter_dir": args.jupyter_dir,
-        "create_from": args.create_from,
+        #"create_from": args.create_from,
         "force": args.force,
         "cancel_unavail": args.cancel_unavail,
         "template_hash_id" : args.template_hash
