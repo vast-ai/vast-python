@@ -1050,7 +1050,7 @@ def create__autoscaler(args):
     argument("--target_util", help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
-    usage="vastai endpoint create [OPTIONS]",
+    usage="vastai create endpoint [OPTIONS]",
     help="Create a new endpoint group",
     epilog=deindent("""
         Create a new endpoint group to manage a set of pool of worker instances as defined by autogroups and make them available to client requests.
@@ -1070,7 +1070,7 @@ def create__endpoint(args):
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
-            print("autoscaler create {}".format(r.json()))
+            print("create endpoint {}".format(r.json()))
         except requests.exceptions.JSONDecodeError:
             print("The response is not valid JSON.")
             print(r)
@@ -1313,11 +1313,11 @@ def delete__autoscaler(args):
         print(r.text)
 
 @parser.command(
-    argument("ID", help="id of group to delete", type=int),
+    argument("ID", help="id of endpoint group to delete", type=int),
     usage="vastai delete endpoint ID ",
     help="Delete an endpoint group",
     epilog=deindent("""
-        Note that deleteing an endpoint group doesn't automatically destroy all the instances that are associated with your endpoint group, nor all the autogroups.
+        Note that deleting an endpoint group doesn't automatically destroy all the instances that are associated with your endpoint group, nor all the autogroups.
         Example: vastai delete endpoint 4242
     """),
 )
