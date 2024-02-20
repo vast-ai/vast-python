@@ -122,6 +122,8 @@ def http_put(args, req_url, headers, json):
 def http_post(args, req_url, headers, json={}):
     t = 0.3
     for i in range(0, int(args.retry)):
+        #if (args.explain):
+        #    print(req_url)
         r = requests.post(req_url, headers=headers, json=json)
         if (r.status_code == 429):
             time.sleep(t)
@@ -342,10 +344,11 @@ displayable_fields = (
     ("dph_total", "$/hr", "{:0.4f}", None, True),
     ("dlperf", "DLP", "{:0.1f}", None, True),
     ("dlperf_per_dphtotal", "DLP/$", "{:0.2f}", None, True),
+    ("score", "score", "{:0.1f}", None, True),
     ("driver_version", "NV Driver", "{}", None, True),
     ("inet_up", "Net_up", "{:0.1f}", None, True),
     ("inet_down", "Net_down", "{:0.1f}", None, True),
-    ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
+    ("reliability", "R", "{:0.1f}", lambda x: x * 100, True),
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
     ("machine_id", "mach_id", "{}", None, True),
     ("verification", "status", "{}", None, True),
@@ -370,7 +373,7 @@ displayable_fields_reserved = (
     ("driver_version", "NV Driver", "{}", None, True),
     ("inet_up", "Net_up", "{:0.1f}", None, True),
     ("inet_down", "Net_down", "{:0.1f}", None, True),
-    ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
+    ("reliability", "R", "{:0.1f}", lambda x: x * 100, True),
     ("duration", "Max_Days", "{:0.1f}", lambda x: x / (24.0 * 60.0 * 60.0), True),
     ("machine_id", "mach_id", "{}", None, True),
     ("verification", "status", "{}", None, True),
@@ -500,6 +503,7 @@ offers_fields = {
     "gpu_mem_bw",
     "gpu_name",
     "gpu_ram",
+    "gpu_total_ram",
     "gpu_display_active",
     "has_avx",
     "host_id",
@@ -514,7 +518,8 @@ offers_fields = {
     "num_gpus",
     "pci_gen",
     "pcie_bw",
-    "reliability2",
+    "reliability",
+    #"reliability2",
     "rentable",
     "rented",
     "storage_cost",
@@ -529,7 +534,7 @@ offers_fields = {
 offers_alias = {
     "cuda_vers": "cuda_max_good",
     "display_active": "gpu_display_active",
-    "reliability": "reliability2",
+    #"reliability": "reliability2",
     "dlperf_usd": "dlperf_per_dphtotal",
     "dph": "dph_total",
     "flops_usd": "flops_per_dphtotal",
@@ -555,7 +560,15 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
     if type(query_str) == list:
         query_str = " ".join(query_str)
     query_str = query_str.strip()
-    opts = re.findall("([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|[^ ]+)?( *)", query_str)
+
+    # Revised regex pattern to accurately capture quoted strings, bracketed lists, and single words/numbers
+    #pattern    = r"([a-zA-Z0-9_]+)\s*(=|!=|<=|>=|<|>| in | nin | eq | neq | not eq | not in )?\s*(\"[^\"]*\"|\[[^\]]+\]|[^ ]+)"
+    #pattern    = "([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|[^ ]+)?( *)"
+    pattern     = r"([a-zA-Z0-9_]+)( *[=><!]+| +(?:[lg]te?|nin|neq|eq|not ?eq|not ?in|in) )?( *)(\[[^\]]+\]|\"[^\"]+\"|[^ ]+)?( *)"
+    opts        = re.findall(pattern, query_str)
+
+    #print("parse_query regex:")
+    #print(opts)
 
     #print(opts)
     # res = {}
@@ -594,7 +607,10 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
         op = op.strip()
         op_name = op_names.get(op)
 
+        #print(f"{field} {v} {op} {value}")
+
         if field in field_alias:
+            res.pop(field)
             field = field_alias[field]
 
         if (field == "driver_version") and ('.' in value):
@@ -619,28 +635,26 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
                 del res[field]
             continue
 
+        if isinstance(value, str):
+            value = value.replace('_', ' ')
+            value = value.strip('\"') 
+        elif isinstance(value, list):
+            value = [x.replace('_', ' ')    for x in value]
+            value = [x.strip('\"')          for x in value]
+
         if field in field_multiplier:
             value = float(value) * field_multiplier[field]
-
-            if isinstance(value, str):
-                v[op_name] = value.replace('_', ' ')
-            else:
-                v[op_name] = value
-
+            v[op_name] = value
         else:
             #print(value)
             if value == 'true':
                 v[op_name] = True
             elif value == 'False':
                 v[op_name] = False
-            elif isinstance(value, str):
-                v[op_name] = value.replace('_', ' ')
             else:
-                #v[op_name] = [v.replace('_', ' ') for v in value]
                 v[op_name] = value
 
-        res[field] = v;
-
+        res[field] = v
     #print(res)
     return res
 
@@ -1850,7 +1864,7 @@ benchmarks_fields = {
 
         Examples:
 
-            # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
+            # search for benchmarks with score > 100 for llama2_70B model on 2 specific machines
             vastai search benchmarks 'score > 100.0  model=llama2_70B  machine_id in [302,402]'
 
         Available fields:
@@ -1882,7 +1896,8 @@ def search__benchmarks(args):
     except ValueError as e:
         print("Error: ", e)
         return 1  
-    url = apiurl(args, "/benchmarks", {"select_cols" : ['id','last_update','machine_id','score'], "select_filters" : query})
+    #url = apiurl(args, "/benchmarks", {"select_cols" : ['id','last_update','machine_id','score'], "select_filters" : query})
+    url = apiurl(args, "/benchmarks", {"select_cols" : ['*'], "select_filters" : query})
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     rows = r.json()
@@ -2005,6 +2020,7 @@ def search__invoices(args):
     argument("-r", "--reserved", dest="type", const="reserved", action="store_const", help="Alias for --type=reserved"),
     argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
+    argument("--new", action="store_true", help="New search exp"),
     argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
@@ -2048,6 +2064,7 @@ def search__invoices(args):
 
             bw_nvlink               float     bandwidth NVLink
             compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
+            cpu_arch                string    host machine cpu architecture (e.g. amd64, arm64)
             cpu_cores:              int       # virtual cpus
             cpu_cores_effective:    float     # virtual cpus you get
             cpu_ram:                float     system RAM in gigabytes
@@ -2066,7 +2083,8 @@ def search__invoices(args):
             geolocation:            string    Two letter country code. Works with operators =, !=, in, not in (e.g. geolocation not in [XV,XZ])
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
-            gpu_ram:                float     GPU RAM in GB
+            gpu_ram:                float     per GPU RAM in GB
+            gpu_total_ram:          float     total GPU RAM in GB
             gpu_frac:               float     Ratio of GPUs in the offer to gpus in the system
             gpu_display_active:     bool      True if the GPU has a display attached
             has_avx:                bool      CPU supports AVX instruction set.
@@ -2088,7 +2106,6 @@ def search__invoices(args):
             total_flops:            float     total TFLOPs from all GPUs
             ubuntu_version          string    host machine ubuntu OS version
             verified:               bool      is the machine verified
-            cpu_arch                string    host machine cpu architecture (e.g. amd64, arm64)
     """),
     aliases=hidden_aliases(["search instances"]),
 )
@@ -2117,7 +2134,11 @@ def search__offers(args):
             direction = "asc"
             if name.strip("-") != name:
                 direction = "desc"
-            field = name.strip("-");
+                field = name.strip("-")
+            if name.strip("+") != name:
+                direction = "asc"
+                field = name.strip("+")
+            #print(f"{field} {name} {direction}")
             if field in offers_alias:
                 field = offers_alias[field];
             order.append([field, direction])
@@ -2133,35 +2154,43 @@ def search__offers(args):
     except ValueError as e:
         print("Error: ", e)
         return 1
+
+    new_search_ept = args.new
     
-    url = apiurl(args, "/bundles", {"q": query})
-    r = requests.get(url, headers=headers);
+    #json_blob = {"select_cols" : ['*'], "q" : query}
+    json_blob = query
+
+    if new_search_ept:
+        #geolocation = query.pop("geolocation", None)
+        #query = {'reliability2': {'gt': '0.1'}}
+        json_blob = {"select_cols" : ['*'], "q" : query}
+        url = apiurl(args, "/search/asks/")
+        stime = time.time()
+
+        if (args.explain):
+            print("request json: ")
+            print(json_blob)
+
+        r = http_put(args, url, headers=headers, json=json_blob)
+        etime = time.time()
+        print(f"request took {etime-stime}s")
+
+    else:
+        if (args.explain):
+            print("request json: ")
+            print(json_blob)
+        #url = apiurl(args, "/bundles", {"q": query})
+        #r = requests.get(url, headers=headers)
+        url = apiurl(args, "/bundles/")
+        r = http_post(args, url, headers=headers, json=json_blob)
+
     r.raise_for_status()
    
     if (r.headers.get('Content-Type') != 'application/json'):
         print(f"invalid return Content-Type: {r.headers.get('Content-Type')}")
-        return
-    
-    rows = r.json()["offers"]
+        return   
 
-    # TODO: add this post-query geolocation filter to the database call rather than handling it locally
-    if 'geolocation' in query:
-        geo_filter = query['geolocation']
-        filter_op = list(geo_filter.keys())[0]
-        geo_target = geo_filter[filter_op]
-        new_rows = []
-        for row in rows:
-            if row["geolocation"] is not None and ' ' in row["geolocation"]:
-                country_code = row["geolocation"].split(' ')[1][:2]
-                if filter_op == "eq" and country_code == geo_target:
-                    new_rows.append(row)
-                if filter_op == "neq" and country_code != geo_target:
-                    new_rows.append(row)
-                if filter_op == "in" and country_code in geo_target:
-                    new_rows.append(row)
-                if filter_op == "notin" and country_code not in geo_target:
-                    new_rows.append(row)  
-        rows = new_rows
+    rows = r.json()["offers"]
 
     # TODO: add this post-query geolocation filter to the database call rather than handling it locally
     if 'rented' in query:
@@ -2190,7 +2219,6 @@ def search__offers(args):
             display_table(rows, displayable_fields_reserved)
         else:
             display_table(rows, displayable_fields)
-
 
 
 templates_fields = {
