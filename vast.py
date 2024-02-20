@@ -2281,7 +2281,7 @@ def search__offers(args):
         new_rows  = []
         for row in rows:
             rented = False
-            if row["rented"] is not None:
+            if "rented" in row and row["rented"] is not None:
                 rented = row["rented"]
             if filter_op == "eq" and rented == target:
                 new_rows.append(row)
