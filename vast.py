@@ -1025,6 +1025,7 @@ def create__api_key(args):
     argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
+    argument("--endpoint_id",   help="deployment endpoint id (allows multiple autoscale groups to share same deployment endpoint)", type=int),
     usage="vastai autoscaler create [OPTIONS]",
     help="Create a new autoscale group",
     epilog=deindent("""
@@ -1040,7 +1041,7 @@ def create__autoscaler(args):
     #     launch_args_dict = json.loads(args.launch_args_dict)
     #     json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args_dict": launch_args_dict, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
     
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     
     if (args.explain):
         print("request json: ")
@@ -1093,6 +1094,24 @@ def create__endpoint(args):
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
 
+def get_runtype(args):
+    runtype = 'ssh'
+    if args.args:
+        runtype = 'args'
+    if (args.args == '') or (args.args == ['']) or (args.args == []):
+        runtype = 'args'
+        args.args = None
+    if args.jupyter_dir or args.jupyter_lab:
+        args.jupyter = True
+    if args.jupyter and runtype == 'args':
+        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
+        return 1
+
+    if args.jupyter:
+        runtype = 'jupyter_direc ssh_direc ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
+
+    if args.ssh:
+        runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
 
 @parser.command(
@@ -1158,23 +1177,9 @@ def create__instance(args: argparse.Namespace):
             args.onstart_cmd = reader.read()
     if args.onstart_cmd is None:
         args.onstart_cmd = args.entrypoint
-    runtype = 'ssh'
-    if args.args:
-        runtype = 'args'
-    if (args.args == '') or (args.args == ['']) or (args.args == []):
-        runtype = 'args'
-        args.args = None
-    if args.jupyter_dir or args.jupyter_lab:
-        args.jupyter = True
-    if args.jupyter and runtype == 'args':
-        print("Error: Can't use --jupyter and --args together. Try --onstart or --onstart-cmd instead of --args.", file=sys.stderr)
+    runtype = get_runtype(args)
+    if runtype == 1:
         return 1
-
-    if args.jupyter:
-        runtype = 'jupyter_direc ssh_direc ssh_proxy' if args.direct else 'jupyter_proxy ssh_proxy'
-
-    if args.ssh:
-        runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
     json_blob ={
         "client_id": "me",
@@ -1185,7 +1190,7 @@ def create__instance(args: argparse.Namespace):
         "label": args.label,
         "extra": args.extra,
         "onstart": args.onstart_cmd,
-        "runtype": runtype,
+        "runtype": runtype, #full str
         "image_login": args.login,
         "python_utf8": args.python_utf8,
         "lang_utf8": args.lang_utf8,
@@ -1284,6 +1289,82 @@ def create__team_role(args):
     r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     print(r.json())
+
+@parser.command(
+    argument("--name", help="name of the template", type=str),
+    argument("--image_path", help="docker container image to launch", type=str),
+    argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
+    argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
+    argument("--env", help="Contents of the 'Docker options' field", type=str),
+    
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+
+    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--search_params", help="search offers filters", type=str),
+    argument("--disk_space", help="disk storage space, in GB", type=str),
+    usage="vastai create template",
+    help="Create a new template",
+    epilog=deindent("""
+        Create a template that can be used to create instances with
+        example: 
+            vast ai create template --name "tgi-llama2-7B-quantized" --image_path "ghcr.io/huggingface/text-generation-inference:1.0.3" 
+                                    --env "-p 3000:3000 -e MODEL_ARGS='--model-id TheBloke/Llama-2-7B-chat-GPTQ --quantize gptq'" 
+                                    --onstart_cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' 
+                                    --search_params "gpu_ram>=23 num_gpus=1 gpu_name=RTX_3090 inet_down>128 direct_port_count>3 disk_space>=192 driver_version>=535086005 rented=False" 
+                                    --disk 8.0 --ssh --direct
+    """)
+)
+
+def create__template(args):
+    url = apiurl(args, f"/users/0/templates/")
+    jup_direct = args.jupyter and args.direct
+    ssh_direct = args.ssh and args.direct
+    use_ssh = args.ssh or args.jupyter
+    runtype = "jupyter" if args.jupyter else ("ssh" if args.ssh else "args")
+    if args.login:
+        login = args.login.split(" ")
+        docker_login_repo = login[0]
+    else:
+        docker_login_repo = None
+    default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    template = {
+        "image" : args.image_path,
+        "tag" : args.image_tag,
+        "env" : args.env, #str format
+        "onstart" : args.onstart_cmd, #don't accept file name for now
+        "jup_direct" : jup_direct,
+        "ssh_direct" : ssh_direct,
+        "use_jupyter_lab" : args.jupyter_lab,
+        "runtype" : runtype,
+        "use_ssh" : use_ssh,
+        "jupyter_dir" : args.jupyter_dir,
+        "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
+        "extra_filters" : parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult),
+        "recommended_disk_space" : args.disk_space
+    }
+
+    json_blob = {
+        "templates" : [template]
+    }
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+
+    r = http_post(args, url, headers=headers, json=json_blob)
+    r.raise_for_status()
+    try:
+        rj = r.json()
+        if rj["success"]:
+            print(f"new template: {rj['templates'][0]}")
+        else:
+            print("template creation failed")
+    except requests.exceptions.JSONDecodeError:
+        print("The response is not valid JSON.")
+
 
 @parser.command(
     argument("ID", help="id of apikey to remove", type=int),
@@ -2949,16 +3030,17 @@ def transfer__credit(args: argparse.Namespace):
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
+    argument("--endpoint_id",   help="deployment endpoint id (allows multiple autoscale groups to share same deployment endpoint)", type=int),
     usage="vastai update autoscaler ID [OPTIONS]",
     help="Update an existing autoscale group",
     epilog=deindent("""
-        Example: vastai update autoscaler 4242 --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama"
+        Example: vastai update autoscaler 4242 --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama" --endpoint_id 2
     """),
 )
 def update__autoscaler(args):
     id  = args.ID
     url = apiurl(args, f"/autojobs/{id}/" )
-    json_blob = {"client_id": "me", "autojob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
+    json_blob = {"client_id": "me", "autojob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     if (args.explain):
         print("request json: ")
         print(json_blob)
