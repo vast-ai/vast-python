@@ -1351,21 +1351,6 @@ def create__template(args):
     except requests.exceptions.JSONDecodeError:
         print("The response is not valid JSON.")
 
-@parser.command(
-    usage="vastai show templates",
-    help="",
-    epilog=deindent("""
-        Show all templates
-    """)
-)
-
-def show__templates(args):
-    query_args = {"select_cols" : ["id", "image", "runtype"] }
-    url = apiurl(args, f"/templates/", query_args)
-    
-    r = http_get(args, url, headers=headers)
-    r.raise_for_status()
-    print(r.json())
 
 @parser.command(
     argument("ID", help="id of apikey to remove", type=int),
