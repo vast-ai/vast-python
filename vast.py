@@ -1292,7 +1292,7 @@ def create__team_role(args):
 
 @parser.command(
     argument("--name", help="name of the template", type=str),
-    argument("--image_path", help="docker container image to launch", type=str),
+    argument("--image", help="docker container image to launch", type=str),
     argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
@@ -1332,7 +1332,7 @@ def create__template(args):
         docker_login_repo = None
     default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
     template = {
-        "image" : args.image_path,
+        "image" : args.image,
         "tag" : args.image_tag,
         "env" : args.env, #str format
         "onstart" : args.onstart_cmd, #don't accept file name for now
