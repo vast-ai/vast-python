@@ -2134,11 +2134,17 @@ def search__invoices(args):
             # search for reliable 4 gpu offers in Taiwan or Sweden
             vastai search offers 'reliability>0.99 num_gpus=4 geolocation in [TW,SE]'
 
-            # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
+            # search for reliable RTX 3090 or 4090 gpus NOT in China or Vietnam
+            vastai search offers 'reliability>0.99 gpu_name in ["RTX 4090", "RTX 3090"] geolocation notin [CN,VN]'
+
+            # search for machines with nvidia drivers 535.86.05 or greater (and various other options)
+            vastai search offers 'disk_space>146 duration>24 gpu_ram>10 cuda_vers>=12.1 direct_port_count>=2 driver_version >= 535.86.05'
+
+            # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow conflicts
             vastai search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
 
-            # search based on cpu architecture
-            vastai search offers 'cpu_arch=amd64'
+            # search for arm64 cpu architecture
+            vastai search offers 'cpu_arch=arm64'
             
         Available fields:
 
@@ -2162,7 +2168,7 @@ def search__invoices(args):
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
-            geolocation:            string    Two letter country code. Works with operators =, !=, in, not in (e.g. geolocation not in [XV,XZ])
+            geolocation:            string    Two letter country code. Works with operators =, !=, in, notin (e.g. geolocation not in [XV,XZ])
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     per GPU RAM in GB
