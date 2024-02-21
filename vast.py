@@ -338,6 +338,7 @@ displayable_fields = (
     ("num_gpus", "N", "{}x", None, False),
     ("gpu_name", "Model", "{}", None, True),
     ("pcie_bw", "PCIE", "{:0.1f}", None, True),
+    ("cpu_ghz", "cpu_ghz", "{:0.1f}", None, True),
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
@@ -364,6 +365,7 @@ displayable_fields_reserved = (
     ("num_gpus", "N", "{}x", None, False),
     ("gpu_name", "Model", "{}", None, True),
     ("pcie_bw", "PCIE", "{:0.1f}", None, True),
+    ("cpu_ghz", "cpu_ghz", "{:0.1f}", None, True),
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
@@ -485,6 +487,7 @@ offers_fields = {
     "cpu_arch",
     "cpu_cores",
     "cpu_cores_effective",
+    "cpu_ghz",
     "cpu_ram",
     "cuda_max_good",
     "datacenter",
@@ -647,10 +650,12 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
             v[op_name] = value
         else:
             #print(value)
-            if value == 'true':
+            if   (value == 'true') or (value == 'True'):
                 v[op_name] = True
-            elif value == 'False':
+            elif (value == 'false') or (value == 'False'):
                 v[op_name] = False
+            elif (value == 'None') or (value == 'null'):
+                v[op_name] = None
             else:
                 v[op_name] = value
 
@@ -2154,6 +2159,7 @@ def search__invoices(args):
             compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
             cpu_arch                string    host machine cpu architecture (e.g. amd64, arm64)
             cpu_cores:              int       # virtual cpus
+            cpu_ghz:                Float     # cpu clock speed GHZ
             cpu_cores_effective:    float     # virtual cpus you get
             cpu_ram:                float     system RAM in gigabytes
             cuda_vers:              float     machine max supported cuda version (based on driver version)
