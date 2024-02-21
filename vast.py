@@ -338,6 +338,7 @@ displayable_fields = (
     ("num_gpus", "N", "{}x", None, False),
     ("gpu_name", "Model", "{}", None, True),
     ("pcie_bw", "PCIE", "{:0.1f}", None, True),
+    ("cpu_ghz", "cpu_ghz", "{:0.1f}", None, True),
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
@@ -364,6 +365,7 @@ displayable_fields_reserved = (
     ("num_gpus", "N", "{}x", None, False),
     ("gpu_name", "Model", "{}", None, True),
     ("pcie_bw", "PCIE", "{:0.1f}", None, True),
+    ("cpu_ghz", "cpu_ghz", "{:0.1f}", None, True),
     ("cpu_cores_effective", "vCPUs", "{:0.1f}", None, True),
     ("cpu_ram", "RAM", "{:0.1f}", lambda x: x / 1000, False),
     ("disk_space", "Disk", "{:.0f}", None, True),
@@ -485,6 +487,7 @@ offers_fields = {
     "cpu_arch",
     "cpu_cores",
     "cpu_cores_effective",
+    "cpu_ghz",
     "cpu_ram",
     "cuda_max_good",
     "datacenter",
@@ -647,10 +650,12 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
             v[op_name] = value
         else:
             #print(value)
-            if value == 'true':
+            if   (value == 'true') or (value == 'True'):
                 v[op_name] = True
-            elif value == 'False':
+            elif (value == 'false') or (value == 'False'):
                 v[op_name] = False
+            elif (value == 'None') or (value == 'null'):
+                v[op_name] = None
             else:
                 v[op_name] = value
 
@@ -2102,7 +2107,8 @@ def search__invoices(args):
     argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
     argument("--new", action="store_true", help="New search exp"),
-    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
+    argument("--limit", type=int, help=""),
+    argument("--disable-bundling", action="store_true", help="Deprecated"),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
@@ -2133,11 +2139,17 @@ def search__invoices(args):
             # search for reliable 4 gpu offers in Taiwan or Sweden
             vastai search offers 'reliability>0.99 num_gpus=4 geolocation in [TW,SE]'
 
-            # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow duplicates
+            # search for reliable RTX 3090 or 4090 gpus NOT in China or Vietnam
+            vastai search offers 'reliability>0.99 gpu_name in ["RTX 4090", "RTX 3090"] geolocation notin [CN,VN]'
+
+            # search for machines with nvidia drivers 535.86.05 or greater (and various other options)
+            vastai search offers 'disk_space>146 duration>24 gpu_ram>10 cuda_vers>=12.1 direct_port_count>=2 driver_version >= 535.86.05'
+
+            # search for reliable machines with at least 4 gpus, unverified, order by num_gpus, allow conflicts
             vastai search offers 'reliability > 0.99  num_gpus>=4 verified=False rented=any' -o 'num_gpus-'
 
-            # search based on cpu architecture
-            vastai search offers 'cpu_arch=amd64'
+            # search for arm64 cpu architecture
+            vastai search offers 'cpu_arch=arm64'
             
         Available fields:
 
@@ -2147,6 +2159,7 @@ def search__invoices(args):
             compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
             cpu_arch                string    host machine cpu architecture (e.g. amd64, arm64)
             cpu_cores:              int       # virtual cpus
+            cpu_ghz:                Float     # cpu clock speed GHZ
             cpu_cores_effective:    float     # virtual cpus you get
             cpu_ram:                float     system RAM in gigabytes
             cuda_vers:              float     machine max supported cuda version (based on driver version)
@@ -2161,7 +2174,7 @@ def search__invoices(args):
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
-            geolocation:            string    Two letter country code. Works with operators =, !=, in, not in (e.g. geolocation not in [XV,XZ])
+            geolocation:            string    Two letter country code. Works with operators =, !=, in, notin (e.g. geolocation not in [XV,XZ])
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     per GPU RAM in GB
@@ -2226,6 +2239,8 @@ def search__offers(args):
 
         query["order"] = order
         query["type"] = args.type
+        if (args.limit):
+            query["limit"] = int(args.limit)
         query["allocated_storage"] = args.storage
         # For backwards compatibility, support --type=interruptible option
         if query["type"] == 'interruptible':
