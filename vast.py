@@ -2102,7 +2102,8 @@ def search__invoices(args):
     argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
     argument("--new", action="store_true", help="New search exp"),
-    argument("--disable-bundling", action="store_true", help="Show identical offers. This request is more heavily rate limited."),
+    argument("--limit", type=int, help=""),
+    argument("--disable-bundling", action="store_true", help="Deprecated"),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
@@ -2226,6 +2227,8 @@ def search__offers(args):
 
         query["order"] = order
         query["type"] = args.type
+        if (args.limit):
+            query["limit"] = int(args.limit)
         query["allocated_storage"] = args.storage
         # For backwards compatibility, support --type=interruptible option
         if query["type"] == 'interruptible':
