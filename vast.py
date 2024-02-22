@@ -546,6 +546,7 @@ offers_alias = {
 offers_mult = {
     "cpu_ram": 1000,
     "gpu_ram": 1000,
+    "gpu_total_ram" : 1000,
     "duration": 24.0 * 60.0 * 60.0,
 }
 
@@ -610,8 +611,6 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
         op = op.strip()
         op_name = op_names.get(op)
 
-        #print(f"{field} {v} {op} {value}")
-
         if field in field_alias:
             res.pop(field)
             field = field_alias[field]
@@ -659,7 +658,10 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
             else:
                 v[op_name] = value
 
-        res[field] = v
+        if field not in res:
+            res[field] = v
+        else:
+            res[field].update(v)
     #print(res)
     return res
 
@@ -1297,7 +1299,7 @@ def create__team_role(args):
 
 @parser.command(
     argument("--name", help="name of the template", type=str),
-    argument("--image_path", help="docker container image to launch", type=str),
+    argument("--image", help="docker container image to launch", type=str),
     argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
@@ -1337,7 +1339,7 @@ def create__template(args):
         docker_login_repo = None
     default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
     template = {
-        "image" : args.image_path,
+        "image" : args.image,
         "tag" : args.image_tag,
         "env" : args.env, #str format
         "onstart" : args.onstart_cmd, #don't accept file name for now
