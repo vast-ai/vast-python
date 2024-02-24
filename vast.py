@@ -948,9 +948,9 @@ def copy(args: argparse.Namespace):
     argument("--src", help="path to source of object to copy.", type=str),
     argument("--dst", help="path to target of copy operation.", type=str, default="/workspace"),
     argument("--instance", help="id of the instance", type=str),
-    argument("--connection", help="id of cloud connection on your account", type=str),
+    argument("--connection", help="id of cloud connection on your account (get from calling 'vastai show connections')", type=str),
     argument("--transfer", help="type of transfer, possible options include Instance To Cloud and Cloud To Instance", type=str, default="Instance to Cloud"),
-    usage="vastai cloud_copy SRC DST CLOUD_SERVICE INSTANCE_ID CLOUD_SERVICE_SELECTED TRANSFER",
+    usage="vastai cloud copy --src SRC --dst DST --instance INSTANCE_ID -connection CONNECTION_ID --transfer TRANSFER_TYPE",
     help=" Copy files/folders to and from cloud providers",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
@@ -959,9 +959,15 @@ def copy(args: argparse.Namespace):
         You can find more information about the cloud copy operation here: https://vast.ai/docs/gpu-instances/cloud-sync
                     
         Examples:
-         vast cloud_copy --src folder --dst /workspace --instance_id 6003036 --connection 52 --transfer "Instance To Cloud"
+         
+         vastai show connections
+         ID    NAME      Cloud Type
+         1001  test_dir  drive 
+         1003  data_dir  drive 
+         
+         vastai cloud_copy --src /folder --dst /workspace --instance 6003036 --connection 1001 --transfer "Instance To Cloud"
 
-        The example copies all contents of /folder into /workspace on instance 6003036 from Amazon S3.
+        The example copies all contents of /folder into /workspace on instance 6003036 from gdrive connection 'test_dir'.
     """),
 )
 def cloud__copy(args: argparse.Namespace):
