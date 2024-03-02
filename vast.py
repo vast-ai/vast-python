@@ -3652,6 +3652,36 @@ def schedule__maint(args):
     r.raise_for_status()
     print(f"Maintenance window scheduled for {dt} success".format(r.json()))
 
+@parser.command(
+    argument("id", help="id of machine to cancel maintenance(s) for", type=int),
+    usage="vastai cancel maint id",
+    help="[Host] Cancel maint window",
+    epilog=deindent("""
+        For deleting a machine's scheduled maintenance window(s), use this cancel maint command.    
+        Example: vastai cancel maint 8207
+    """),
+    )
+def cancel__maint(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/machines/{id}/cancel_maint/".format(id=args.id))
+
+    print(f"Cancelling scheduled maintenance window(s) for machine {args.id}.")
+    ok = input("Continue? [y/n] ")
+    if ok.strip().lower() != "y":
+        return
+
+    json_blob = {"client_id": "me", "machine_id": args.id}
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_put(args, url,  headers=headers,json=json_blob)
+    r.raise_for_status()
+    print(f"Cancel maintenance window(s) scheduled for machine {args.id} success".format(r.json()))
+
+
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
