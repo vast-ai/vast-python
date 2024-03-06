@@ -3113,21 +3113,6 @@ def update__endpoint(args):
         print(r.text)
 
 
-@parser.command(
-    argument("ID", help="id of the role", type=int),
-    argument("--name", help="name of the template", type=str),
-    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
-    help="Update an existing team role",
-)
-def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
-    permissions = load_permissions_from_file(args.permissions)
-    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
-    r.raise_for_status()
-    print(r.json())
-
-
 def convert_dates_to_timestamps(args):
     selector_flag = ""
     end_timestamp = time.time()
