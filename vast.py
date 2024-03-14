@@ -3134,7 +3134,10 @@ def update__team_role(args):
     permissions = load_permissions_from_file(args.permissions)
     r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
-    print(r.json())
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(json.dumps(r.json(), indent=1))
 
 
 def convert_dates_to_timestamps(args):
@@ -3745,23 +3748,6 @@ def unlist__machine(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
-
-@parser.command(
-    argument("ID", help="id of the role", type=int),
-    argument("--name", help="name of the template", type=str),
-    argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
-    usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
-    help="Update an existing team role",
-)
-def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
-    permissions = load_permissions_from_file(args.permissions)
-    r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
-    r.raise_for_status()
-    if args.raw:
-        print(json.dumps(r.json(), indent=1))
-    else:
-        print(r.json())
 
 login_deprecated_message = """
 login via the command line is no longer supported.
