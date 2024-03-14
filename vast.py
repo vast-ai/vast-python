@@ -36,7 +36,7 @@ except NameError:
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-# server_url_default = "http://localhost:5002"
+#server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -743,6 +743,20 @@ def parse_vast_url(url_str):
 
 
 @parser.command(
+    argument("--instance_id", help="id of instance to attach to", type=int),
+    argument("--ssh_key", help="ssh key to attach to instance", type=str),
+    usage="vastai attach id path",
+    help="Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.",
+)
+def attach__ssh(args):
+    url = apiurl(args, "/instances/{id}/ssh/".format(id=args.instance_id))
+    print(url)
+    req_json = {"ssh_key": args.ssh_key}
+    r = http_post(args, url, headers=headers, json=req_json)
+    r.raise_for_status()
+    print(r.json())
+
+@parser.command(
     argument("dst", help="instance_id:/path to target of copy operation.", type=str),
     usage="vastai cancel copy DST",
     help=" Cancel a remote copy in progress, specified by DST id",
@@ -1028,6 +1042,20 @@ def create__api_key(args):
     r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
+
+@parser.command(
+    argument("--ssh_key", help="ssh key to add to your account", type=str),
+    usage="vastai create ssh-key --ssh_key SSH_KEY",
+    help="Create a new ssh-key",
+    epilog=deindent("""
+        Use this command to create a new ssh key for your account. 
+    """)
+)
+def create__ssh_key(args):
+    url = apiurl(args, "/ssh/")
+    r = http_post(args, url, headers=headers, json={"ssh_key": args.ssh_key})
+    r.raise_for_status()
+    print("ssh-key created {}".format(r.json()))
 
 @parser.command(
     
@@ -1395,6 +1423,16 @@ def delete__api_key(args):
     r.raise_for_status()
     print(r.json())
 
+@parser.command(
+    argument("ID", help="id ssh key to delete", type=int),
+    usage="vastai delete ssh-key ID",
+    help="Remove an ssh-key",
+)
+def delete__ssh_key(args):
+    url = apiurl(args, "/ssh/{id}/".format(id=args.ID))
+    r = http_del(args, url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 @parser.command(
     argument("ID", help="id of group to delete", type=int),
@@ -1508,6 +1546,17 @@ def destroy__team(args):
     r.raise_for_status()
     print(r.json())
 
+@parser.command(
+    argument("--instance_id", help="id of the instance", type=int),
+    argument("--ssh_key_id", help="id of the key to attach to the instance", type=str),
+    usage="vastai detach ssh",
+    help="Detach an ssh key from an instance",
+)
+def detach__ssh(args):
+    url = apiurl(args, "/instances/{id}/ssh/{ssh_key_id}/".format(id=args.instance_id, ssh_key_id=args.ssh_key_id))
+    r = http_del(args, url, headers=headers)
+    r.raise_for_status()
+    print(r.json())
 
 @parser.command(
     argument("ID", help="id of instance to execute on", type=int),
@@ -2584,6 +2633,19 @@ def show__api_keys(args):
         print(r.json())
 
 @parser.command(
+    usage="vastai show ssh-keys",
+    help="List your ssh keys associated with your account",
+)
+def show__ssh_keys(args):
+    url = apiurl(args, "/ssh/")
+    r = http_get(args, url, headers=headers)
+    r.raise_for_status()
+    if args.raw:
+        print(json.dumps(r.json(), indent=1))
+    else:
+        print(r.json())
+
+@parser.command(
     usage="vastai show autoscalers [--api-key API_KEY]",
     help="Display user's current autoscaler groups",
     epilog=deindent("""
@@ -3139,6 +3201,17 @@ def update__team_role(args):
     else:
         print(json.dumps(r.json(), indent=1))
 
+@parser.command(
+    argument("ID", help="id of the ssh key to update", type=int),
+    argument("--ssh_key", help="value of the ssh_key", type=str),
+    usage="vastai update ssh-key ID --ssh_key SSH_KEY",
+    help="Update an existing ssh key",
+)
+def update__ssh_key(args):
+    url = apiurl(args, "/ssh/{id}/".format(id=args.ID))
+    r = http_put(args, url,  headers=headers, json={"ssh_key": args.ssh_key})
+    r.raise_for_status()
+    print(r.json())
 
 def convert_dates_to_timestamps(args):
     selector_flag = ""
