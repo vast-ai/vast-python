@@ -501,6 +501,7 @@ offers_fields = {
     "duration",
     "external",
     "flops_per_dphtotal",
+    "gpu_arch",
     "gpu_display_active",
     # "gpu_ram_free_min",
     "gpu_mem_bw",
@@ -2183,6 +2184,7 @@ def search__invoices(args):
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
             geolocation:            string    Two letter country code. Works with operators =, !=, in, notin (e.g. geolocation not in [XV,XZ])
+            gpu_arch                string    host machine gpu architecture (e.g. nvidia, amd)
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     per GPU RAM in GB
@@ -3679,6 +3681,7 @@ def cancel__maint(args):
         print(json_blob)
     r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
+    print(r.text)
     print(f"Cancel maintenance window(s) scheduled for machine {args.id} success".format(r.json()))
 
 
