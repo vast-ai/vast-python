@@ -743,14 +743,20 @@ def parse_vast_url(url_str):
 
 
 @parser.command(
-    argument("--instance_id", help="id of instance to attach to", type=int),
-    argument("--ssh_key", help="ssh key to attach to instance", type=str),
-    usage="vastai attach id path",
+    argument("instance_id", help="id of instance to attach to", type=int),
+    argument("ssh_key", help="ssh key to attach to instance", type=str),
+    usage="vastai attach instance_id ssh_key",
     help="Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.",
+    epilog=deindent("""
+        Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.
+        Examples:
+         vast attach 12371 ssh-rsa AAAAB3NzaC1yc2EAAA...
+
+        The first example attaches the ssh key to instance 12371
+    """),
 )
 def attach__ssh(args):
     url = apiurl(args, "/instances/{id}/ssh/".format(id=args.instance_id))
-    print(url)
     req_json = {"ssh_key": args.ssh_key}
     r = http_post(args, url, headers=headers, json=req_json)
     r.raise_for_status()
@@ -1044,11 +1050,13 @@ def create__api_key(args):
     print("api-key created {}".format(r.json()))
 
 @parser.command(
-    argument("--ssh_key", help="ssh key to add to your account", type=str),
-    usage="vastai create ssh-key --ssh_key SSH_KEY",
+    argument("ssh_key", help="ssh key to add to your account", type=str),
+    usage="vastai create ssh-key ssh_key",
     help="Create a new ssh-key",
     epilog=deindent("""
         Use this command to create a new ssh key for your account. 
+        All ssh keys are stored in your account and can be used to connect to instances they've been added to
+        All ssh keys should be added in rsa format
     """)
 )
 def create__ssh_key(args):
@@ -1547,10 +1555,13 @@ def destroy__team(args):
     print(r.json())
 
 @parser.command(
-    argument("--instance_id", help="id of the instance", type=int),
-    argument("--ssh_key_id", help="id of the key to attach to the instance", type=str),
-    usage="vastai detach ssh",
+    argument("instance_id", help="id of the instance", type=int),
+    argument("ssh_key_id", help="id of the key to attach to the instance", type=str),
+    usage="vastai detach instance_id ssh_key_id",
     help="Detach an ssh key from an instance",
+    epilog=deindent("""
+        Example: vastai detach 99999 12345
+    """)
 )
 def detach__ssh(args):
     url = apiurl(args, "/instances/{id}/ssh/{ssh_key_id}/".format(id=args.instance_id, ssh_key_id=args.ssh_key_id))
@@ -3202,9 +3213,9 @@ def update__team_role(args):
         print(json.dumps(r.json(), indent=1))
 
 @parser.command(
-    argument("ID", help="id of the ssh key to update", type=int),
-    argument("--ssh_key", help="value of the ssh_key", type=str),
-    usage="vastai update ssh-key ID --ssh_key SSH_KEY",
+    argument("id", help="id of the ssh key to update", type=int),
+    argument("ssh_key", help="value of the ssh_key", type=str),
+    usage="vastai update ssh-key id ssh_key",
     help="Update an existing ssh key",
 )
 def update__ssh_key(args):
