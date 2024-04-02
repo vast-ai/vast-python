@@ -2300,6 +2300,7 @@ def search__offers(args):
             name = name.strip()
             if not name: continue
             direction = "asc"
+            field = name
             if name.strip("-") != name:
                 direction = "desc"
                 field = name.strip("-")
