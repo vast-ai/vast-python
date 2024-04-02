@@ -1280,32 +1280,47 @@ def create__instance(args: argparse.Namespace):
     help="Create a subaccount",
     epilog=deindent("""
        Creates a new account that is considered a child of your current account as defined via the API key. 
+
+       vastai create subaccount --email bob@gmail.com --username bob --password password --type host
+
+       vastai create subaccount --email vast@gmail.com --username vast --password password --type host
     """),
 )
 def create__subaccount(args):
     """Creates a new account that is considered a child of your current account as defined via the API key.
     """
+    # Default value for host_only, can adjust based on expected default behavior
+    host_only = False
+    
+    # Only process the --account_type argument if it's provided
+    if args.type:
+        host_only = args.type.lower() == "host"
 
-    url = apiurl(args, "/users/")
     json_blob = {
         "email": args.email,
         "username": args.username,
         "password": args.password,
-        "host_only": True if args.type.lower() == "host" else False,
+        "host_only": host_only,
         "parent_id": "me"
     }
-    if (args.explain):
-        print("request json: ")
+
+    # Use --explain to print the request JSON and return early
+    if getattr(args, 'explain', False):
+        print("Request JSON would be: ")
         print(json_blob)
-    r = http_post(args, url, headers=headers,json=json_blob)
+        return  # Prevents execution of the actual API call
+
+    # API call execution continues here if --explain is not used
+    url = apiurl(args, "/users/")
+    r = http_post(args, url, headers=headers, json=json_blob)
     r.raise_for_status()
 
-    if (r.status_code == 200):
-        rj = r.json();
+    if r.status_code == 200:
+        rj = r.json()
         print(rj)
     else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print(r.text)
+        print(f"Failed with error {r.status_code}")
 
 @parser.command(
     argument("--team_name", help="name of the team", type=str),
