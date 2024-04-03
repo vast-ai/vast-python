@@ -971,6 +971,11 @@ def copy(args: argparse.Namespace):
     argument("--instance", help="id of the instance", type=str),
     argument("--connection", help="id of cloud connection on your account (get from calling 'vastai show connections')", type=str),
     argument("--transfer", help="type of transfer, possible options include Instance To Cloud and Cloud To Instance", type=str, default="Instance to Cloud"),
+    argument("--dry-run", help="show what would have been transferred", action="store_true"),
+    argument("--size-only", help="skip based on size only, not mod-time or checksum", action="store_true"),
+    argument("--ignore-existing", help="skip all files that exist on destination", action="store_true"),
+    argument("--update", help="skip files that are newer on the destination", action="store_true"),
+    argument("--delete-excluded", help="delete files on dest excluded from transfer", action="store_true"),
     usage="vastai cloud copy --src SRC --dst DST --instance INSTANCE_ID -connection CONNECTION_ID --transfer TRANSFER_TYPE",
     help=" Copy files/folders to and from cloud providers",
     epilog=deindent("""
@@ -1006,6 +1011,21 @@ def cloud__copy(args: argparse.Namespace):
         print("invalid arguments")
         return
 
+    # Initialize an empty list for flags
+    flags = []
+
+    # Append flags to the list based on the argparse.Namespace
+    if args.dry_run:
+        flags.append("--dry-run")
+    if args.size_only:
+        flags.append("--size-only")
+    if args.ignore_existing:
+        flags.append("--ignore-existing")
+    if args.update:
+        flags.append("--update")
+    if args.delete_excluded:
+        flags.append("--delete-excluded")
+
     print(f"copying {args.src} {args.dst} {args.instance} {args.connection} {args.transfer}")
 
     req_json = {
@@ -1013,7 +1033,8 @@ def cloud__copy(args: argparse.Namespace):
         "dst": args.dst,
         "instance_id": args.instance,
         "selected": args.connection,
-        "transfer": args.transfer
+        "transfer": args.transfer,
+        "flags": flags
     }
 
     if (args.explain):
