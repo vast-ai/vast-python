@@ -11,11 +11,15 @@ class VastAI(VastAIBase):
     """VastAI SDK class that dynamically imports functions from vast.py and binds them as instance methods.
     
     """
-    def __init__(self, api_key, server_url="https://console.vast.ai"):
+    def __init__(self, api_key, server_url="https://console.vast.ai", retry=3, raw=False, explain=False, quiet=False):
         if not api_key:
             raise ValueError("API key is required")
         self.api_key = api_key
         self.server_url = server_url
+        self.retry = retry
+        self.raw = raw
+        self.explain = explain
+        self.quiet = quiet
         self.imported_methods = {}
         self.import_cli_functions()
 
@@ -67,10 +71,10 @@ class VastAI(VastAIBase):
 
             kwargs.setdefault('api_key', self.api_key)
             kwargs.setdefault('url', self.server_url)
-            kwargs.setdefault('retry', 3)
-            kwargs.setdefault('explain', False)
-            kwargs.setdefault('raw', False)
-            kwargs.setdefault('quiet', False)
+            kwargs.setdefault('retry', self.retry)
+            kwargs.setdefault('raw', self.raw)
+            kwargs.setdefault('explain', self.explain)
+            kwargs.setdefault('quiet', self.quiet)
             args = argparse.Namespace(**kwargs)
 
             # Redirect stdout to capture prints
