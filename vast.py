@@ -971,6 +971,11 @@ def copy(args: argparse.Namespace):
     argument("--instance", help="id of the instance", type=str),
     argument("--connection", help="id of cloud connection on your account (get from calling 'vastai show connections')", type=str),
     argument("--transfer", help="type of transfer, possible options include Instance To Cloud and Cloud To Instance", type=str, default="Instance to Cloud"),
+    argument("--dry-run", help="show what would have been transferred", action="store_true"),
+    argument("--size-only", help="skip based on size only, not mod-time or checksum", action="store_true"),
+    argument("--ignore-existing", help="skip all files that exist on destination", action="store_true"),
+    argument("--update", help="skip files that are newer on the destination", action="store_true"),
+    argument("--delete-excluded", help="delete files on dest excluded from transfer", action="store_true"),
     usage="vastai cloud copy --src SRC --dst DST --instance INSTANCE_ID -connection CONNECTION_ID --transfer TRANSFER_TYPE",
     help=" Copy files/folders to and from cloud providers",
     epilog=deindent("""
@@ -1006,6 +1011,21 @@ def cloud__copy(args: argparse.Namespace):
         print("invalid arguments")
         return
 
+    # Initialize an empty list for flags
+    flags = []
+
+    # Append flags to the list based on the argparse.Namespace
+    if args.dry_run:
+        flags.append("--dry-run")
+    if args.size_only:
+        flags.append("--size-only")
+    if args.ignore_existing:
+        flags.append("--ignore-existing")
+    if args.update:
+        flags.append("--update")
+    if args.delete_excluded:
+        flags.append("--delete-excluded")
+
     print(f"copying {args.src} {args.dst} {args.instance} {args.connection} {args.transfer}")
 
     req_json = {
@@ -1013,7 +1033,8 @@ def cloud__copy(args: argparse.Namespace):
         "dst": args.dst,
         "instance_id": args.instance,
         "selected": args.connection,
-        "transfer": args.transfer
+        "transfer": args.transfer,
+        "flags": flags
     }
 
     if (args.explain):
@@ -1280,32 +1301,47 @@ def create__instance(args: argparse.Namespace):
     help="Create a subaccount",
     epilog=deindent("""
        Creates a new account that is considered a child of your current account as defined via the API key. 
+
+       vastai create subaccount --email bob@gmail.com --username bob --password password --type host
+
+       vastai create subaccount --email vast@gmail.com --username vast --password password --type host
     """),
 )
 def create__subaccount(args):
     """Creates a new account that is considered a child of your current account as defined via the API key.
     """
+    # Default value for host_only, can adjust based on expected default behavior
+    host_only = False
+    
+    # Only process the --account_type argument if it's provided
+    if args.type:
+        host_only = args.type.lower() == "host"
 
-    url = apiurl(args, "/users/")
     json_blob = {
         "email": args.email,
         "username": args.username,
         "password": args.password,
-        "host_only": True if args.type.lower() == "host" else False,
+        "host_only": host_only,
         "parent_id": "me"
     }
-    if (args.explain):
-        print("request json: ")
+
+    # Use --explain to print the request JSON and return early
+    if getattr(args, 'explain', False):
+        print("Request JSON would be: ")
         print(json_blob)
-    r = http_post(args, url, headers=headers,json=json_blob)
+        return  # Prevents execution of the actual API call
+
+    # API call execution continues here if --explain is not used
+    url = apiurl(args, "/users/")
+    r = http_post(args, url, headers=headers, json=json_blob)
     r.raise_for_status()
 
-    if (r.status_code == 200):
-        rj = r.json();
+    if r.status_code == 200:
+        rj = r.json()
         print(rj)
     else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print(r.text)
+        print(f"Failed with error {r.status_code}")
 
 @parser.command(
     argument("--team_name", help="name of the team", type=str),
