@@ -1188,6 +1188,8 @@ def get_runtype(args):
     if args.ssh:
         runtype = 'ssh_direc ssh_proxy' if args.direct else 'ssh_proxy'
 
+    return runtype
+
 
 @parser.command(
     argument("ID", help="id of instance type to launch (returned from search offers)", type=int),
