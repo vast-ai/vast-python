@@ -348,3 +348,22 @@ class VastAIBase(ABC):
         - str: A string representation of the machines information, possibly formatted as JSON or a human-readable list.
         """
         pass
+
+    def launch_instance(gpu_name: str, num_gpus: str, image: str,
+                    region: str = None, disk: float = 16.0,
+                    explain: bool = False, raw: bool = False) -> str:
+        """
+        Launches the top instance from the search offers based on the given parameters.
+
+        Parameters:
+            gpu_name (str): Name of the GPU model, replace spaces with underscores.
+            num_gpus (int): Number of GPUs required.
+            image (str): Name of the image to use for instance.
+            region (str): Geographical location of the instance. Defaults to "Planet Earth".
+            disk (float): Disk space required in GB. Defaults to 16.0.
+            explain (bool): If set to True, prints the request JSON.
+            raw (bool): If set to True, prints the raw JSON response from the server.
+
+        Returns:
+            str: Confirmation message of the instance launch or details about the operation.
+        """

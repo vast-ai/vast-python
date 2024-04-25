@@ -2332,6 +2332,7 @@ def search__offers(args):
 
         if args.query is not None:
             query = parse_query(args.query, query, offers_fields, offers_alias, offers_mult)
+            print("SKYLARR", query)
 
         order = []
         for name in args.order.split(","):
@@ -3869,6 +3870,123 @@ def unlist__machine(args):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
+
+
+# @parser.command(
+#     argument("gpu_name", help="type of instance to launch", type=str),
+#     argument("--num_gpus", help="narrows results to a specific region for machine selection", type=str),
+#     argument("--region", help="narrows results to a specific region for machine selection", type=str),
+#     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
+#     argument("--image", help="docker container image to launch", type=str),
+#     argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
+#     usage="vastai launch instance INSTANCE_TYPE [OPTIONS] [--args ...]",
+#     help="Launch a new instance",
+#     epilog=deindent("""
+#         Allows for a more streamlined and simplified way to create an instance.
+#         Creates an instance.
+#         Besides the offer ID, you must pass in an '--image' argument as a minimum.
+#         vastai search offers 'reliability>0.99 gpu_name in ["RTX 4090", "RTX 3090"] geolocation notin [CN,VN]'
+#         argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 disk_space>=64\"", type=str),
+
+
+       
+#         Return value:
+#         Returns a json reporting the instance ID of the newly created instance:
+#         {'success': True, 'new_contract': 7835610} 
+#     """),
+# )
+def _api_request(endpoint, params=None):
+    """Generic API request handler."""
+    url = f"{server_url_default}{endpoint}"
+    # headers = {'Authorization': f'Bearer {api_key}'}
+    response = requests.get(url, headers={}, params=params)
+    response.raise_for_status()  # Will raise an exception for HTTP errors
+    return response.json()
+
+def _get_gpu_names() -> List[str]:
+    """Returns a set of GPU names available on Vast.ai."""
+    endpoint = "/api/v0/gpu_names/unique/"
+    gpu_names = _api_request(endpoint)
+    formatted_gpu_names = []
+    for name in gpu_names['gpu_names']:
+        formatted_gpu_names.append(name.replace(" ", "_").replace("-", "_"))
+    return formatted_gpu_names
+
+# dictionary maps region to list of countries 
+# matches FE code's dropdown menu
+REGIONS = {
+    "North_America": "[US, CA]",
+    "South_America": "[BR, AR, CL]",
+    "Europe": "[SE, UA, GB, PL, PT, SI, DE, IT, CH, LT, GR, FI, IS, AT, FR, RO, MD, HU, NO, MK, BG, ES, HR, NL, CZ, EE]",
+    "Asia": "[CN, JP, KR, ID, IN, HK, MY, IL, TH, QA, TR, RU, VN, TW, OM, SG, AE, KZ]",
+    "Oceania": "[AU, NZ]",
+    "Africa": "[EG, ZA]",
+}
+
+@parser.command(
+    argument("-g", "--gpu-name", type=str, required=True, choices=_get_gpu_names(), help="Name of the GPU model, replace spaces with underscores"),
+    argument("-n", "--num-gpus", type=str, required=True, choices=["1", "2", "4", "8", "12", "14"], help="Number of GPUs required"),
+    argument("-r", "--region", type=str, choices=["North_America", "South_America", "Europe", "Asia", "Oceania", "Africa"], help="Geographical location of the instance"),
+    argument("-i", "--image", required=True, help="Name of the image to use for instance"),
+    argument("-d", "--disk", type=float, default=16.0, help="Disk space required in GB"),
+    usage="vastai launch instance [--help] [--api-key API_KEY] <gpu_name> <num_gpus> <image> [geolocation] [disk_space]",
+    help="Launch the top instance from the search offers based on the given parameters",
+)
+def launch__instance(args):
+    """Allows for a more streamlined and simplified way to create an instance.
+
+    :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
+    """
+    print("MADE IT TO LAUNCH")
+    print("ARGSS",args)
+    args_query = f"num_gpus={args.num_gpus} gpu_name={args.gpu_name}"
+    if args.region:
+        args_query = f"geolocation in {REGIONS[args.region]}"
+    if args.disk:
+        args_query += f" disk_space>={args.disk}"
+
+    base_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    query = parse_query(args_query, base_query, offers_fields, offers_alias, offers_mult)
+    print("SKYLARR", query)
+
+    # let's stick with default for these search params
+    # this can be expanded upon in the future
+    query["order"] = [['score', 'desc']]
+    query["type"] = "on-demand"
+    query["limit"] = 3
+    query["allocated_storage"] = 5.0
+
+    json_blob = {
+        "client_id": "me", 
+        "gpu_name": args.gpu_name, 
+        "num_gpus": args.num_gpus, 
+        "region": args.region, 
+        "image": args.image, 
+        "disk": args.disk,  
+        "q" : query
+    }
+
+    url = apiurl(args, "/launch_instance/".format())
+
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+    r = http_put(args, url, headers=headers, json=json_blob)
+    try:
+        r.raise_for_status()  # This will raise an exception for HTTP error codes
+        response_data = r.json()
+        if args.raw:
+            print(json.dumps(r.json(), indent=1))
+        else:
+            print("Started. {}".format(r.json()))
+        if response_data.get('success'):
+            print(f"Instance launched successfully: {response_data.get('new_contract')}")
+        else:
+            print(f"Failed to launch instance: {response_data.get('error')}, {response_data.get('message')}")
+    except requests.exceptions.HTTPError as err:
+        print(f"HTTP error occurred: {err}")
+    except Exception as err:
+        print(f"An error occurred: {err}")
 
 
 
