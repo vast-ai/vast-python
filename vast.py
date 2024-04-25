@@ -36,7 +36,7 @@ except NameError:
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-#server_url_default = "http://localhost:5002"
+# server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -3872,29 +3872,6 @@ def unlist__machine(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
-# @parser.command(
-#     argument("gpu_name", help="type of instance to launch", type=str),
-#     argument("--num_gpus", help="narrows results to a specific region for machine selection", type=str),
-#     argument("--region", help="narrows results to a specific region for machine selection", type=str),
-#     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
-#     argument("--image", help="docker container image to launch", type=str),
-#     argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
-#     usage="vastai launch instance INSTANCE_TYPE [OPTIONS] [--args ...]",
-#     help="Launch a new instance",
-#     epilog=deindent("""
-#         Allows for a more streamlined and simplified way to create an instance.
-#         Creates an instance.
-#         Besides the offer ID, you must pass in an '--image' argument as a minimum.
-#         vastai search offers 'reliability>0.99 gpu_name in ["RTX 4090", "RTX 3090"] geolocation notin [CN,VN]'
-#         argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 disk_space>=64\"", type=str),
-
-
-       
-#         Return value:
-#         Returns a json reporting the instance ID of the newly created instance:
-#         {'success': True, 'new_contract': 7835610} 
-#     """),
-# )
 def _api_request(endpoint, params=None):
     """Generic API request handler."""
     url = f"{server_url_default}{endpoint}"
@@ -3929,16 +3906,64 @@ REGIONS = {
     argument("-r", "--region", type=str, choices=["North_America", "South_America", "Europe", "Asia", "Oceania", "Africa"], help="Geographical location of the instance"),
     argument("-i", "--image", required=True, help="Name of the image to use for instance"),
     argument("-d", "--disk", type=float, default=16.0, help="Disk space required in GB"),
+    argument("--price", help="per machine bid price in $/hour", type=float),
+    argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
+    argument("--label", help="label to set on the instance", type=str),
+    argument("--onstart", help="filename to use as onstart script", type=str),
+    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--entrypoint", help="override entrypoint for args launch instance", type=str),
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
+    argument("--extra", help=argparse.SUPPRESS),
+    argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
+    argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
+    argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
+    argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
+    argument("--template_hash", help="Create instance from template info", type=str),
     usage="vastai launch instance [--help] [--api-key API_KEY] <gpu_name> <num_gpus> <image> [geolocation] [disk_space]",
     help="Launch the top instance from the search offers based on the given parameters",
+    epilog=deindent("""
+        Launches an instance based on the given parameters. The instance will be created with the top offer from the search results.
+        Besides the gpu_name and num_gpus, you must pass in an '--image' argument as a minimum.
+
+        If you use args/entrypoint launch mode, we create a container from your image as is, without attempting to inject ssh and or jupyter.
+        If you use the args launch mode, you can override the entrypoint with --entrypoint, and pass arguments to the entrypoint with --args.
+        If you use --args, that must be the last argument, as any following tokens are consumed into the args string.
+        For ssh/jupyter launch types, use --onstart-cmd to pass in startup script, instead of --entrypoint and --args.
+                    
+        Examples:
+
+            # launch a single RTX 3090 instance with the pytorch image and 16 GB of disk space located anywhere
+            python vast.py launch instance -g RTX_3090 -n 1 -i pytorch/pytorch
+                    
+            # launch a 4x RTX 3090 instance with the pytorch image and 32 GB of disk space located in North America
+            python vast.py launch instance -g RTX_3090 -n 4 -i pytorch/pytorch -d 32.0 -r North_America
+            
+        Available fields:
+
+            Name                    Type      Description
+
+            num_gpus:               int       # of GPUs
+            gpu_name:               string    GPU model name
+            region:                 string    Region of the instance
+            image:                  string    Docker image name
+            disk_space:             float     Disk space in GB
+            price:                  float     Bid price per machine in $/hour, optional for cost optimization.
+            ssh, jupyter, direct:   bool      Flags to specify the instance type and connection method.
+            env:                    str       Environment variables and port mappings, encapsulated in single quotes.
+            args:                   list      Arguments passed to the container's ENTRYPOINT, used only if '--args' is specified.
+    """),
 )
 def launch__instance(args):
     """Allows for a more streamlined and simplified way to create an instance.
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     """
-    print("MADE IT TO LAUNCH")
-    print("ARGSS",args)
     args_query = f"num_gpus={args.num_gpus} gpu_name={args.gpu_name}"
     if args.region:
         args_query = f"geolocation in {REGIONS[args.region]}"
@@ -3947,7 +3972,6 @@ def launch__instance(args):
 
     base_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
     query = parse_query(args_query, base_query, offers_fields, offers_alias, offers_mult)
-    print("SKYLARR", query)
 
     # let's stick with default for these search params
     # this can be expanded upon in the future
@@ -3956,6 +3980,15 @@ def launch__instance(args):
     query["limit"] = 3
     query["allocated_storage"] = 5.0
 
+    if args.onstart:
+        with open(args.onstart, "r") as reader:
+            args.onstart_cmd = reader.read()
+    if args.onstart_cmd is None:
+        args.onstart_cmd = args.entrypoint
+    runtype = get_runtype(args)
+    if runtype == 1:
+        return 1
+
     json_blob = {
         "client_id": "me", 
         "gpu_name": args.gpu_name, 
@@ -3963,8 +3996,25 @@ def launch__instance(args):
         "region": args.region, 
         "image": args.image, 
         "disk": args.disk,  
-        "q" : query
+        "q" : query,
+        "env" : parse_env(args.env),
+        "price": args.price,
+        "disk": args.disk,
+        "label": args.label,
+        "extra": args.extra,
+        "onstart": args.onstart_cmd,
+        "runtype": runtype, #full str
+        "image_login": args.login,
+        "python_utf8": args.python_utf8,
+        "lang_utf8": args.lang_utf8,
+        "use_jupyter_lab": args.jupyter_lab,
+        "jupyter_dir": args.jupyter_dir,
+        "force": args.force,
+        "cancel_unavail": args.cancel_unavail,
+        "template_hash_id" : args.template_hash
     }
+    if (args.args != None):
+        json_blob["args"] = args.args
 
     url = apiurl(args, "/launch_instance/".format())
 

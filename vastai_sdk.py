@@ -24,6 +24,7 @@ class VastAI(VastAIBase):
         self.imported_methods = {}
         self.import_cli_functions()
 
+
     def import_cli_functions(self):
         vast = importlib.import_module("vast")
         parser = vast.parser
@@ -61,7 +62,6 @@ class VastAI(VastAIBase):
             print("No subparsers have been configured.")
 
 
-
     def create_wrapper(self, func, method_name):
         """Create a wrapper to check required arguments, convert keyword arguments, and capture output."""
         def wrapper(self, **kwargs):
@@ -91,13 +91,13 @@ class VastAI(VastAIBase):
         wrapper.__doc__ = f"Wrapper for {func.__name__}, dynamically imported from vast.py."
         return wrapper
 
-
     
     def __getattr__(self, name):
         if name in self.imported_methods:
             return getattr(self, name)
         raise AttributeError(f"{type(self).__name__} has no attribute {name}")
     
+
     def _api_request(self, endpoint, params=None):
         """Generic API request handler."""
         url = f"{self.server_url}{endpoint}"
@@ -105,6 +105,7 @@ class VastAI(VastAIBase):
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()  # Will raise an exception for HTTP errors
         return response.json()
+
 
     def get_gpu_names(self):
         """Returns a set of GPU names available on Vast.ai."""
