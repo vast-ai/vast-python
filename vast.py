@@ -36,7 +36,7 @@ except NameError:
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-# server_url_default = "http://localhost:5002"
+#server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -2332,7 +2332,6 @@ def search__offers(args):
 
         if args.query is not None:
             query = parse_query(args.query, query, offers_fields, offers_alias, offers_mult)
-            print("SKYLARR", query)
 
         order = []
         for name in args.order.split(","):
