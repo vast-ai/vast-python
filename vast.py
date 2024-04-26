@@ -3871,18 +3871,13 @@ def unlist__machine(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 
-def _api_request(endpoint, params=None):
-    """Generic API request handler."""
-    url = f"{server_url_default}{endpoint}"
-    # headers = {'Authorization': f'Bearer {api_key}'}
-    response = requests.get(url, headers={}, params=params)
-    response.raise_for_status()  # Will raise an exception for HTTP errors
-    return response.json()
-
 def _get_gpu_names() -> List[str]:
     """Returns a set of GPU names available on Vast.ai."""
     endpoint = "/api/v0/gpu_names/unique/"
-    gpu_names = _api_request(endpoint)
+    url = f"{server_url_default}{endpoint}"
+    r = requests.get(url, headers={})
+    r.raise_for_status()  # Will raise an exception for HTTP errors
+    gpu_names = r.json()
     formatted_gpu_names = []
     for name in gpu_names['gpu_names']:
         formatted_gpu_names.append(name.replace(" ", "_").replace("-", "_"))
