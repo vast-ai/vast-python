@@ -1065,7 +1065,7 @@ def cloud__copy(args: argparse.Namespace):
 def create__api_key(args):
 
     url = apiurl(args, "/auth/apikeys/")
-    permissions = load_permissions_from_file(args.permissions)
+    permissions = load_permissions_from_file(args.permission_file)
     r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
     r.raise_for_status()
     print("api-key created {}".format(r.json()))
