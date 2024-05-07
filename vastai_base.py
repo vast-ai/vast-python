@@ -348,3 +348,51 @@ class VastAIBase(ABC):
         - str: A string representation of the machines information, possibly formatted as JSON or a human-readable list.
         """
         pass
+
+    def launch_instance(gpu_name: str, num_gpus: str, image: str,
+                        region: str = None, disk: float = 16.0,
+                        price: float = None, login: str = None, label: str = None,
+                        onstart: str = None, onstart_cmd: str = None,
+                        entrypoint: str = None, ssh: bool = False, jupyter: bool = False,
+                        direct: bool = False, jupyter_dir: str = None,
+                        jupyter_lab: bool = False, lang_utf8: bool = False,
+                        python_utf8: bool = False, extra: str = None,
+                        env: str = None, args: list = None,
+                        force: bool = False, cancel_unavail: bool = False,
+                        template_hash: str = None,
+                        explain: bool = False, raw: bool = False) -> str:
+        """
+        Launches the top instance from the search offers based on the given parameters.
+
+        Parameters:
+            gpu_name (str): Name of the GPU model, replace spaces with underscores.
+            num_gpus (str): Number of GPUs required.
+            image (str): Name of the image to use for instance.
+            region (str): Geographical location of the instance, defaults to None.
+            disk (float): Disk space required in GB, defaults to 16.0.
+            price (float): Per machine bid price in $/hour, optional.
+            login (str): Docker login arguments for private repo authentication, optional.
+            label (str): Label to set on the instance, optional.
+            onstart (str): Filename to use as onstart script, optional.
+            onstart_cmd (str): Contents of onstart script as a single argument, optional.
+            entrypoint (str): Override entrypoint for args launch instance, optional.
+            ssh (bool): Launch as an SSH instance type.
+            jupyter (bool): Launch as a Jupyter instance instead of an SSH instance.
+            direct (bool): Use direct connections for Jupyter & SSH.
+            jupyter_dir (str): Directory in instance to use to launch Jupyter, optional.
+            jupyter_lab (bool): Launch instance with Jupyter Lab.
+            lang_utf8 (bool): Install and generate locales before instance launch, set locale to C.UTF-8.
+            python_utf8 (bool): Set Python's locale to C.UTF-8.
+            extra (str): Extra parameters for instance customization, optional.
+            env (str): Environment variables and port mapping options, optional.
+            args (list): List of arguments passed to container ENTRYPOINT, optional.
+            force (bool): Skip sanity checks when creating from an existing instance.
+            cancel_unavail (bool): Return error if scheduling fails rather than creating a stopped instance.
+            template_hash (str): Create instance from template info, optional.
+            explain (bool): If set to True, prints the request JSON.
+            raw (bool): If set to True, prints the raw JSON response from the server.
+
+        Returns:
+            str: Confirmation message of the instance launch or details about the operation.
+        """
+        pass
