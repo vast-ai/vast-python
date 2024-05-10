@@ -49,7 +49,14 @@ headers = {}
 class Object(object):
     pass
 
-
+def strip_strings(value):
+    if isinstance(value, str):
+        return value.strip()
+    elif isinstance(value, dict):
+        return {k: strip_strings(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        return [strip_strings(item) for item in value]
+    return value  # Return as is if not a string, list, or dict
 
 def string_to_unix_epoch(date_string):
     try:
@@ -503,6 +510,7 @@ offers_fields = {
     "flops_per_dphtotal",
     "gpu_arch",
     "gpu_display_active",
+    "gpu_frac",
     # "gpu_ram_free_min",
     "gpu_mem_bw",
     "gpu_name",
@@ -1062,16 +1070,22 @@ def cloud__copy(args: argparse.Namespace):
         You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
     """)
 )
-def create__api_key(args):
-
-    url = apiurl(args, "/auth/apikeys/")
-    permissions = load_permissions_from_file(args.permission_file)
-    r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
-    r.raise_for_status()
-    print("api-key created {}".format(r.json()))
+def create_api_key(args):
+    try:
+        url = apiurl(args, "/auth/apikeys/")
+        permissions = load_permissions_from_file(args.permission_file)
+        r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions, "key_params": args.key_params})
+        r.raise_for_status()
+        print("api-key created {}".format(r.json()))
+    except FileNotFoundError:
+        print("Error: Permission file '{}' not found.".format(args.permission_file))
+    except requests.exceptions.RequestException as e:
+        print("Error: Failed to create api-key. Reason: {}".format(e))
+    except Exception as e:
+        print("An unexpected error occurred:", e)
 
 @parser.command(
-    argument("ssh_key", help="ssh key to add to your account", type=str),
+    argument("ssh_key", help="add the public key of your ssh key to your account (form the .pub file)", type=str),
     usage="vastai create ssh-key ssh_key",
     help="Create a new ssh-key",
     epilog=deindent("""
@@ -1594,7 +1608,7 @@ def destroy__team(args):
 
 @parser.command(
     argument("instance_id", help="id of the instance", type=int),
-    argument("ssh_key_id", help="id of the key to attach to the instance", type=str),
+    argument("ssh_key_id", help="id of the key to detach to the instance", type=str),
     usage="vastai detach instance_id ssh_key_id",
     help="Detach an ssh key from an instance",
     epilog=deindent("""
@@ -2285,7 +2299,7 @@ def search__invoices(args):
             duration:               float     max rental duration in days
             external:               bool      show external offers in addition to datacenter offers
             flops_usd:              float     TFLOPs/$
-            geolocation:            string    Two letter country code. Works with operators =, !=, in, notin (e.g. geolocation not in [XV,XZ])
+            geolocation:            string    Two letter country code. Works with operators =, !=, in, notin (e.g. geolocation not in ['XV','XZ'])
             gpu_arch                string    host machine gpu architecture (e.g. nvidia, amd)
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
@@ -2994,9 +3008,9 @@ def show__instances(args):
     r.raise_for_status()
     rows = r.json()["instances"]
     for row in rows:
+        row = {k: strip_strings(v) for k, v in row.items()} 
         row['duration'] = time.time() - row['start_date']
         row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
-
     if args.quiet:
         for row in rows:
             id = row.get("id", None)
