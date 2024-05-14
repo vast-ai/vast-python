@@ -3680,16 +3680,13 @@ def parse_env(envs):
     result = {}
     if (envs is None):
         return result
-    #env  = envs.split(' ')
     env = smart_split(envs,' ')
-    # print(env)
     prev = None
     for e in env:
         if (prev is None):
           if (e in {"-e", "-p", "-h"}):
               prev = e
           else:
-              #print(result)
               return result
         else:
           if (prev == "-p"):
@@ -3700,8 +3697,10 @@ def parse_env(envs):
           elif (prev == "-e"):
             kv = e.split('=')
             if len(kv) >= 2: #set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
-                val = kv[1].strip("'\"")
-                result[kv[0]] = val
+                val = kv[1]
+                if len(kv) > 2:
+                    val = '='.join(kv[1:])
+                result[kv[0]] = val.strip("'\"")
             else:
                 return result
           else:
