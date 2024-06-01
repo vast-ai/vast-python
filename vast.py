@@ -1254,10 +1254,8 @@ def create__instance(args: argparse.Namespace):
             args.onstart_cmd = reader.read()
     if args.onstart_cmd is None:
         args.onstart_cmd = args.entrypoint
-    runtype = get_runtype(args)
-    if runtype == 1:
-        return 1
 
+    runtype = None
     json_blob ={
         "client_id": "me",
         "image": args.image,
@@ -1267,7 +1265,6 @@ def create__instance(args: argparse.Namespace):
         "label": args.label,
         "extra": args.extra,
         "onstart": args.onstart_cmd,
-        "runtype": runtype, #full str
         "image_login": args.login,
         "python_utf8": args.python_utf8,
         "lang_utf8": args.lang_utf8,
@@ -1278,6 +1275,14 @@ def create__instance(args: argparse.Namespace):
         "cancel_unavail": args.cancel_unavail,
         "template_hash_id" : args.template_hash
     }
+
+
+    if args.template_hash is None:
+        runtype = get_runtype(args)
+        if runtype == 1:
+            return 1
+        json_blob["runtype"] = runtype
+
     if (args.args != None):
         json_blob["args"] = args.args
 
