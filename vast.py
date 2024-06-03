@@ -3141,6 +3141,7 @@ def show__team_roles(args):
 @parser.command(
     argument("recipient", help="email of recipient account", type=str),
     argument("amount",    help="$dollars of credit to transfer ", type=float),
+    argument("--skip",    help="skip confirmation", action="store_true", default=False),
     usage="vastai transfer credit RECIPIENT AMOUNT",
     help="Transfer credits to another account",
     epilog=deindent("""
@@ -3151,10 +3152,11 @@ def show__team_roles(args):
 def transfer__credit(args: argparse.Namespace):
     url = apiurl(args, "/commands/transfer_credit/")
  
-    print(f"Transfer ${args.amount} credit to account {args.recipient}?  This is irreversible.")
-    ok = input("Continue? [y/n] ")
-    if ok.strip().lower() != "y":
-        return
+    if not args.skip:
+        print(f"Transfer ${args.amount} credit to account {args.recipient}?  This is irreversible.")
+        ok = input("Continue? [y/n] ")
+        if ok.strip().lower() != "y":
+            return
 
     json_blob = {
         "sender":    "me",
