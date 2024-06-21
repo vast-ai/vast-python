@@ -257,7 +257,8 @@ def translate_null_strings_to_blanks(d: Dict) -> Dict:
     new_d = {k: translate_nulls(v) for k, v in d.items()}
     return new_d
 
-    req_url = apiurl(args, "/instances", {"owner": "me"});
+    #req_url = apiurl(args, "/instances", {"owner": "me"});
+
 
 def apiurl(args: argparse.Namespace, subpath: str, query_args: Dict = None) -> str:
     """Creates the endpoint URL for a given combination of parameters.
@@ -3320,12 +3321,13 @@ def filter_invoice_items(args: argparse.Namespace, rows: List) -> Dict:
         directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
         package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
 
+    """
     try:
         vast_pdf
     except NameError:
         vast_pdf = Object()
         vast_pdf.invoice_number = -1
-
+    """
 
     selector_flag = ""
     end_timestamp: float = 9999999999

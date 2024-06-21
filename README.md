@@ -120,627 +120,101 @@ command we type `./vast.py show machines`
 ## List of commands and associated help message
 
 ```
-usage: vast.py [-h] [--url URL] [--raw] [--api-key API_KEY] command ...
+usage: vast.py [-h] [--url URL] [--retry RETRY] [--raw] [--explain] [--api-key API_KEY] command ...
 
 positional arguments:
   command               command to run. one of:
     help                print this help message
+    attach ssh          Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.
+    cancel copy         Cancel a remote copy in progress, specified by DST id
+    cancel sync         Cancel a remote copy in progress, specified by DST id
+    change bid          Change the bid price for a spot/interruptible instance
     copy                Copy directories between instances and/or local
+    cloud copy          Copy files/folders to and from cloud providers
+    create api-key      Create a new api-key with restricted permissions. Can be sent to other users and teammates
+    create ssh-key      Create a new ssh-key
+    create autoscaler   Create a new autoscale group
+    create endpoint     Create a new endpoint group
+    create instance     Create a new instance
+    create subaccount   Create a subaccount
+    create team         Create a new team
+    create team-role    Add a new role to your
+    create template     Create a new template
+    delete api-key      Remove an api-key
+    delete ssh-key      Remove an ssh-key
+    delete autoscaler   Delete an autoscaler group
+    delete endpoint     Delete an endpoint group
+    destroy instance    Destroy an instance (irreversible, deletes data)
+    destroy instances   Destroy a list of instances (irreversible, deletes data)
+    destroy team        Destroy your team
+    detach ssh          Detach an ssh key from an instance
+    execute             Execute a (constrained) remote command on a machine
+    invite team-member  Invite a team member
+    label instance      Assign a string label to an instance
+    logs                Get the logs for an instance
+    prepay instance     Deposit credits into reserved instance.
+    reboot instance     Reboot (stop/start) an instance
+    recycle instance    Recycle (destroy/create) an instance
+    remove team-member  Remove a team member
+    remove team-role    Remove a role from your team
+    reports             Get the user reports for a given machine
+    reset api-key       Reset your api-key (get new key from website).
+    start instance      Start a stopped instance
+    start instances     Start a list of instances
+    stop instance       Stop a running instance
+    stop instances      Stop a list of instances
+    search benchmarks   Search for benchmark results using custom query
+    search invoices     Search for benchmark results using custom query
     search offers       Search for instance types using custom query
-    show instances      Display user's current instances
+    search templates    Search for template results using custom query
+    set api-key         Set api-key (get your api-key from the console/CLI)
+    set user            Update user data from json file
     ssh-url             ssh url helper
     scp-url             scp url helper
-    show machines       [Host] Show hosted machines
+    show api-key        Show an api-key
+    show api-keys       List your api-keys associated with your account
+    show ssh-keys       List your ssh keys associated with your account
+    show autoscalers    Display user's current autoscaler groups
+    show endpoints      Display user's current endpoint groups
+    show connections    Displays user's cloud connections
+    show deposit        Display reserve deposit info for an instance
+    show earnings       Get machine earning history reports
     show invoices       Get billing history reports
+    show instance       Display user's current instances
+    show instances      Display user's current instances
+    show ipaddrs        Display user's history of ip addresses
     show user           Get current user data
+    show subaccounts    Get current subaccounts
+    show team-members   Show your team members
+    show team-role      Show your team role
+    show team-roles     Show roles for a team
+    transfer credit     Transfer credits to another account
+    update autoscaler   Update an existing autoscale group
+    update endpoint     Update an existing endpoint group
+    update team-role    Update an existing team role
+    update ssh-key      Update an existing ssh key
     generate pdf-invoices
+    cleanup machine     [Host] Remove all expired storage instances from the machine, freeing up space.
     list machine        [Host] list a machine for rent
-    unlist machine      [Host] Unlist a listed machine
+    list machines       [Host] list machines for rent
     remove defjob       [Host] Delete default jobs
-    reboot instance     Reboot (stop/start) an instance
-    start instance      Start a stopped instance
-    stop instance       Stop a running instance
-    label instance      Assign a string label to an instance
-    destroy instance    Destroy an instance (irreversible, deletes data)
-    execute             Execute a (constrained) remote command on a machine
-    logs                Get the logs for an instance
     set defjob          [Host] Create default jobs for a machine
-    create instance     Create a new instance
-    change bid          Change the bid price for a spot/interruptible instance
     set min-bid         [Host] Set the minimum bid/rental price for a machine
-    set api-key         Set api-key (get your api-key from the console/CLI)
+    schedule maint      [Host] Schedule upcoming maint window
+    cancel maint        [Host] Cancel maint window
+    show machines       [Host] Show hosted machines
+    unlist machine      [Host] Unlist a listed machine
+    launch instance     Launch the top instance from the search offers based on the given parameters
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   --url URL             server REST api url
+  --retry RETRY         retry limit
   --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
+  --explain             output verbose explanation of mapping of CLI calls to HTTPS API endpoints
+  --api-key API_KEY     api key. defaults to using the one stored in ~/.vast_api_key
 
 Use 'vast COMMAND --help' for more info about a command
-
 ```
-#### change bid -- Change the bid price for a spot/interruptible instance
 
-```
-usage: ./vast change bid id [--price PRICE]
-
-positional arguments:
-  id                 id of instance type to change bid
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --price PRICE      per machine bid price in $/hour
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-Change the current bid price of instance id to PRICE.
-If PRICE is not specified, then a winning bid price is used as the default.
-
-```
----
-#### copy -- Copy directories between instances and/or local
-
-```
-usage: ./vast copy src dst
-
-positional arguments:
-  src                   instance_id:/path to source of object to copy.
-  dst                   instance_id:/path to target of copy operation.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i IDENTITY, --identity IDENTITY
-                        Location of ssh private key
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-Copies a directory from a source location to a target location. Each of source and destination
-directories can be either local or remote, subject to appropriate read and write
-permissions required to carry out the action. The format for both src and dst is [instance_id:]path.
-Examples:
- vast copy 11824:/data/test 12371:/temp
- vast copy 11824:/data/test data/test
- vast copy data/test 11824:/data/test
-
-The first example copy syncs the directory '/tmp' in instance 12371 from the directory '/data/test' in instance 11824.
-The second example copy syncs the relative directory 'data/test' on the local machine from '/data/test' in instance 11824.
-The third example copy syncs the directory '/data/test' in instance 11824 from the relative directory 'data/test' on the local machine.
-
-```
----
-#### create instance -- Create a new instance
-
-```
-usage: ./vast create instance id [OPTIONS] [--args ...]
-
-positional arguments:
-  id                    id of instance type to launch
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --price PRICE         per machine bid price in $/hour
-  --disk DISK           size of local disk partition in GB
-  --image IMAGE         docker container image to launch
-  --login LOGIN         docker login arguments for private repo
-                        authentication, surround with ''
-  --label LABEL         label to set on the instance
-  --onstart ONSTART     filename to use as onstart script
-  --onstart-cmd ONSTART_CMD
-                        contents of onstart script as single argument
-  --ssh                 Launch as an ssh instance type.
-  --jupyter             Launch as a jupyter instance instead of an ssh
-                        instance.
-  --direct              Use (faster) direct connections for jupyter & ssh.
-  --jupyter-dir JUPYTER_DIR
-                        For runtype 'jupyter', directory in instance to use to
-                        launch jupyter. Defaults to image's working directory.
-  --jupyter-lab         For runtype 'jupyter', Launch instance with jupyter
-                        lab.
-  --lang-utf8           Workaround for images with locale problems: install
-                        and generate locales before instance launch, and set
-                        locale to C.UTF-8.
-  --python-utf8         Workaround for images with locale problems: set
-                        python's locale to C.UTF-8.
-  --env ENV             env variables and port mapping options, surround with
-                        ''
-  --args ...            list of arguments passed to container ENTRYPOINT.
-                        Onstart is recommended for this purpose.
-  --create-from CREATE_FROM
-                        Existing instance id to use as basis for new instance.
-                        Instance configuration should usually be identical, as
-                        only the difference from the base image is copied.
-  --force               Skip sanity checks when creating from an existing
-                        instance
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-Examples:
-vast create instance 384827 --image bobsrepo/pytorch:latest --login '-u bob -p 9d8df!fd89ufZ docker.io' --jupyter --direct --env '-e TZ=PDT -e XNAME=XX4 -p 22:22 -p 8080:8080' --disk 20
-vast create instance 344521 --image anthonytatowicz/eth-cuda-miner --disk 20 --args -U -S us-west1.nanopool.org:9999 -O 0x5C9314b28Fbf25D1d054a9184C0b6abF27E20d95 --farm-recheck 200
-
-```
----
-#### destroy instance -- Destroy an instance (irreversible, deletes data)
-
-```
-usage: ./vast destroy instance id [-h] [--api-key API_KEY] [--raw]
-
-positional arguments:
-  id                 id of instance to delete
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### execute -- Execute a (constrained) remote command on a machine
-
-```
-usage: ./vast execute ID COMMAND
-
-positional arguments:
-  ID                 id of instance to execute on
-  COMMAND            command to execute
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### generate pdf-invoices -- 
-
-```
-usage: ./vast generate pdf_invoices [OPTIONS]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -q, --quiet           only display numeric ids
-  -s START_DATE, --start_date START_DATE
-                        start date and time for report. Many formats accepted
-                        (optional)
-  -e END_DATE, --end_date END_DATE
-                        end date and time for report. Many formats accepted
-                        (optional)
-  -c, --only_charges    Show only charge items.
-  -p, --only_credits    Show only credit items.
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-#### help -- print this help message
-
-```
-usage: vast.py help [-h] [--url URL] [--raw] [--api-key API_KEY] [subcommand]
-
-positional arguments:
-  subcommand
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### label instance -- Assign a string label to an instance
-
-```
-usage: ./vast label instance <id> <label>
-
-positional arguments:
-  id                 id of instance to label
-  label              label to set
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### list machine -- [Host] list a machine for rent
-
-```
-usage: ./vast list machine id [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--api-key API_KEY]
-
-positional arguments:
-  id                    id of machine to list
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -g PRICE_GPU, --price_gpu PRICE_GPU
-                        per gpu rental price in $/hour (price for active
-                        instances)
-  -s PRICE_DISK, --price_disk PRICE_DISK
-                        storage price in $/GB/month (price for inactive
-                        instances), default: $0.15/GB/month
-  -u PRICE_INETU, --price_inetu PRICE_INETU
-                        price for internet upload bandwidth in $/GB
-  -d PRICE_INETD, --price_inetd PRICE_INETD
-                        price for internet download bandwidth in $/GB
-  -m MIN_CHUNK, --min_chunk MIN_CHUNK
-                        minimum amount of gpus
-  -e END_DATE, --end_date END_DATE
-                        unix timestamp of the available until date (optional)
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-#### logs -- Get the logs for an instance
-
-```
-usage: ./vast logs [OPTIONS] INSTANCE_ID
-
-positional arguments:
-  INSTANCE_ID        id of instance
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --tail TAIL        Number of lines to show from the end of the logs (default
-                     '1000')
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### reboot instance -- Reboot (stop/start) an instance
-
-```
-usage: ./vast reboot instance <id> [--raw]
-
-positional arguments:
-  id                 id of instance to reboot
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### remove defjob -- [Host] Delete default jobs
-
-```
-usage: vast.py remove defjob [-h] [--url URL] [--raw] [--api-key API_KEY] id
-
-positional arguments:
-  id                 id of machine to remove default instance from
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### scp-url -- scp url helper
-
-```
-usage: ./vast scp-url
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --id ID            id of instance
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### search offers -- Search for instance types using custom query
-
-```
-usage: ./vast search offers [--help] [--api-key API_KEY] [--raw] <query>
-
-positional arguments:
-  query                 Query to search for. default: 'external=false
-                        rentable=true verified=true', pass -n to ignore
-                        default
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -t TYPE, --type TYPE  Show 'bid'(interruptible) or 'on-demand' offers.
-                        default: on-demand
-  -i, --interruptible   Alias for --type=bid
-  -b, --bid             Alias for --type=bid
-  -d, --on-demand       Alias for --type=on-demand
-  -n, --no-default      Disable default query
-  --disable-bundling    Show identical offers. This request is more heavily
-                        rate limited.
-  --storage STORAGE     Amount of storage to use for pricing, in GiB.
-                        default=5.0GiB
-  -o ORDER, --order ORDER
-                        Comma-separated list of fields to sort on. postfix
-                        field with - to sort desc. ex: -o
-                        'num_gpus,total_flops-'. default='score-'
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-Query syntax:
-
-    query = comparison comparison...
-    comparison = field op value
-    field = <name of a field>
-    op = one of: <, <=, ==, !=, >=, >, in, notin
-    value = <bool, int, float, etc> | 'any'
-
-note: to pass '>' and '<' on the command line, make sure to use quotes
-
-Examples:
-
-    ./vast search offers 'compute_cap > 610 total_flops < 5'
-    ./vast search offers 'reliability > 0.99  num_gpus>=4' -o 'num_gpus-'
-    ./vast search offers 'rentable = any'
-
-Available fields:
-
-      Name                  Type       Description
-
-    bw_nvlink               float     bandwidth NVLink
-    compute_cap:            int       cuda compute capability*100  (ie:  650 for 6.5, 700 for 7.0)
-    cpu_cores:              int       # virtual cpus
-    cpu_cores_effective:    float     # virtual cpus you get
-    cpu_ram:                float     system RAM in gigabytes
-    cuda_vers:              float     cuda version
-    direct_port_count       int       open ports on host's router
-    disk_bw:                float     disk read bandwidth, in MB/s
-    disk_space:             float     disk storage space, in GB
-    dlperf:                 float     DL-perf score  (see FAQ for explanation)
-    dlperf_usd:             float     DL-perf/$
-    dph:                    float     $/hour rental cost
-    driver_version          string    driver version in use on a host.
-    duration:               float     max rental duration in days
-    external:               bool      show external offers
-    flops_usd:              float     TFLOPs/$
-    gpu_mem_bw:             float     GPU memory bandwidth in GB/s
-    gpu_ram:                float     GPU RAM in GB
-    gpu_frac:               float     Ratio of GPUs in the offer to gpus in the system
-    has_avx:                bool      CPU supports AVX instruction set.
-    id:                     int       instance unique ID
-    inet_down:              float     internet download speed in Mb/s
-    inet_down_cost:         float     internet download bandwidth cost in $/GB
-    inet_up:                float     internet upload speed in Mb/s
-    inet_up_cost:           float     internet upload bandwidth cost in $/GB
-    machine_id              int       machine id of instance
-    min_bid:                float     current minimum bid price in $/hr for interruptible
-    num_gpus:               int       # of GPUs
-    pci_gen:                float     PCIE generation
-    pcie_bw:                float     PCIE bandwidth (CPU to GPU)
-    reliability:            float     machine reliability score (see FAQ for explanation)
-    rentable:               bool      is the instance currently rentable
-    rented:                 bool      is the instance currently rented
-    storage_cost:           float     storage cost in $/GB/month
-    total_flops:            float     total TFLOPs from all GPUs
-    verified:               bool      is the machine verified
-
-```
----
-#### set api-key -- Set api-key (get your api-key from the console/CLI)
-
-```
-usage: ./vast set api-key APIKEY
-
-positional arguments:
-  new_api_key        Api key to set as currently logged in user
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### set defjob -- [Host] Create default jobs for a machine
-
-```
-usage: ./vast set defjob id [--api-key API_KEY] [--price_gpu PRICE_GPU] [--price_inetu PRICE_INETU] [--price_inetd PRICE_INETD] [--image IMAGE] [--args ...]
-
-positional arguments:
-  id                    id of machine to launch default instance on
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --price_gpu PRICE_GPU
-                        per gpu rental price in $/hour
-  --price_inetu PRICE_INETU
-                        price for internet upload bandwidth in $/GB
-  --price_inetd PRICE_INETD
-                        price for internet download bandwidth in $/GB
-  --image IMAGE         docker container image to launch
-  --args ...            list of arguments passed to container launch
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-#### set min-bid -- [Host] Set the minimum bid/rental price for a machine
-
-```
-usage: ./vast set min_bid id [--price PRICE]
-
-positional arguments:
-  id                 id of machine to set min bid price for
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --price PRICE      per gpu min bid price in $/hour
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-Change the current min bid price of machine id to PRICE.
-
-```
----
-#### show instances -- Display user's current instances
-
-```
-usage: ./vast show instances [--api-key API_KEY] [--raw]
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### show invoices -- Get billing history reports
-
-```
-usage: ./vast show invoices [OPTIONS]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -q, --quiet           only display numeric ids
-  -s START_DATE, --start_date START_DATE
-                        start date and time for report. Many formats accepted
-                        (optional)
-  -e END_DATE, --end_date END_DATE
-                        end date and time for report. Many formats accepted
-                        (optional)
-  -c, --only_charges    Show only charge items.
-  -p, --only_credits    Show only credit items.
-  --url URL             server REST api url
-  --raw                 output machine-readable json
-  --api-key API_KEY     api key. defaults to using the one stored in
-                        ~/.vast_api_key
-
-```
----
-#### show machines -- [Host] Show hosted machines
-
-```
-usage: ./vast show machines [OPTIONS]
-
-optional arguments:
-  -h, --help         show this help message and exit
-  -q, --quiet        only display numeric ids
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### show user -- Get current user data
-
-```
-usage: ./vast show user [OPTIONS]
-
-optional arguments:
-  -h, --help         show this help message and exit
-  -q, --quiet        display information about user
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### ssh-url -- ssh url helper
-
-```
-usage: ./vast ssh-url
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --id ID            id of instance
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### start instance -- Start a stopped instance
-
-```
-usage: ./vast start instance <id> [--raw]
-
-positional arguments:
-  id                 id of instance to start/restart
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### stop instance -- Stop a running instance
-
-```
-usage: ./vast stop instance [--raw] <id>
-
-positional arguments:
-  id                 id of instance to stop
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
-#### unlist machine -- [Host] Unlist a listed machine
-
-```
-usage: ./vast unlist machine <id>
-
-positional arguments:
-  id                 id of machine to unlist
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --url URL          server REST api url
-  --raw              output machine-readable json
-  --api-key API_KEY  api key. defaults to using the one stored in
-                     ~/.vast_api_key
-
-```
----
+----
