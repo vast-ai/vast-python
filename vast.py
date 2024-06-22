@@ -1724,7 +1724,6 @@ def logs(args):
     :param argparse.Namespace args: should supply all the command-line options
     """
     url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
-    #url = apiurl(args, "/instances/bid_price/{id}/".format(id=args.INSTANCE_ID))
     json_blob = {}
     if (args.tail):
         json_blob['tail'] = args.tail
