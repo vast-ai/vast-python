@@ -1725,33 +1725,33 @@ def logs(args):
     """
     url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
     json_blob = {}
-    if (args.tail):
+    if args.tail:
         json_blob['tail'] = args.tail
-    if (args.explain):
+    if args.daemon_logs:
+        json_blob['daemon_logs'] = 'true'
+    if args.explain:
         print("request json: ")
         print(json_blob)
 
-    r = http_put(args, url,  headers=headers,json=json_blob )
+    r = http_put(args, url, headers=headers, json=json_blob)
     r.raise_for_status()
 
-    if (r.status_code == 200):
-        rj = r.json();
-        for i in range(0,30):
+    if r.status_code == 200:
+        rj = r.json()
+        for i in range(0, 30):
             time.sleep(0.3)
-            #url = args.url + "/static/docker_logs/C" + str(args.INSTANCE_ID&255) + ".log" # apiurl(args, "/instances/request_logs/{id}/".format(id=args.id))
-            #url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + args.api_key + str(args.INSTANCE_ID) + ".log"
-            api_key_id_h = hashlib.md5( (args.api_key + str(args.INSTANCE_ID)).encode('utf-8') ).hexdigest()
+            api_key_id_h = hashlib.md5((args.api_key + str(args.INSTANCE_ID)).encode('utf-8')).hexdigest()
             url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + ".log"
             print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
-            r = requests.get(url, headers=headers);
-            if (r.status_code == 200):
+            r = requests.get(url, headers=headers)
+            if r.status_code == 200:
                 print(r.text)
                 break
         else:
-            print(rj["msg"]);
+            print(rj["msg"])
     else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print(r.text)
+        print(f"failed with error {r.status_code}")
 
 
 
