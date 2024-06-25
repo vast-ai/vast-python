@@ -1756,7 +1756,6 @@ def _parse_region(region):
     return region
 
 @parser.command(
-    argument("-t", "--type", default="on-demand", help="Rental type: 'on-demand', 'reserved', or 'bid'(interruptible) pricing. default: on-demand"),
     argument("-g", "--gpu-name", type=str, required=True, choices=_get_gpu_names(), help="Name of the GPU model, replace spaces with underscores"),
     argument("-n", "--num-gpus", type=str, required=True, choices=["1", "2", "4", "8", "12", "14"], help="Number of GPUs required"),
     argument("-r", "--region", type=str, help="Geographical location of the instance"),
@@ -1764,7 +1763,6 @@ def _parse_region(region):
     argument("-d", "--disk", type=float, default=16.0, help="Disk space required in GB"),
     argument("--limit", default=3, type=int, help=""),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
-    argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
     argument("--label", help="label to set on the instance", type=str),
     argument("--onstart", help="filename to use as onstart script", type=str),
@@ -1854,7 +1852,7 @@ def launch__instance(args):
             field = offers_alias[field];
         order.append([field, direction])
     query["order"] = order
-    query["type"] = args.type
+    query["type"] = "on-demand"
     # For backwards compatibility, support --type=interruptible option
     if query["type"] == 'interruptible':
         query["type"] = 'bid'
