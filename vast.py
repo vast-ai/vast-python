@@ -1809,7 +1809,6 @@ def _parse_region(region):
             region:                 string    Region of the instance
             image:                  string    Docker image name
             disk_space:             float     Disk space in GB
-            price:                  float     Bid price per machine in $/hour, optional for cost optimization.
             ssh, jupyter, direct:   bool      Flags to specify the instance type and connection method.
             env:                    str       Environment variables and port mappings, encapsulated in single quotes.
             args:                   list      Arguments passed to the container's ENTRYPOINT, used only if '--args' is specified.
@@ -1876,7 +1875,6 @@ def launch__instance(args):
         "disk": args.disk,  
         "q" : query,
         "env" : parse_env(args.env),
-        "price": args.price,
         "disk": args.disk,
         "label": args.label,
         "extra": args.extra,
