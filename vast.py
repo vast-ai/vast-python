@@ -1712,10 +1712,16 @@ def label__instance(args):
         print(rj["msg"]);
 
 
+def fetch_url_content(url):
+    response = requests.get(url)
+    response.raise_for_status()  # Raises an HTTPError for bad responses
+    return response.text
+
 
 @parser.command(
     argument("INSTANCE_ID", help="id of instance", type=int),
     argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
+    argument("--daemon-logs", help="Fetch daemon system logs instead of container logs.", action="store_true"),
     usage="vastai logs INSTANCE_ID [OPTIONS] ",
     help="Get the logs for an instance",
 )
@@ -1743,7 +1749,9 @@ def logs(args):
             api_key_id_h = hashlib.md5((args.api_key + str(args.INSTANCE_ID)).encode('utf-8')).hexdigest()
             url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + ".log"
             print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
-            r = requests.get(url, headers=headers)
+            #r = requests.get(url, headers=headers)
+            r = requests.get(url)
+            #r.raise_for_status()
             if r.status_code == 200:
                 print(r.text)
                 break
