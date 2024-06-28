@@ -7,6 +7,7 @@ import contextlib
 import requests
 
 from .vastai_base import VastAIBase
+from .vast import parser
 
 
 class VastAI(VastAIBase):
@@ -33,8 +34,7 @@ class VastAI(VastAIBase):
         self.import_cli_functions()
 
     def import_cli_functions(self):
-        vast = importlib.import_module("vast")
-        parser = vast.parser
+        """Dynamically import functions from vast.py and bind them as instance methods."""
 
         if hasattr(parser, "subparsers_") and parser.subparsers_:
             for name, subparser in parser.subparsers_.choices.items():
