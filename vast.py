@@ -59,6 +59,8 @@ def strip_strings(value):
     return value  # Return as is if not a string, list, or dict
 
 def string_to_unix_epoch(date_string):
+    if date_string is None:
+        return None
     try:
         # Check if the input is a float or integer representing Unix time
         return float(date_string)
@@ -419,6 +421,29 @@ instance_fields = (
     ("label", "Label", "{}", None, True),
     ("duration", "age(hours)", "{:0.2f}",  lambda x: x/(3600.0), True),
 )
+
+
+# These fields are displayed when you do 'show machines'
+machine_fields = (
+    ("id", "ID", "{}", None, True),
+    ("num_gpus", "#gpus", "{}", None, True),
+    ("gpu_name", "gpu_name", "{}", None, True),
+    ("disk_space", "disk", "{}", None, True),
+    ("hostname", "hostname", "{}", lambda x: x[:16], True),
+    ("driver_version", "driver", "{}", None, True),
+    ("reliability2", "reliab", "{:0.4f}", None, True),
+    ("verification", "veri", "{}", None, True),
+    ("public_ipaddr", "ip", "{}", None, True),
+    ("geolocation", "geoloc", "{}", None, True),
+    ("num_reports", "reports", "{}", None, True),
+    ("listed_gpu_cost", "gpuD_$/h", "{:0.2f}", None, True),
+    ("min_bid_price", "gpuI$/h", "{:0.2f}", None, True),
+    ("credit_discount_max", "rdisc", "{:0.2f}", None, True),
+    ("listed_inet_up_cost",   "netu_$/TB", "{:0.2f}", lambda x: x * 1024, True),
+    ("listed_inet_down_cost", "netd_$/TB", "{:0.2f}", lambda x: x * 1024, True),
+    ("gpu_occupancy", "occup", "{}", None, True),
+)
+
 
 ipaddr_fields = (
     ("ip", "ip", "{}", None, True),
@@ -3738,7 +3763,7 @@ def list_machine(args, id):
             if args.raw:
                 print(json.dumps(r.json(), indent=1))
             else:
-                print("offers created/updated for machine {id},  @ ${price_gpu_}/gpu/day, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, max discount_rate {discount_rate_}, till {end_date_}".format(**locals()))
+                print("offers created/updated for machine {id},  @ ${price_gpu_}/gpu/hr, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, max discount_rate {discount_rate_}, till {end_date_}".format(**locals()))
                 num_extended = rj.get("extended", 0)
 
                 if num_extended > 0:
@@ -3784,7 +3809,7 @@ def list__machine(args):
 
 
 @parser.command(
-    argument("IDs", help="ids of instance to destroy", type=int, nargs='+'),
+    argument("ids", help="ids of instance to list", type=int, nargs='+'),
     argument("-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float),
     argument("-s", "--price_disk",
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
@@ -3804,7 +3829,7 @@ def list__machine(args):
 def list__machines(args):
     """
     """
-    for id in args.IDs:
+    for id in args.ids:
         list_machine(args, id)
 
 
@@ -4068,12 +4093,11 @@ def show__machines(args):
     if args.raw:
         print(json.dumps(r.json(), indent=1, sort_keys=True))
     else:
-        for machine in rows:
-            if args.quiet:
-                print("{id}".format(id=machine["id"]))
-            else:
-                print("{N} machines: ".format(N=len(rows)));
-                print("{id}: {json}".format(id=machine["id"], json=json.dumps(machine, indent=4, sort_keys=True)))
+        if args.quiet:            
+            ids = [f"{row['id']}" for row in rows]
+            print(" ".join(id for id in ids))
+        else:
+            display_table(rows, machine_fields)
 
 
 @parser.command(
