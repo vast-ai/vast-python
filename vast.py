@@ -1707,6 +1707,42 @@ def execute(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+
+@parser.command(
+    argument("ID", help="id of instance to execute on", type=int),
+    argument("--level", help="log detail level (0 to 3)", type=int, default=1),
+    usage="vastai get endpt-logs ID [--api-key API_KEY]",
+    help="Fetch logs for a specific serverless endpoint group",
+    epilog=deindent("""
+        Example: vastai get endpt-logs 382
+    """),
+)
+def get__endpt_logs(args):
+    #url = apiurl(args, "/endptjobs/" )
+    url = "https://run.vast.ai/get_endpoint_logs/"
+    json_blob = {"id": args.ID, "api_key": args.api_key}
+    if (args.explain):
+        print(f"{url} with request json: ")
+        print(json_blob)
+
+    #response = requests.post(f"{server_addr}/route/", headers={"Content-Type": "application/json"}, data=json.dumps(route_payload), timeout=4)
+    #response.raise_for_status()  # Raises HTTPError for bad responses
+
+    r = http_post(args, url, headers=headers,json=json_blob)
+    r.raise_for_status()
+    #print("autoscaler list ".format(r.json()))
+    levels = {0 : "info0", 1: "info1", 2: "trace", 3: "debug"}
+
+    if (r.status_code == 200):
+        rj = r.json()
+        if args.raw:
+            print(json.dumps(rj, indent=1, sort_keys=True))
+        else:
+            dbg_lvl = levels[args.level]
+            print(rj[dbg_lvl])
+            #print(json.dumps(rj, indent=1, sort_keys=True))
+
+
 @parser.command(
     argument("--email", help="email of user to be invited", type=str),
     argument("--role", help="role of user to be invited", type=str),
@@ -3373,7 +3409,7 @@ def show__team_roles(args):
         print(r.json())
 
 @parser.command(
-    argument("recipient", help="email of recipient account", type=str),
+    argument("recipient", help="email (or id) of recipient account", type=str),
     argument("amount",    help="$dollars of credit to transfer ", type=float),
     argument("--skip",    help="skip confirmation", action="store_true", default=False),
     usage="vastai transfer credit RECIPIENT AMOUNT",
@@ -3743,9 +3779,8 @@ def list_machine(args, id):
     req_url = apiurl(args, "/machines/create_asks/")
 
     json_blob = {'machine': id, 'price_gpu': args.price_gpu,
-                        'price_disk': args.price_disk, 'price_inetu': args.price_inetu,
-                        'price_inetd': args.price_inetd, 'min_chunk': args.min_chunk,
-                        'end_date': string_to_unix_epoch(args.end_date), 'credit_discount_max': args.discount_rate}
+                        'price_disk': args.price_disk, 'price_inetu': args.price_inetu, 'price_inetd': args.price_inetd, 'price_min_bid': args.price_min_bid, 
+                        'min_chunk': args.min_chunk, 'end_date': string_to_unix_epoch(args.end_date), 'credit_discount_max': args.discount_rate}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -3786,6 +3821,7 @@ def list_machine(args, id):
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
     argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
+    argument("-b", "--price_min_bid", help="per gpu minimum bid price floor in $/hour", type=float),
     argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
@@ -3810,11 +3846,12 @@ def list__machine(args):
 
 @parser.command(
     argument("ids", help="ids of instance to list", type=int, nargs='+'),
-    argument("-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float),
+    argument("-g", "--price_gpu", help="per gpu on-demand rental price in $/hour (base price for active instances)", type=float),
     argument("-s", "--price_disk",
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
     argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
     argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
+    argument("-b", "--price_min_bid", help="per gpu minimum bid price floor in $/hour", type=float),
     argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
     argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
     argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
@@ -4087,7 +4124,7 @@ def show__machines(args):
     :rtype:
     """
     req_url = apiurl(args, "/machines", {"owner": "me"});
-    r = http_get(args, req_url);
+    r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()["machines"]
     if args.raw:
