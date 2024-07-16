@@ -1999,6 +1999,7 @@ def launch__instance(args):
 @parser.command(
     argument("INSTANCE_ID", help="id of instance", type=int),
     argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
+    argument("--filter", help="Grep filter for log entries", type=str),
     argument("--daemon-logs", help="Fetch daemon system logs instead of container logs.", action="store_true"),
     usage="vastai logs INSTANCE_ID [OPTIONS] ",
     help="Get the logs for an instance",
@@ -2008,11 +2009,11 @@ def logs(args):
     :param argparse.Namespace args: should supply all the command-line options
     """
     url = apiurl(args, "/instances/request_logs/{id}/".format(id=args.INSTANCE_ID))
-    json_blob = {}
+    json_blob = {'filter': args.filter} if args.filter else {}
     if args.tail:
-        json_blob['tail'] = args.tail
+        json_blob.update({'tail': args.tail})
     if args.daemon_logs:
-        json_blob['daemon_logs'] = 'true'
+        json_blob.update({'daemon_logs': 'true'})
     if args.explain:
         print("request json: ")
         print(json_blob)
