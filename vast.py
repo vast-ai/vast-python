@@ -4113,6 +4113,33 @@ def cancel__maint(args):
 
 
 @parser.command(
+    argument("ID", help="id of machine to display", type=int),
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+    usage="vastai show machine ID [OPTIONS]",
+    help="[Host] Show hosted machines",
+)
+def show__machine(args):
+    """
+    Show a machine the host is offering for rent.
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, f"/machines/{args.ID}", {"owner": "me"});
+    r = http_get(args, req_url)
+    r.raise_for_status()
+    rows = r.json()
+    if args.raw:
+        print(json.dumps(r.json(), indent=1, sort_keys=True))
+    else:
+        if args.quiet:
+            ids = [f"{row['id']}" for row in rows]
+            print(" ".join(id for id in ids))
+        else:
+            display_table(rows, machine_fields)
+
+
+@parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage="vastai show machines [OPTIONS]",
     help="[Host] Show hosted machines",
