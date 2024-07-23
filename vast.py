@@ -3967,24 +3967,25 @@ def set__defjob(args):
 
 
 def smart_split(s, char):
-    in_quotes = False
+    in_double_quotes = False
+    in_single_quotes = False #note that isn't designed to work with nested quotes within the env
     parts = []
     current = []
 
     for c in s:
-        if c == char and not in_quotes:
+        if c == char and not (in_double_quotes or in_single_quotes):
             parts.append(''.join(current))
             current = []
-        elif c == '"':
-            in_quotes = not in_quotes
+        elif c == '\'':
+            in_single_quotes = not in_single_quotes
+            current.append(c)
+        elif c == '\"':
+            in_double_quotes = not in_double_quotes
             current.append(c)
         else:
             current.append(c)
-
     parts.append(''.join(current))  # add last part
-
     return parts
-
 
 
 
@@ -3999,13 +4000,13 @@ def parse_env(envs):
           if (e in {"-e", "-p", "-h"}):
               prev = e
           else:
-              return result
+            pass
         else:
           if (prev == "-p"):
             if set(e).issubset(set("0123456789:tcp/udp")):
                 result["-p " + e] = "1"
             else:
-                return result
+                pass
           elif (prev == "-e"):
             kv = e.split('=')
             if len(kv) >= 2: #set(e).issubset(set("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_=")):
@@ -4014,11 +4015,10 @@ def parse_env(envs):
                     val = '='.join(kv[1:])
                 result[kv[0]] = val.strip("'\"")
             else:
-                return result
+                pass
           else:
               result[prev] = e
           prev = None
-
     #print(result)
     return result
 
