@@ -1793,7 +1793,7 @@ def fetch_url_content(url):
     return response.text
 
 
-CACHE_FILE = "gpu_names_cache.json"
+CACHE_FILE = "./gpu_names_cache.json"
 CACHE_DURATION = timedelta(hours=24)
 
 def _get_gpu_names() -> List[str]:
