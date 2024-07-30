@@ -543,6 +543,8 @@ offers_fields = {
     "gpu_ram",
     "gpu_total_ram",
     "gpu_display_active",
+    "gpu_max_power",
+    "gpu_max_temp",
     "has_avx",
     "host_id",
     "id",
