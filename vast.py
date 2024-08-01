@@ -787,6 +787,7 @@ def parse_vast_url(url_str):
         Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.
         Examples:
          vast attach 12371 ssh-rsa AAAAB3NzaC1yc2EAAA...
+         vast attach 12371 ssh-rsa $(cat ~/.ssh/id_rsa)
 
         The first example attaches the ssh key to instance 12371
     """),
@@ -2050,7 +2051,9 @@ def logs(args):
             print(f"waiting on logs for instance {args.INSTANCE_ID} fetching from {url}")
             r = requests.get(url)
             if r.status_code == 200:
-                print(r.text)
+                result = r.text
+                cleaned_text = re.sub(r'\n\s*\n', '\n', result)
+                print(cleaned_text)
                 break
         else:
             print(rj["msg"])
@@ -4270,3 +4273,24 @@ if __name__ == "__main__":
         main()
     except (KeyboardInterrupt, BrokenPipeError):
         pass
+ 
+def update_instance_template(args):
+    """
+    Updates the template associated with an instance.
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, "/instances/update_template/{id}/".format(id=args.ID))
+    payload = {'template_id': args.template_id}
+    r = http_put(args, url, headers=headers, json=payload)
+    r.raise_for_status()
+
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print("Template updated for instance {args.ID} to template {args.template_id}.".format(**locals()))
+        else:
+            print(rj["msg"])
+    else:
+        print(r.text)
+        print("Failed with error {r.status_code}".format(**locals()))
