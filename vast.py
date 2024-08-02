@@ -1136,28 +1136,34 @@ def create__ssh_key(args):
     argument("--template_hash", help="template hash (optional, but **Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id (optional)", type=int),
     argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
+    argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
     argument("--endpoint_id",   help="deployment endpoint id (allows multiple autoscale groups to share same deployment endpoint)", type=int),
     argument("--min_load", help="[NOTE: this field isn't currently used at the autojob level] minimum floor load in perf units/s  (token/s for LLms)", type=float),
     argument("--target_util", help="[NOTE: this field isn't currently used at the autojob level] target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="[NOTE: this field isn't currently used at the autojob level]cold/stopped instance capacity target as multiple of hot capacity target (default 2.0)", type=float),
-    usage="vastai autoscaler create [OPTIONS]",
+    usage="vastai autogroup create [OPTIONS]",
     help="Create a new autoscale group",
     epilog=deindent("""
         Create a new autoscaling group to manage a pool of worker instances.
                     
-        Example: vastai create autoscaler --template_hash HASH  --endpoint_name "LLama" --test_workers 5
+        Example: vastai create autogroup --template_hash HASH  --endpoint_name "LLama" --test_workers 5
         """),
 )
-def create__autoscaler(args):
+def create__autogroup(args):
     url = apiurl(args, "/autojobs/" )
 
     # if args.launch_args_dict:
     #     launch_args_dict = json.loads(args.launch_args_dict)
     #     json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args_dict": launch_args_dict, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name}
-    
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
+    if args.no_default:
+        query = ""
+    else:
+        query = " verified=True rentable=True rented=False"
+        #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params + query, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     
     if (args.explain):
         print("request json: ")
@@ -1166,7 +1172,7 @@ def create__autoscaler(args):
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
-            print("autoscaler create {}".format(r.json()))
+            print("autogroup create {}".format(r.json()))
         except requests.exceptions.JSONDecodeError:
             print("The response is not valid JSON.")
             print(r)
@@ -1445,6 +1451,7 @@ def create__team_role(args):
 
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--search_params", help="search offers filters", type=str),
+    argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--disk_space", help="disk storage space, in GB", type=str),
     usage="vastai create template",
     help="Create a new template",
@@ -1458,7 +1465,6 @@ def create__team_role(args):
                                     --disk 8.0 --ssh --direct
     """)
 )
-
 def create__template(args):
     url = apiurl(args, f"/users/0/templates/")
     jup_direct = args.jupyter and args.direct
@@ -1470,7 +1476,9 @@ def create__template(args):
         docker_login_repo = login[0]
     else:
         docker_login_repo = None
-    default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    default_search_query = {}
+    if not args.no_default:
+        default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
     template = {
         "image" : args.image,
         "tag" : args.image_tag,
@@ -1530,14 +1538,14 @@ def delete__ssh_key(args):
 
 @parser.command(
     argument("ID", help="id of group to delete", type=int),
-    usage="vastai delete autoscaler ID ",
-    help="Delete an autoscaler group",
+    usage="vastai delete autogroup ID ",
+    help="Delete an autogroup group",
     epilog=deindent("""
-        Note that deleteing an autoscaler group doesn't automatically destroy all the instances that are associated with your autoscaler group.
-        Example: vastai delete autoscaler 4242
+        Note that deleteing an autogroup group doesn't automatically destroy all the instances that are associated with your autogroup group.
+        Example: vastai delete autogroup 4242
     """),
 )
-def delete__autoscaler(args):
+def delete__autogroup(args):
     id  = args.ID
     url = apiurl(args, f"/autojobs/{id}/" )
     json_blob = {"client_id": "me", "autojob_id": args.ID}
@@ -1548,7 +1556,7 @@ def delete__autoscaler(args):
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
-            print("autoscaler delete {}".format(r.json()))
+            print("autogroup delete {}".format(r.json()))
         except requests.exceptions.JSONDecodeError:
             print("The response is not valid JSON.")
             print(r)
@@ -1733,7 +1741,7 @@ def get__endpt_logs(args):
 
     r = http_post(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
-    #print("autoscaler list ".format(r.json()))
+    #print("autogroup list ".format(r.json()))
     levels = {0 : "info0", 1: "info1", 2: "trace", 3: "debug"}
 
     if (r.status_code == 200):
@@ -3009,13 +3017,13 @@ def show__ssh_keys(args):
         print(r.json())
 
 @parser.command(
-    usage="vastai show autoscalers [--api-key API_KEY]",
-    help="Display user's current autoscaler groups",
+    usage="vastai show autogroups [--api-key API_KEY]",
+    help="Display user's current autogroup groups",
     epilog=deindent("""
-        Example: vastai show autoscalers 
+        Example: vastai show autogroups 
     """),
 )
-def show__autoscalers(args):
+def show__autogroups(args):
     url = apiurl(args, "/autojobs/" )
     json_blob = {"client_id": "me", "api_key": args.api_key}
     if (args.explain):
@@ -3023,7 +3031,7 @@ def show__autoscalers(args):
         print(json_blob)
     r = http_get(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
-    #print("autoscaler list ".format(r.json()))
+    #print("autogroup list ".format(r.json()))
 
     if (r.status_code == 200):
         rj = r.json();
@@ -3052,7 +3060,7 @@ def show__endpoints(args):
         print(json_blob)
     r = http_get(args, url, headers=headers,json=json_blob)
     r.raise_for_status()
-    #print("autoscaler list ".format(r.json()))
+    #print("autogroup list ".format(r.json()))
 
     if (r.status_code == 200):
         rj = r.json();
@@ -3485,19 +3493,24 @@ def transfer__credit(args: argparse.Namespace):
     argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id", type=int),
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
+    argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--endpoint_name",   help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
     argument("--endpoint_id",   help="deployment endpoint id (allows multiple autoscale groups to share same deployment endpoint)", type=int),
-    usage="vastai update autoscaler ID [OPTIONS]",
+    usage="vastai update autogroup ID [OPTIONS]",
     help="Update an existing autoscale group",
     epilog=deindent("""
-        Example: vastai update autoscaler 4242 --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama" --endpoint_id 2
+        Example: vastai update autogroup 4242 --min_load 100 --target_util 0.9 --cold_mult 2.0 --search_params \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\" --launch_args \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\" --gpu_ram 32.0 --endpoint_name "LLama" --endpoint_id 2
     """),
 )
-def update__autoscaler(args):
+def update__autogroup(args):
     id  = args.ID
     url = apiurl(args, f"/autojobs/{id}/" )
-    json_blob = {"client_id": "me", "autojob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
+    if args.no_default:
+        query = ""
+    else:
+        query = " verified=True rentable=True rented=False"
+    json_blob = {"client_id": "me", "autojob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params + query, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -3505,7 +3518,7 @@ def update__autoscaler(args):
     r.raise_for_status()
     if 'application/json' in r.headers.get('Content-Type', ''):
         try:
-            print("autoscaler update {}".format(r.json()))
+            print("autogroup update {}".format(r.json()))
         except requests.exceptions.JSONDecodeError:
             print("The response is not valid JSON.")
             print(r)
