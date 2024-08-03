@@ -2608,6 +2608,8 @@ def search__invoices(args):
             flops_usd:              float     TFLOPs/$
             geolocation:            string    Two letter country code. Works with operators =, !=, in, notin (e.g. geolocation not in ['XV','XZ'])
             gpu_arch                string    host machine gpu architecture (e.g. nvidia, amd)
+            gpu_max_power           float     GPU power limit (watts)
+            gpu_max_temp            float     GPU temp limit (C)
             gpu_mem_bw:             float     GPU memory bandwidth in GB/s
             gpu_name:               string    GPU model name (no quotes, replace spaces with underscores, ie: RTX_3090 rather than 'RTX 3090')
             gpu_ram:                float     per GPU RAM in GB
