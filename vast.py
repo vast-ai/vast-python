@@ -11,7 +11,9 @@ import time
 from typing import Dict, List, Tuple
 import hashlib
 from datetime import date, datetime, timedelta
-
+import math
+import threading
+from concurrent.futures import ThreadPoolExecutor
 import requests
 import getpass
 import subprocess
@@ -2231,14 +2233,16 @@ def start_instance(id,args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        rj = r.json();
+        rj = r.json()
         if (rj["success"]):
-            print("starting instance {id}.".format(**(locals())));
+            print("starting instance {id}.".format(**(locals())))
         else:
-            print(rj["msg"]);
+            print(rj["msg"])
+        return True
     else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()))
+    return False
 
 @parser.command(
     argument("ID", help="ID of instance to start/restart", type=int),
@@ -2260,6 +2264,38 @@ def start__instance(args):
     """
     start_instance(args.ID,args)
 
+
+
+def exec_with_threads(f, args, nt=16, max_retries=5):
+    def worker(sub_args):
+        for arg in sub_args:
+            retries = 0
+            while retries <= max_retries:
+                try:
+                    result = None
+                    if isinstance(arg,tuple):
+                        result = f(*arg)
+                    else:
+                        result = f(arg)
+                    if result:  # Assuming a truthy return value means success
+                        break
+                except Exception as e:
+                    print(str(e))
+                    pass
+                retries += 1
+                stime = 0.2 * 1.4 ** retries
+                print(f"retrying in {stime}s")
+                time.sleep(stime)  # Exponential backoff
+
+    # Split args into nt sublists
+    args_per_thread = math.ceil(len(args) / nt)
+    sublists = [args[i:i + args_per_thread] for i in range(0, len(args), args_per_thread)]
+
+    with ThreadPoolExecutor(max_workers=nt) as executor:
+        executor.map(worker, sublists)
+
+
+
 @parser.command(
     argument("IDs", help="ids of instance to start", type=int, nargs='+'),
     usage="vastai start instances [OPTIONS] ID0 ID1 ID2...",
@@ -2267,9 +2303,12 @@ def start__instance(args):
 )
 def start__instances(args):
     """
-    """
     for id in args.IDs:
         start_instance(id, args)
+    """
+
+    exec_with_threads(lambda id : start_instance(id, args), args.IDs)
+
 
 
 def stop_instance(id,args):
@@ -2282,14 +2321,16 @@ def stop_instance(id,args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        rj = r.json();
+        rj = r.json()
         if (rj["success"]):
-            print("stopping instance {id}.".format(**(locals())));
+            print("stopping instance {id}.".format(**(locals())))
         else:
-            print(rj["msg"]);
+            print(rj["msg"])
+        return True
     else:
         print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print("failed with error {r.status_code}".format(**locals()))
+    return False
 
 
 @parser.command(
@@ -2322,10 +2363,12 @@ def stop__instance(args):
 )
 def stop__instances(args):
     """
-    """
-
     for id in args.IDs:
         stop_instance(id, args)
+    """
+
+    exec_with_threads(lambda id : stop_instance(id, args), args.IDs)
+
 
 
 def numeric_version(version_str):
