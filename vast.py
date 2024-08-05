@@ -2266,7 +2266,7 @@ def start__instance(args):
 
 
 
-def exec_with_threads(f, args, nt=16, max_retries=5):
+def exec_with_threads(f, args, nt=32, max_retries=5):
     def worker(sub_args):
         for arg in sub_args:
             retries = 0
@@ -2283,7 +2283,7 @@ def exec_with_threads(f, args, nt=16, max_retries=5):
                     print(str(e))
                     pass
                 retries += 1
-                stime = 0.2 * 1.4 ** retries
+                stime = 0.15 * 1.3 ** retries
                 print(f"retrying in {stime}s")
                 time.sleep(stime)  # Exponential backoff
 
