@@ -2263,6 +2263,13 @@ def split_into_sublists(lst, k):
     return sublists
 
 
+def split_list(lst, k):
+    """
+    Splits a list into sublists of maximum size k.
+    """
+    return [lst[i:i + k] for i in range(0, len(lst), k)]
+
+
 def start_instance(id,args):
 
     json_blob ={"state": "running"}
@@ -2325,7 +2332,7 @@ def start__instances(args):
     #start_instance(args.IDs, args)
     #exec_with_threads(lambda id : start_instance(id, args), args.IDs)
 
-    idlist = split_into_sublists(args.IDs, 16)
+    idlist = split_list(args.IDs, 64)
     exec_with_threads(lambda ids : start_instance(ids, args), idlist, nt=8)
 
 
@@ -2348,12 +2355,12 @@ def stop_instance(id,args):
     if (r.status_code == 200):
         rj = r.json()
         if (rj["success"]):
-            print("stopping instance {id}.".format(**(locals())))
+            print("starting instance {id}.".format(**(locals())))
         else:
             print(rj["msg"])
         return True
     else:
-        print(r.text);
+        print(r.text)
         print("failed with error {r.status_code}".format(**locals()))
     return False
 
@@ -2392,7 +2399,7 @@ def stop__instances(args):
         stop_instance(id, args)
     """
 
-    idlist = split_into_sublists(args.IDs, 16)
+    idlist = split_list(args.IDs, 64)
     #stop_instance(args.IDs, args)
     exec_with_threads(lambda ids : stop_instance(ids, args), idlist, nt=8)
 
