@@ -2223,9 +2223,55 @@ def reset__api_key(args):
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
+
+def exec_with_threads(f, args, nt=16, max_retries=5):
+    def worker(sub_args):
+        for arg in sub_args:
+            retries = 0
+            while retries <= max_retries:
+                try:
+                    result = None
+                    if isinstance(arg,tuple):
+                        result = f(*arg)
+                    else:
+                        result = f(arg)
+                    if result:  # Assuming a truthy return value means success
+                        break
+                except Exception as e:
+                    print(str(e))
+                    pass
+                retries += 1
+                stime = 0.25 * 1.3 ** retries
+                print(f"retrying in {stime}s")
+                time.sleep(stime)  # Exponential backoff
+
+    # Split args into nt sublists
+    args_per_thread = math.ceil(len(args) / nt)
+    sublists = [args[i:i + args_per_thread] for i in range(0, len(args), args_per_thread)]
+
+    with ThreadPoolExecutor(max_workers=nt) as executor:
+        executor.map(worker, sublists)
+
+
+def split_into_sublists(lst, k):
+    # Calculate the size of each sublist
+    sublist_size = (len(lst) + k - 1) // k
+    
+    # Create the sublists using list comprehension
+    sublists = [lst[i:i + sublist_size] for i in range(0, len(lst), sublist_size)]
+    
+    return sublists
+
+
 def start_instance(id,args):
-    url = apiurl(args, "/instances/{id}/".format(id=id))
+
     json_blob ={"state": "running"}
+    if isinstance(id,list):
+        url = apiurl(args, "/instances/")
+        json_blob["ids"] = id
+    else:
+        url = apiurl(args, "/instances/{id}/".format(id=id))
+
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -2265,37 +2311,6 @@ def start__instance(args):
     start_instance(args.ID,args)
 
 
-
-def exec_with_threads(f, args, nt=32, max_retries=5):
-    def worker(sub_args):
-        for arg in sub_args:
-            retries = 0
-            while retries <= max_retries:
-                try:
-                    result = None
-                    if isinstance(arg,tuple):
-                        result = f(*arg)
-                    else:
-                        result = f(arg)
-                    if result:  # Assuming a truthy return value means success
-                        break
-                except Exception as e:
-                    print(str(e))
-                    pass
-                retries += 1
-                stime = 0.15 * 1.3 ** retries
-                print(f"retrying in {stime}s")
-                time.sleep(stime)  # Exponential backoff
-
-    # Split args into nt sublists
-    args_per_thread = math.ceil(len(args) / nt)
-    sublists = [args[i:i + args_per_thread] for i in range(0, len(args), args_per_thread)]
-
-    with ThreadPoolExecutor(max_workers=nt) as executor:
-        executor.map(worker, sublists)
-
-
-
 @parser.command(
     argument("IDs", help="ids of instance to start", type=int, nargs='+'),
     usage="vastai start instances [OPTIONS] ID0 ID1 ID2...",
@@ -2307,13 +2322,23 @@ def start__instances(args):
         start_instance(id, args)
     """
 
-    exec_with_threads(lambda id : start_instance(id, args), args.IDs)
+    #start_instance(args.IDs, args)
+    #exec_with_threads(lambda id : start_instance(id, args), args.IDs)
+
+    idlist = split_into_sublists(args.IDs, 16)
+    exec_with_threads(lambda ids : start_instance(ids, args), idlist, nt=8)
 
 
 
 def stop_instance(id,args):
-    url = apiurl(args, "/instances/{id}/".format(id=id))
+
     json_blob ={"state": "stopped"}
+    if isinstance(id,list):
+        url = apiurl(args, "/instances/")
+        json_blob["ids"] = id
+    else:
+        url = apiurl(args, "/instances/{id}/".format(id=id))
+
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -2367,7 +2392,9 @@ def stop__instances(args):
         stop_instance(id, args)
     """
 
-    exec_with_threads(lambda id : stop_instance(id, args), args.IDs)
+    idlist = split_into_sublists(args.IDs, 16)
+    #stop_instance(args.IDs, args)
+    exec_with_threads(lambda ids : stop_instance(ids, args), idlist, nt=8)
 
 
 
