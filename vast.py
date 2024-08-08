@@ -599,6 +599,9 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
     :param Dict res:
     :return Dict:
     """
+    if query_str is None:
+        return res
+
     if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
@@ -1481,6 +1484,8 @@ def create__template(args):
     default_search_query = {}
     if not args.no_default:
         default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    
+    extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
     template = {
         "image" : args.image,
         "tag" : args.image_tag,
@@ -1493,7 +1498,7 @@ def create__template(args):
         "use_ssh" : use_ssh,
         "jupyter_dir" : args.jupyter_dir,
         "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
-        "extra_filters" : parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult),
+        "extra_filters" : extra_filters,
         "recommended_disk_space" : args.disk_space
     }
 
