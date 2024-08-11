@@ -11,7 +11,9 @@ import time
 from typing import Dict, List, Tuple
 import hashlib
 from datetime import date, datetime, timedelta
-
+import math
+import threading
+from concurrent.futures import ThreadPoolExecutor
 import requests
 import getpass
 import subprocess
@@ -597,6 +599,9 @@ def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {},
     :param Dict res:
     :return Dict:
     """
+    if query_str is None:
+        return res
+
     if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
@@ -1479,6 +1484,8 @@ def create__template(args):
     default_search_query = {}
     if not args.no_default:
         default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    
+    extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
     template = {
         "image" : args.image,
         "tag" : args.image_tag,
@@ -1491,7 +1498,7 @@ def create__template(args):
         "use_ssh" : use_ssh,
         "jupyter_dir" : args.jupyter_dir,
         "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
-        "extra_filters" : parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult),
+        "extra_filters" : extra_filters,
         "recommended_disk_space" : args.disk_space
     }
 
@@ -2221,9 +2228,62 @@ def reset__api_key(args):
     r.raise_for_status()
     print("api-key reset ".format(r.json()))
 
+
+def exec_with_threads(f, args, nt=16, max_retries=5):
+    def worker(sub_args):
+        for arg in sub_args:
+            retries = 0
+            while retries <= max_retries:
+                try:
+                    result = None
+                    if isinstance(arg,tuple):
+                        result = f(*arg)
+                    else:
+                        result = f(arg)
+                    if result:  # Assuming a truthy return value means success
+                        break
+                except Exception as e:
+                    print(str(e))
+                    pass
+                retries += 1
+                stime = 0.25 * 1.3 ** retries
+                print(f"retrying in {stime}s")
+                time.sleep(stime)  # Exponential backoff
+
+    # Split args into nt sublists
+    args_per_thread = math.ceil(len(args) / nt)
+    sublists = [args[i:i + args_per_thread] for i in range(0, len(args), args_per_thread)]
+
+    with ThreadPoolExecutor(max_workers=nt) as executor:
+        executor.map(worker, sublists)
+
+
+def split_into_sublists(lst, k):
+    # Calculate the size of each sublist
+    sublist_size = (len(lst) + k - 1) // k
+    
+    # Create the sublists using list comprehension
+    sublists = [lst[i:i + sublist_size] for i in range(0, len(lst), sublist_size)]
+    
+    return sublists
+
+
+def split_list(lst, k):
+    """
+    Splits a list into sublists of maximum size k.
+    """
+    return [lst[i:i + k] for i in range(0, len(lst), k)]
+
+
 def start_instance(id,args):
-    url = apiurl(args, "/instances/{id}/".format(id=id))
+
     json_blob ={"state": "running"}
+    if isinstance(id,list):
+        url = apiurl(args, "/instances/")
+        json_blob["ids"] = id
+    else:
+        url = apiurl(args, "/instances/{id}/".format(id=id))
+
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -2231,14 +2291,16 @@ def start_instance(id,args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        rj = r.json();
+        rj = r.json()
         if (rj["success"]):
-            print("starting instance {id}.".format(**(locals())));
+            print("starting instance {id}.".format(**(locals())))
         else:
-            print(rj["msg"]);
+            print(rj["msg"])
+        return True
     else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()))
+    return False
 
 @parser.command(
     argument("ID", help="ID of instance to start/restart", type=int),
@@ -2260,6 +2322,7 @@ def start__instance(args):
     """
     start_instance(args.ID,args)
 
+
 @parser.command(
     argument("IDs", help="ids of instance to start", type=int, nargs='+'),
     usage="vastai start instances [OPTIONS] ID0 ID1 ID2...",
@@ -2267,14 +2330,27 @@ def start__instance(args):
 )
 def start__instances(args):
     """
-    """
     for id in args.IDs:
         start_instance(id, args)
+    """
+
+    #start_instance(args.IDs, args)
+    #exec_with_threads(lambda id : start_instance(id, args), args.IDs)
+
+    idlist = split_list(args.IDs, 64)
+    exec_with_threads(lambda ids : start_instance(ids, args), idlist, nt=8)
+
 
 
 def stop_instance(id,args):
-    url = apiurl(args, "/instances/{id}/".format(id=id))
+
     json_blob ={"state": "stopped"}
+    if isinstance(id,list):
+        url = apiurl(args, "/instances/")
+        json_blob["ids"] = id
+    else:
+        url = apiurl(args, "/instances/{id}/".format(id=id))
+
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -2282,14 +2358,16 @@ def stop_instance(id,args):
     r.raise_for_status()
 
     if (r.status_code == 200):
-        rj = r.json();
+        rj = r.json()
         if (rj["success"]):
-            print("stopping instance {id}.".format(**(locals())));
+            print("starting instance {id}.".format(**(locals())))
         else:
-            print(rj["msg"]);
+            print(rj["msg"])
+        return True
     else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()))
+    return False
 
 
 @parser.command(
@@ -2322,10 +2400,14 @@ def stop__instance(args):
 )
 def stop__instances(args):
     """
-    """
-
     for id in args.IDs:
         stop_instance(id, args)
+    """
+
+    idlist = split_list(args.IDs, 64)
+    #stop_instance(args.IDs, args)
+    exec_with_threads(lambda ids : stop_instance(ids, args), idlist, nt=8)
+
 
 
 def numeric_version(version_str):
