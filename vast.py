@@ -4370,24 +4370,4 @@ if __name__ == "__main__":
         main()
     except (KeyboardInterrupt, BrokenPipeError):
         pass
- 
-def update_instance_template(args):
-    """
-    Updates the template associated with an instance.
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-    url = apiurl(args, "/instances/update_template/{id}/".format(id=args.ID))
-    payload = {'template_id': args.template_id}
-    r = http_put(args, url, headers=headers, json=payload)
-    r.raise_for_status()
 
-    if (r.status_code == 200):
-        rj = r.json()
-        if (rj["success"]):
-            print("Template updated for instance {args.ID} to template {args.template_id}.".format(**locals()))
-        else:
-            print(rj["msg"])
-    else:
-        print(r.text)
-        print("Failed with error {r.status_code}".format(**locals()))
