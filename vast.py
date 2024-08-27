@@ -3647,6 +3647,59 @@ def update__endpoint(args):
 
 
 @parser.command(
+    argument("ID", help="id of instance to update", type=int),
+    argument("--template_id", help="new template ID to associate with the instance", type=int),
+    argument("--template_hash_id", help="new template hash ID to associate with the instance", type=str),
+    argument("--image", help="new image UUID for the instance", type=str),
+    argument("--args", help="new arguments for the instance", type=str),
+    argument("--env", help="new environment variables for the instance", type=json.loads),
+    argument("--onstart", help="new onstart script for the instance", type=str),
+    usage="vastai update instance ID [OPTIONS]",
+    help="Update recreate an instance from a new/updated template",
+    epilog=deindent("""
+        Example: vastai update instance 1234 --template_hash_id 661d064bbda1f2a133816b6d55da07c3
+    """),
+)
+def update__instance(args):
+    """
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    url = apiurl(args, f"/instances/update_template/{args.ID}/")
+    json_blob = {"id": args.ID}
+    
+    if args.template_id:
+        json_blob["template_id"] = args.template_id
+    if args.template_hash_id:
+        json_blob["template_hash_id"] = args.template_hash_id
+    if args.image:
+        json_blob["image"] = args.image
+    if args.args:
+        json_blob["args"] = args.args
+    if args.env:
+        json_blob["env"] = args.env
+    if args.onstart:
+        json_blob["onstart"] = args.onstart
+
+    if args.explain:
+        print("request json: ")
+        print(json_blob)
+    
+    r = http_put(args, url, headers=headers, json=json_blob)
+
+    if r.status_code == 200:
+        response_data = r.json()
+        if response_data.get("success"):
+            print(f"Instance {args.ID} updated successfully.")
+            print("Updated instance details:")
+            print(response_data.get("updated_instance"))
+        else:
+            print(f"Failed to update instance {args.ID}: {response_data.get('msg')}")
+    else:
+        print(f"Failed to update instance {args.ID} with error {r.status_code}: {r.text}")
+
+
+@parser.command(
     argument("ID", help="id of the role", type=int),
     argument("--name", help="name of the template", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
