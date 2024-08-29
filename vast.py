@@ -1283,6 +1283,9 @@ def get_runtype(args):
         
         Examples:
 
+        # create an instance with the PyTorch (cuDNN Devel) template and 64GB of disk
+        vastai create instance 384826 --template_hash 661d064bbda1f2a133816b6d55da07c3 --disk 64
+
         # create an instance with the pytorch/pytorch image, 40GB of disk, open 8081 udp, direct ssh, set hostname to billybob, and a small onstart script
         vastai create instance 6995713 --image pytorch/pytorch --disk 40 --env '-p 8081:8081/udp -h billybob' --ssh --direct --onstart-cmd "env | grep _ >> /etc/environment; echo 'starting up'";                
 
