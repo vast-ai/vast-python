@@ -3719,6 +3719,91 @@ def update__team_role(args):
     else:
         print(json.dumps(r.json(), indent=1))
 
+
+
+@parser.command(
+    argument("HASH_ID", help="hash id of the template", type=str),
+    argument("--name", help="name of the template", type=str),
+    argument("--image", help="docker container image to launch", type=str),
+    argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
+    argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
+    argument("--env", help="Contents of the 'Docker options' field", type=str),
+    
+    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+
+    argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
+    argument("--search_params", help="search offers filters", type=str),
+    argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
+    argument("--disk_space", help="disk storage space, in GB", type=str),
+    usage="vastai update template HASH_ID",
+    help="Update an existing template",
+    epilog=deindent("""
+        Update a template
+        example: 
+            vastai update template c81e7ab0e928a508510d1979346de10d --name "tgi-llama2-7B-quantized" --image_path "ghcr.io/huggingface/text-generation-inference:1.0.3" 
+                                    --env "-p 3000:3000 -e MODEL_ARGS='--model-id TheBloke/Llama-2-7B-chat-GPTQ --quantize gptq'" 
+                                    --onstart_cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' 
+                                    --search_params "gpu_ram>=23 num_gpus=1 gpu_name=RTX_3090 inet_down>128 direct_port_count>3 disk_space>=192 driver_version>=535086005 rented=False" 
+                                    --disk 8.0 --ssh --direct
+    """)
+)
+def update__template(args):
+    url = apiurl(args, f"/template/")
+    jup_direct = args.jupyter and args.direct
+    ssh_direct = args.ssh and args.direct
+    use_ssh = args.ssh or args.jupyter
+    runtype = "jupyter" if args.jupyter else ("ssh" if args.ssh else "args")
+    if args.login:
+        login = args.login.split(" ")
+        docker_login_repo = login[0]
+    else:
+        docker_login_repo = None
+    default_search_query = {}
+    if not args.no_default:
+        default_search_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    
+    extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
+    template = {
+        "hash_id": args.HASH_ID,
+        "image" : args.image,
+        "tag" : args.image_tag,
+        "env" : args.env, #str format
+        "onstart" : args.onstart_cmd, #don't accept file name for now
+        "jup_direct" : jup_direct,
+        "ssh_direct" : ssh_direct,
+        "use_jupyter_lab" : args.jupyter_lab,
+        "runtype" : runtype,
+        "use_ssh" : use_ssh,
+        "jupyter_dir" : args.jupyter_dir,
+        "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
+        "extra_filters" : extra_filters,
+        "recommended_disk_space" : args.disk_space
+    }
+
+    json_blob = template
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+
+    r = http_put(args, url, headers=headers, json=json_blob)
+    r.raise_for_status()
+    try:
+        rj = r.json()
+        if rj["success"]:
+            print(f"new template: {rj['templates'][0]}")
+        else:
+            print("template creation failed")
+    except requests.exceptions.JSONDecodeError as e:
+        print(str(e))
+        #print(r.text)
+        print(r.status_code)
+
+
+
 @parser.command(
     argument("id", help="id of the ssh key to update", type=int),
     argument("ssh_key", help="value of the ssh_key", type=str),
