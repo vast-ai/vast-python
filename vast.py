@@ -38,7 +38,7 @@ except NameError:
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
-#server_url_default = "http://localhost:5002"
+# server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 api_key_file_base = "~/.vast_api_key"
 api_key_file = os.path.expanduser(api_key_file_base)
@@ -3771,15 +3771,15 @@ def update__template(args):
         "hash_id": args.HASH_ID,
         "image" : args.image,
         "tag" : args.image_tag,
-        "env" : args.env, #str format
-        "onstart" : args.onstart_cmd, #don't accept file name for now
+        "env" : args.env,
+        "onstart" : args.onstart_cmd,
         "jup_direct" : jup_direct,
         "ssh_direct" : ssh_direct,
         "use_jupyter_lab" : args.jupyter_lab,
         "runtype" : runtype,
         "use_ssh" : use_ssh,
         "jupyter_dir" : args.jupyter_dir,
-        "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
+        "docker_login_repo" : docker_login_repo, 
         "extra_filters" : extra_filters,
         "recommended_disk_space" : args.disk_space
     }
@@ -3794,12 +3794,11 @@ def update__template(args):
     try:
         rj = r.json()
         if rj["success"]:
-            print(f"new template: {rj['templates'][0]}")
+            print(f"template updated successfully")
         else:
-            print("template creation failed")
+            print("template update failed")
     except requests.exceptions.JSONDecodeError as e:
         print(str(e))
-        #print(r.text)
         print(r.status_code)
 
 
