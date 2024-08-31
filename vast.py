@@ -453,6 +453,14 @@ ipaddr_fields = (
     ("first_location", "first_location", "{}", None, True),
 )
 
+audit_log_fields = (
+    ("ip_address", "ip_address", "{}", None, True),
+    ("api_key_id", "api_key_id", "{}", None, True),
+    ("created_at", "created_at", "{}", None, True),
+    ("api_route", "api_route", "{}", None, True),
+    ("args", "args", "{}", None, True),
+)
+
 invoice_fields = (
     ("description", "Description", "{}", None, True),
     ("quantity", "Quantity", "{}", None, True),
@@ -3089,6 +3097,28 @@ def show__api_keys(args):
         print(json.dumps(r.json(), indent=1))
     else:
         print(r.json())
+
+
+@parser.command(
+    usage="vastai show audit-logs [--api-key API_KEY] [--raw]",
+    help="Display account's history of important actions"
+)
+def show__audit_logs(args):
+    """
+    Shows the history of ip address accesses to console.vast.ai endpoints
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    req_url = apiurl(args, "/audit_logs/")
+    r = http_get(args, req_url)
+    r.raise_for_status()
+    rows = r.json()
+    if args.raw:
+        print(json.dumps(rows, indent=1, sort_keys=True))
+    else:
+        display_table(rows, audit_log_fields)
+
 
 @parser.command(
     usage="vastai show ssh-keys",
