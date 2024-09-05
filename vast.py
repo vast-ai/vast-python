@@ -1112,7 +1112,7 @@ def cloud__copy(args: argparse.Namespace):
         You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
     """)
 )
-def create_api_key(args):
+def create__api_key(args):
     try:
         url = apiurl(args, "/auth/apikeys/")
         permissions = load_permissions_from_file(args.permission_file)
