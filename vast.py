@@ -37,6 +37,7 @@ except NameError:
 
 #server_url_default = "https://vast.ai"
 server_url_default = "https://console.vast.ai"
+# server_url_default = "http://localhost:5002"
 #server_url_default = "host.docker.internal"
 #server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
@@ -4374,13 +4375,15 @@ def set__min_bid(args):
     argument("id", help="id of machine to schedule maintenance for", type=int),
     argument("--sdate",      help="maintenance start date in unix epoch time (UTC seconds)", type=float),
     argument("--duration",   help="maintenance duration in hours", type=float),
-    usage="vastai schedule maintenance id [--sdate START_DATE --duration DURATION]",
+    argument("--maintenance_reason",   help="(optional) reason for the maintenance. Minimum 70 chars and Maximum 300 chars", type=str, default="not provided"),
+    argument("--maintenance_category",   help="(optional) can be one of [power, internet, disk, gpu, software, other]", type=str, default="not provided"),
+    usage="vastai schedule maintenance id [--sdate START_DATE --duration DURATION --maintenance_reason MAINTENANCE_REASON --maintenance_category MAINTENANCE_CATEGORY]",
     help="[Host] Schedule upcoming maint window",
     epilog=deindent("""
         The proper way to perform maintenance on your machine is to wait until all active contracts have expired or the machine is vacant.
         For unplanned or unscheduled maintenance, use this schedule maint command. That will notify the client that you have to take the machine down and that they should save their work. 
-        You can specify a date and duration.           
-        Example: vastai schedule maint 8207 --sdate 1677562671 --duration 0.5
+        You can specify a date, duration, reason and category for the maintenance.         
+        Example: vastai schedule maint 8207 --sdate 1677562671 --duration 0.5 --maintenance_reason "maintenance reason as a string that briefly helps clients understand why the maintenance was necessary" --maintenance_category "power"
     """),
     )
 def schedule__maint(args):
@@ -4397,7 +4400,7 @@ def schedule__maint(args):
     if ok.strip().lower() != "y":
         return
 
-    json_blob = {"client_id": "me", "sdate": string_to_unix_epoch(args.sdate), "duration": args.duration}
+    json_blob = {"client_id": "me", "sdate": string_to_unix_epoch(args.sdate), "duration": args.duration, "maintenance_reason": args.maintenance_reason, "maintenance_category": args.maintenance_category}
     if (args.explain):
         print("request json: ")
         print(json_blob)
