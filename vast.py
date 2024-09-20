@@ -3346,7 +3346,8 @@ def select(X,k):
     return Y
 
 @parser.command(
-    usage="vastai show env-vars",
+    argument("-s", "--show-values", action="store_true", help="Show the values of environment variables"),
+    usage="vastai show env-vars [-s]",
     help="Show user environment variables",
 )
 def show__env_vars(args):
@@ -3355,17 +3356,29 @@ def show__env_vars(args):
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
 
-    env_vars = r.json().get("secrets", [])
+    env_vars = r.json().get("secrets", {})
+
     if args.raw:
-        print(json.dumps(env_vars, indent=2))
+        if not args.show_values:
+            # Replace values with placeholder in raw output
+            masked_env_vars = {k: "*****" for k, v in env_vars.items()}
+            print(json.dumps(masked_env_vars, indent=2))
+        else:
+            print(json.dumps(env_vars, indent=2))
     else:
         if not env_vars:
             print("No environment variables found.")
         else:
-            for env_var in env_vars:
-                print(f"Name: {env_var['key']}")
-                print(f"Value: {env_var['value']}")
+            for key, value in env_vars.items():
+                print(f"Name: {key}")
+                if args.show_values:
+                    print(f"Value: {value}")
+                else:
+                    print("Value: *****")
                 print("---")
+
+    if not args.show_values:
+        print("\nNote: Values are hidden. Use --show-values or -s option to display them.")
 
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
