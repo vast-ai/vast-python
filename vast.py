@@ -1128,6 +1128,25 @@ def create__api_key(args):
         print("An unexpected error occurred:", e)
 
 @parser.command(
+    argument("name", help="Environment variable name", type=str),
+    argument("value", help="Environment variable value", type=str),
+    usage="vastai create env-var <name> <value>",
+    help="Create a new user environment variable",
+)
+def create__env_var(args):
+    """Create a new environment variable for the current user."""
+    url = apiurl(args, "/secrets/")
+    data = {"key": args.name, "value": args.value}
+    r = http_post(args, url, headers=headers, json=data)
+    r.raise_for_status()
+
+    result = r.json()
+    if result.get("success"):
+        print(result.get("msg", "Environment variable created successfully."))
+    else:
+        print(f"Failed to create environment variable: {result.get('msg', 'Unknown error')}")
+
+@parser.command(
     argument("ssh_key", help="add the public key of your ssh key to your account (form the .pub file)", type=str),
     usage="vastai create ssh-key ssh_key",
     help="Create a new ssh-key",
@@ -1612,6 +1631,24 @@ def delete__endpoint(args):
     else:
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
+
+@parser.command(
+    argument("name", help="Environment variable name to delete", type=str),
+    usage="vastai delete env-var <name>",
+    help="Delete a user environment variable",
+)
+def delete__env_var(args):
+    """Delete an environment variable for the current user."""
+    url = apiurl(args, "/secrets/")
+    data = {"key": args.name}
+    r = http_del(args, url, headers=headers, json=data)
+    r.raise_for_status()
+
+    result = r.json()
+    if result.get("success"):
+        print(result.get("msg", "Environment variable deleted successfully."))
+    else:
+        print(f"Failed to delete environment variable: {result.get('msg', 'Unknown error')}")
 
 def destroy_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
@@ -3309,6 +3346,28 @@ def select(X,k):
     return Y
 
 @parser.command(
+    usage="vastai show env-vars",
+    help="Show user environment variables",
+)
+def show__env_vars(args):
+    """Show the environment variables for the current user."""
+    url = apiurl(args, "/secrets/")
+    r = http_get(args, url, headers=headers)
+    r.raise_for_status()
+
+    env_vars = r.json().get("secrets", [])
+    if args.raw:
+        print(json.dumps(env_vars, indent=2))
+    else:
+        if not env_vars:
+            print("No environment variables found.")
+        else:
+            for env_var in env_vars:
+                print(f"Name: {env_var['key']}")
+                print(f"Value: {env_var['value']}")
+                print("---")
+
+@parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
@@ -3599,84 +3658,6 @@ def transfer__credit(args: argparse.Namespace):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    usage="vastai show env-vars",
-    help="Show user environment variables",
-)
-def show__env_vars(args):
-    """Show the environment variables for the current user."""
-    url = apiurl(args, "/secrets/")
-    r = http_get(args, url, headers=headers)
-    r.raise_for_status()
-
-    env_vars = r.json().get("secrets", [])
-    if args.raw:
-        print(json.dumps(env_vars, indent=2))
-    else:
-        if not env_vars:
-            print("No environment variables found.")
-        else:
-            for env_var in env_vars:
-                print(f"Name: {env_var['key']}")
-                print(f"Value: {env_var['value']}")
-                print("---")
-
-@parser.command(
-    argument("name", help="Environment variable name", type=str),
-    argument("value", help="Environment variable value", type=str),
-    usage="vastai create env-var <name> <value>",
-    help="Create a new user environment variable",
-)
-def create__env_var(args):
-    """Create a new environment variable for the current user."""
-    url = apiurl(args, "/secrets/")
-    data = {"key": args.name, "value": args.value}
-    r = http_post(args, url, headers=headers, json=data)
-    r.raise_for_status()
-
-    result = r.json()
-    if result.get("success"):
-        print(result.get("msg", "Environment variable created successfully."))
-    else:
-        print(f"Failed to create environment variable: {result.get('msg', 'Unknown error')}")
-
-@parser.command(
-    argument("name", help="Environment variable name to update", type=str),
-    argument("value", help="New environment variable value", type=str),
-    usage="vastai update env-var <name> <value>",
-    help="Update an existing user environment variable",
-)
-def update__env_var(args):
-    """Update an existing environment variable for the current user."""
-    url = apiurl(args, "/secrets/")
-    data = {"key": args.name, "value": args.value}
-    r = http_put(args, url, headers=headers, json=data)
-    r.raise_for_status()
-
-    result = r.json()
-    if result.get("success"):
-        print(result.get("msg", "Environment variable updated successfully."))
-    else:
-        print(f"Failed to update environment variable: {result.get('msg', 'Unknown error')}")
-
-@parser.command(
-    argument("name", help="Environment variable name to delete", type=str),
-    usage="vastai delete env-var <name>",
-    help="Delete a user environment variable",
-)
-def delete__env_var(args):
-    """Delete an environment variable for the current user."""
-    url = apiurl(args, "/secrets/")
-    data = {"key": args.name}
-    r = http_del(args, url, headers=headers, json=data)
-    r.raise_for_status()
-
-    result = r.json()
-    if result.get("success"):
-        print(result.get("msg", "Environment variable deleted successfully."))
-    else:
-        print(f"Failed to delete environment variable: {result.get('msg', 'Unknown error')}")
-
-@parser.command(
     argument("ID", help="id of autoscale group to update", type=int),
     argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
     argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
@@ -3754,6 +3735,24 @@ def update__endpoint(args):
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
 
+@parser.command(
+    argument("name", help="Environment variable name to update", type=str),
+    argument("value", help="New environment variable value", type=str),
+    usage="vastai update env-var <name> <value>",
+    help="Update an existing user environment variable",
+)
+def update__env_var(args):
+    """Update an existing environment variable for the current user."""
+    url = apiurl(args, "/secrets/")
+    data = {"key": args.name, "value": args.value}
+    r = http_put(args, url, headers=headers, json=data)
+    r.raise_for_status()
+
+    result = r.json()
+    if result.get("success"):
+        print(result.get("msg", "Environment variable updated successfully."))
+    else:
+        print(f"Failed to update environment variable: {result.get('msg', 'Unknown error')}")
 
 @parser.command(
     argument("ID", help="id of instance to update", type=int),
