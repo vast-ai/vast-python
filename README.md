@@ -136,11 +136,13 @@ positional arguments:
     create autoscaler   Create a new autoscale group
     create endpoint     Create a new endpoint group
     create instance     Create a new instance
+    create env-var      Create a new user environment variable
     create subaccount   Create a subaccount
     create team         Create a new team
     create team-role    Add a new role to your
     create template     Create a new template
     delete api-key      Remove an api-key
+    delete env-var      Delete a user environment variable
     delete ssh-key      Remove an ssh-key
     delete autoscaler   Delete an autoscaler group
     delete endpoint     Delete an endpoint group
@@ -185,6 +187,7 @@ positional arguments:
     show ipaddrs        Display user's history of ip addresses
     show user           Get current user data
     show subaccounts    Get current subaccounts
+    show env-vars       Show user environment variables
     show team-members   Show your team members
     show team-role      Show your team role
     show team-roles     Show roles for a team
@@ -192,6 +195,7 @@ positional arguments:
     update autoscaler   Update an existing autoscale group
     update endpoint     Update an existing endpoint group
     update team-role    Update an existing team role
+    update env-var      Update an existing user environment variable
     update ssh-key      Update an existing ssh key
     generate pdf-invoices
     cleanup machine     [Host] Remove all expired storage instances from the machine, freeing up space.
