@@ -1163,16 +1163,15 @@ def create__ssh_key(args):
     print("ssh-key created {}".format(r.json()))
 
 @parser.command(
-    
-    argument("--test_workers",help="number of workers to create to get an performance estimate for while initializing autogroup (default 3)", type=int, default=3),
-    argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash", help="template hash (optional, but **Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
+    argument("--template_hash", help="template hash (required, but **Note**: if you use this field, you can skip search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id (optional)", type=int),
-    argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
     argument("--endpoint_id",   help="deployment endpoint id (allows multiple autoscale groups to share same deployment endpoint)", type=int),
+    argument("--test_workers",help="number of workers to create to get an performance estimate for while initializing autogroup (default 3)", type=int, default=3),
+    argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
+    argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--min_load", help="[NOTE: this field isn't currently used at the autojob level] minimum floor load in perf units/s  (token/s for LLms)", type=float),
     argument("--target_util", help="[NOTE: this field isn't currently used at the autojob level] target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="[NOTE: this field isn't currently used at the autojob level]cold/stopped instance capacity target as multiple of hot capacity target (default 2.0)", type=float),
@@ -1195,8 +1194,9 @@ def create__autogroup(args):
     else:
         query = " verified=True rentable=True rented=False"
         #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    search_params = (args.search_params if args.search_params is not None else "" + query).strip()
 
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params + query, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     
     if (args.explain):
         print("request json: ")
@@ -1225,7 +1225,7 @@ def create__autogroup(args):
     usage="vastai create endpoint [OPTIONS]",
     help="Create a new endpoint group",
     epilog=deindent("""
-        Create a new endpoint group to manage a set of pool of worker instances as defined by autogroups and make them available to client requests.
+        Create a new endpoint group to manage many autoscaling groups
                     
         Example: vastai create endpoint --target_util 0.9 --cold_mult 2.0 --endpoint_name "LLama"
     """),
@@ -1940,7 +1940,7 @@ def _parse_region(region):
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
-    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
+    argument("--template_hash",   help="template hash which contains all relevant information about an instance. This can be used as a replacement for other parameters describing the instance configuration", type=str),
     usage="vastai launch instance [--help] [--api-key API_KEY] <gpu_name> <num_gpus> <image> [geolocation] [disk_space]",
     help="Launch the top instance from the search offers based on the given parameters",
     epilog=deindent("""
@@ -3677,7 +3677,7 @@ def transfer__credit(args: argparse.Namespace):
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--test_workers",help="number of workers to create to get an performance estimate for while initializing autogroup (default 3)", type=int),
     argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
+    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id", type=int),
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
