@@ -36,8 +36,8 @@ except NameError:
 
 
 #server_url_default = "https://vast.ai"
-server_url_default = "https://console.vast.ai"
-# server_url_default = "http://localhost:5002"
+# server_url_default = "https://console.vast.ai"
+server_url_default = "http://localhost:5002"
 #server_url_default = "host.docker.internal"
 #server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
@@ -4174,29 +4174,25 @@ def list__machine(args):
 
 
 @parser.command(
-    argument("ids", help="ids of instance to list", type=int, nargs='+'),
-    argument("-g", "--price_gpu", help="per gpu on-demand rental price in $/hour (base price for active instances)", type=float),
-    argument("-s", "--price_disk",
-             help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
-    argument("-u", "--price_inetu", help="price for internet upload bandwidth in $/GB", type=float),
-    argument("-d", "--price_inetd", help="price for internet download bandwidth in $/GB", type=float),
-    argument("-b", "--price_min_bid", help="per gpu minimum bid price floor in $/hour", type=float),
-    argument("-r", "--discount_rate", help="Max long term prepay discount rate fraction, default: 0.4 ", type=float),
-    argument("-m", "--min_chunk", help="minimum amount of gpus", type=int),
-    argument("-e", "--end_date", help="contract offer expiration - the available until date (optional, in unix float timestamp or MM/DD/YYYY format)", type=str),
-    usage="vastai list machines IDs [options]",
-    help="[Host] list machines for rent",
-    epilog=deindent("""
-        This variant can be used to list or update the listings for multiple machines at once with the same args.
-        You could extend the end dates of all your machines using a command combo like this:
-        ./vast.py list machines $(./vast.py show machines -q) -e 12/31/2024 --retry 6
-    """)
-)
-def list__machines(args):
+    argument("id", help="id of machine to delete", type=int),
+    usage="vastai force delete a machine <id>",
+    help="[Host] Force Delete a machine",
+)   
+def force__delete_machine(args):
+    """ 
+    Deletes machine if the machine is not being used by clients. host jobs on their own machines are disregarded and machine is force deleted.
     """
-    """
-    for id in args.ids:
-        list_machine(args, id)
+    req_url = apiurl(args, "/machines/{machine_id}/force_delete/".format(machine_id=args.id));
+    r = http_post(args, req_url, headers=headers)
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print("deleted machine_id ({machine_id}) and all related contracts.".format(machine_id=args.id));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
