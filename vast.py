@@ -1128,6 +1128,25 @@ def create__api_key(args):
         print("An unexpected error occurred:", e)
 
 @parser.command(
+    argument("name", help="Environment variable name", type=str),
+    argument("value", help="Environment variable value", type=str),
+    usage="vastai create env-var <name> <value>",
+    help="Create a new user environment variable",
+)
+def create__env_var(args):
+    """Create a new environment variable for the current user."""
+    url = apiurl(args, "/secrets/")
+    data = {"key": args.name, "value": args.value}
+    r = http_post(args, url, headers=headers, json=data)
+    r.raise_for_status()
+
+    result = r.json()
+    if result.get("success"):
+        print(result.get("msg", "Environment variable created successfully."))
+    else:
+        print(f"Failed to create environment variable: {result.get('msg', 'Unknown error')}")
+
+@parser.command(
     argument("ssh_key", help="add the public key of your ssh key to your account (form the .pub file)", type=str),
     usage="vastai create ssh-key ssh_key",
     help="Create a new ssh-key",
@@ -1144,16 +1163,15 @@ def create__ssh_key(args):
     print("ssh-key created {}".format(r.json()))
 
 @parser.command(
-    
-    argument("--test_workers",help="number of workers to create to get an performance estimate for while initializing autogroup (default 3)", type=int, default=3),
-    argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash", help="template hash (optional, but **Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
+    argument("--template_hash", help="template hash (required, but **Note**: if you use this field, you can skip search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id (optional)", type=int),
-    argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--launch_args",   help="launch args  string for create instance  ex: \"--onstart onstart_wget.sh  --env '-e ONSTART_PATH=https://s3.amazonaws.com/vast.ai/onstart_OOBA.sh' --image atinoda/text-generation-webui:default-nightly --disk 64\"", type=str),
     argument("--endpoint_name", help="deployment endpoint name (allows multiple autoscale groups to share same deployment endpoint)", type=str),
     argument("--endpoint_id",   help="deployment endpoint id (allows multiple autoscale groups to share same deployment endpoint)", type=int),
+    argument("--test_workers",help="number of workers to create to get an performance estimate for while initializing autogroup (default 3)", type=int, default=3),
+    argument("--gpu_ram",     help="estimated GPU RAM req  (independent of search string)", type=float),
+    argument("--search_params", help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("--min_load", help="[NOTE: this field isn't currently used at the autojob level] minimum floor load in perf units/s  (token/s for LLms)", type=float),
     argument("--target_util", help="[NOTE: this field isn't currently used at the autojob level] target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="[NOTE: this field isn't currently used at the autojob level]cold/stopped instance capacity target as multiple of hot capacity target (default 2.0)", type=float),
@@ -1176,8 +1194,9 @@ def create__autogroup(args):
     else:
         query = " verified=True rentable=True rented=False"
         #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    search_params = (args.search_params if args.search_params is not None else "" + query).strip()
 
-    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params + query, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
+    json_blob = {"client_id": "me", "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": search_params, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     
     if (args.explain):
         print("request json: ")
@@ -1206,7 +1225,7 @@ def create__autogroup(args):
     usage="vastai create endpoint [OPTIONS]",
     help="Create a new endpoint group",
     epilog=deindent("""
-        Create a new endpoint group to manage a set of pool of worker instances as defined by autogroups and make them available to client requests.
+        Create a new endpoint group to manage many autoscaling groups
                     
         Example: vastai create endpoint --target_util 0.9 --cold_mult 2.0 --endpoint_name "LLama"
     """),
@@ -1613,6 +1632,24 @@ def delete__endpoint(args):
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
 
+@parser.command(
+    argument("name", help="Environment variable name to delete", type=str),
+    usage="vastai delete env-var <name>",
+    help="Delete a user environment variable",
+)
+def delete__env_var(args):
+    """Delete an environment variable for the current user."""
+    url = apiurl(args, "/secrets/")
+    data = {"key": args.name}
+    r = http_del(args, url, headers=headers, json=data)
+    r.raise_for_status()
+
+    result = r.json()
+    if result.get("success"):
+        print(result.get("msg", "Environment variable deleted successfully."))
+    else:
+        print(f"Failed to delete environment variable: {result.get('msg', 'Unknown error')}")
+
 def destroy_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
     r = http_del(args, url, headers=headers,json={})
@@ -1903,7 +1940,7 @@ def _parse_region(region):
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
     argument("--force", help="Skip sanity checks when creating from an existing instance", action="store_true"),
     argument("--cancel-unavail", help="Return error if scheduling fails (rather than creating a stopped instance)", action="store_true"),
-    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
+    argument("--template_hash",   help="template hash which contains all relevant information about an instance. This can be used as a replacement for other parameters describing the instance configuration", type=str),
     usage="vastai launch instance [--help] [--api-key API_KEY] <gpu_name> <num_gpus> <image> [geolocation] [disk_space]",
     help="Launch the top instance from the search offers based on the given parameters",
     epilog=deindent("""
@@ -3309,6 +3346,41 @@ def select(X,k):
     return Y
 
 @parser.command(
+    argument("-s", "--show-values", action="store_true", help="Show the values of environment variables"),
+    usage="vastai show env-vars [-s]",
+    help="Show user environment variables",
+)
+def show__env_vars(args):
+    """Show the environment variables for the current user."""
+    url = apiurl(args, "/secrets/")
+    r = http_get(args, url, headers=headers)
+    r.raise_for_status()
+
+    env_vars = r.json().get("secrets", {})
+
+    if args.raw:
+        if not args.show_values:
+            # Replace values with placeholder in raw output
+            masked_env_vars = {k: "*****" for k, v in env_vars.items()}
+            print(json.dumps(masked_env_vars, indent=2))
+        else:
+            print(json.dumps(env_vars, indent=2))
+    else:
+        if not env_vars:
+            print("No environment variables found.")
+        else:
+            for key, value in env_vars.items():
+                print(f"Name: {key}")
+                if args.show_values:
+                    print(f"Value: {value}")
+                else:
+                    print("Value: *****")
+                print("---")
+
+    if not args.show_values:
+        print("\nNote: Values are hidden. Use --show-values or -s option to display them.")
+
+@parser.command(
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
@@ -3568,7 +3640,6 @@ def show__team_roles(args):
         Transfer (amount) credits to account with email (recipient).
     """),
 )
-
 def transfer__credit(args: argparse.Namespace):
     url = apiurl(args, "/commands/transfer_credit/")
  
@@ -3599,8 +3670,6 @@ def transfer__credit(args: argparse.Namespace):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
-
-
 @parser.command(
     argument("ID", help="id of autoscale group to update", type=int),
     argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
@@ -3608,7 +3677,7 @@ def transfer__credit(args: argparse.Namespace):
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
     argument("--test_workers",help="number of workers to create to get an performance estimate for while initializing autogroup (default 3)", type=int),
     argument("--gpu_ram",   help="estimated GPU RAM req  (independent of search string)", type=float),
-    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip launch_args and search_params, as they are automatically inferred from the template)", type=str),
+    argument("--template_hash",   help="template hash (**Note**: if you use this field, you can skip search_params, as they are automatically inferred from the template)", type=str),
     argument("--template_id",   help="template id", type=int),
     argument("--search_params",   help="search param string for search offers    ex: \"gpu_ram>=23 num_gpus=2 gpu_name=RTX_4090 inet_down>200 direct_port_count>2 disk_space>=64\"", type=str),
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
@@ -3679,6 +3748,24 @@ def update__endpoint(args):
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
 
+@parser.command(
+    argument("name", help="Environment variable name to update", type=str),
+    argument("value", help="New environment variable value", type=str),
+    usage="vastai update env-var <name> <value>",
+    help="Update an existing user environment variable",
+)
+def update__env_var(args):
+    """Update an existing environment variable for the current user."""
+    url = apiurl(args, "/secrets/")
+    data = {"key": args.name, "value": args.value}
+    r = http_put(args, url, headers=headers, json=data)
+    r.raise_for_status()
+
+    result = r.json()
+    if result.get("success"):
+        print(result.get("msg", "Environment variable updated successfully."))
+    else:
+        print(f"Failed to update environment variable: {result.get('msg', 'Unknown error')}")
 
 @parser.command(
     argument("ID", help="id of instance to update", type=int),
@@ -4511,7 +4598,7 @@ def main():
     parser.add_argument("--retry", help="retry limit", default=3)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json")
     parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
-    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=api_key_guard)
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
 
 
     args = parser.parse_args()
