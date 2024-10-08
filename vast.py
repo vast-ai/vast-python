@@ -1502,7 +1502,8 @@ def create__team_role(args):
     """)
 )
 def create__template(args):
-    url = apiurl(args, f"/users/0/templates/")
+    # url = apiurl(args, f"/users/0/templates/")
+    url = apiurl(args, f"/template/")
     jup_direct = args.jupyter and args.direct
     ssh_direct = args.ssh and args.direct
     use_ssh = args.ssh or args.jupyter
@@ -1533,21 +1534,18 @@ def create__template(args):
         "recommended_disk_space" : args.disk_space
     }
 
-    json_blob = {
-        "templates" : [template]
-    }
     if (args.explain):
         print("request json: ")
-        print(json_blob)
+        print(template)
 
-    r = http_post(args, url, headers=headers, json=json_blob)
+    r = http_post(args, url, headers=headers, json=template)
     r.raise_for_status()
     try:
         rj = r.json()
         if rj["success"]:
-            print(f"new template: {rj['templates'][0]}")
+            print(f"New Template: {rj['template']}")
         else:
-            print("template creation failed")
+            print(rj['msg'])
     except requests.exceptions.JSONDecodeError:
         print("The response is not valid JSON.")
 
@@ -1649,6 +1647,47 @@ def delete__env_var(args):
         print(result.get("msg", "Environment variable deleted successfully."))
     else:
         print(f"Failed to delete environment variable: {result.get('msg', 'Unknown error')}")
+
+@parser.command(
+    argument("--template-id", help="Template ID of Template to Delete", type=int),
+    argument("--hash-id", help="Hash ID of Template to Delete", type=str),
+    usage="vastai delete template [--template-id <id> | --hash-id <hash_id>]",
+    help="Delete a Template",
+    epilog=deindent("""
+        Note: Deleting a template only removes the user's replationship to a template. It does not get destroyed
+        Example: vastai delete template --template-id 12345
+        Example: vastai delete template --hash-id 49c538d097ad6437413b83711c9f61e8
+    """),
+)
+def delete__template(args):
+    url = apiurl(args, f"/template/" )
+    
+    if args.hash_id:
+        json_blob = { "hash_id": args.hash_id }
+    elif args.template_id:
+        json_blob = { "template_id": args.template_id }
+    else:
+        print('ERROR: Must Specify either Template ID or Hash ID to delete a template')
+        return
+    
+    if (args.explain):
+        print("request json: ")
+        print(json_blob)
+        print(args)
+        print(url)
+    r = http_del(args, url, headers=headers,json=json_blob)
+    print(r)
+    # r.raise_for_status()
+    if 'application/json' in r.headers.get('Content-Type', ''):
+        try:
+            print(r.json()['msg'])
+        except requests.exceptions.JSONDecodeError:
+            print("The response is not valid JSON.")
+            print(r)
+            print(r.text)  # Print the raw response to help with debugging.
+    else:
+        print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
+        print(r.text)
 
 def destroy_instance(id,args):
     url = apiurl(args, "/instances/{id}/".format(id=id))
@@ -2961,7 +3000,7 @@ def search__templates(args):
     except ValueError as e:
         print("Error: ", e)
         return 1  
-    url = apiurl(args, "/templates", {"select_cols" : ['*'], "select_filters" : query})
+    url = apiurl(args, "/template/", {"select_cols" : ['*'], "select_filters" : query})
     r = requests.get(url, headers=headers)
     r.raise_for_status()
     rows = r.json()
@@ -3912,9 +3951,9 @@ def update__template(args):
     try:
         rj = r.json()
         if rj["success"]:
-            print(f"new template: {rj['templates'][0]}")
+            print(f"updated template: {json.dumps(rj['template'], indent=1)}")
         else:
-            print("template creation failed")
+            print("template update failed")
     except requests.exceptions.JSONDecodeError as e:
         print(str(e))
         #print(r.text)
