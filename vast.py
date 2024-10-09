@@ -18,6 +18,7 @@ import requests
 import getpass
 import subprocess
 from subprocess import PIPE
+from loguru import logger
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -1471,6 +1472,43 @@ def create__team_role(args):
     r = http_post(args, url, headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     print(r.json())
+
+
+@parser.command(
+    usage="create a mock machine",
+    help="Create a mock machine",
+)
+def create__mock_machine(args):
+    def read_json_from_file(file_path):
+        with open(file_path, 'r') as file:
+            return json.load(file)
+
+    # File paths
+    cpu_file = 'create_machine/create_cpus.json'
+    gpu_file = 'create_machine/create_gpus.json'
+    disk_file = 'create_machine/create_disks.json'
+    inetworks_file = "create_machine/create_inetworks.json"
+    lnetworks_file = "create_machine/create_lnetworks.json"
+    machine_file = "create_machine/create_machine.json"
+
+    data = {
+        "cpu_info": read_json_from_file(cpu_file),
+        "gpu_info": read_json_from_file(gpu_file),
+        "disks_info": read_json_from_file(disk_file),
+        "inetworks_info": read_json_from_file(inetworks_file),
+        "lnetworks_info": read_json_from_file(lnetworks_file),
+        "machine_info": read_json_from_file(machine_file)
+    }
+
+    url = f'{ server_url_default }/api/admin/create-machine/'
+    response = requests.post(url, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        logger.info("Machine created successfully")
+        logger.info(response.json())
+    else:
+        logger.error("Status Code:", response.status_code)
+        logger.error("Response Body:", response.text)
 
 @parser.command(
     argument("--name", help="name of the template", type=str),
