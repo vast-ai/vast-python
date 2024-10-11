@@ -1500,10 +1500,6 @@ def create__instance(args: argparse.Namespace):
     else:
         print("Started. {}".format(r.json()))
 
-    if (args.schedule):
-        cli_command = "create instance"
-        api_endpoint = "/api/v0" + "/asks/{id}/".format(id=args.ID)
-        add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")    
 
 @parser.command(
     argument("--email", help="email address to use for login", type=str),
@@ -1891,6 +1887,7 @@ def execute(args):
                     if (args.schedule):
                         cli_command = "execute"
                         api_endpoint = "/api/v0" + "/instances/command/{id}/".format(id=args.ID)
+                        json_blob["instance_id"] = args.ID
                         add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
                     break
 
@@ -2312,7 +2309,8 @@ def reboot__instance(args):
             if (args.schedule):
                 cli_command = "reboot instance"
                 api_endpoint = "/api/v0" + "/instances/reboot/{id}/".format(id=args.ID)
-                add_scheduled_job(args, {}, cli_command, api_endpoint, "PUT")
+                json_blob = {"instance_id": args.ID}
+                add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
         else:
             print(rj["msg"]);
     else:
