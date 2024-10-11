@@ -984,6 +984,12 @@ def change__bid(args: argparse.Namespace):
     r.raise_for_status()
     print("Per gpu bid price changed".format(r.json()))
 
+    if (args.schedule):
+        cli_command = "change bid"
+        api_endpoint = "/api/v0" + "/instances/bid_price/{id}/".format(id=args.id)
+        json_blob["instance_id"] = args.id
+        add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT") 
+
 
 
 
@@ -1039,10 +1045,7 @@ def copy(args: argparse.Namespace):
         print("request json: ")
         print(req_json)
 
-    if (args.schedule):
-        cli_command = "copy"
-        api_endpoint = "/api/v0" + "/commands/rsync/"
-        add_scheduled_job(args, req_json, cli_command, api_endpoint) 
+
 
     r = http_put(args, url,  headers=headers,json=req_json)
     r.raise_for_status()
@@ -1073,6 +1076,10 @@ def copy(args: argparse.Namespace):
         else:
             if (rj["success"]):
                 print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
+                if (args.schedule):
+                    cli_command = "copy"
+                    api_endpoint = "/api/v0" + "/commands/rsync/"
+                    add_scheduled_job(args, req_json, cli_command, api_endpoint, "PUT") 
             else:
                 print(rj["msg"]);
     else:
@@ -1157,17 +1164,16 @@ def cloud__copy(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(req_json)
-
-    if (args.schedule):
-        cli_command = "cloud copy"
-        api_endpoint = "/api/v0" + "/commands/rclone/"
-        add_scheduled_job(args, req_json, cli_command, api_endpoint)     
-    
+        
     r = http_post(args, url, headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
         print("Cloud Copy Started - check instance status bar for progress updates (~30 seconds delayed).")
         print("When the operation is finished you should see 'Cloud Cody Operation Finished' in the instance status bar.")  
+        if (args.schedule):
+            cli_command = "cloud copy"
+            api_endpoint = "/api/v0" + "/commands/rclone/"
+            add_scheduled_job(args, req_json, cli_command, api_endpoint, "POST") 
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
@@ -1175,7 +1181,7 @@ def cloud__copy(args: argparse.Namespace):
 
 
 
-def add_scheduled_job(args, req_json, cli_command, api_endpoint):
+def add_scheduled_job(args, req_json, cli_command, api_endpoint, request_method):
     start_time, end_time, time_interval = validate_schedule_values(args)
 
         
@@ -1187,7 +1193,7 @@ def add_scheduled_job(args, req_json, cli_command, api_endpoint):
                 "end_time": end_time, 
                 "time_interval": time_interval,  
                 "api_endpoint": api_endpoint,
-                "request_method": "POST",
+                "request_method": request_method,
                 "request_body": req_json
             }
                 # Send a POST request
@@ -1493,6 +1499,11 @@ def create__instance(args: argparse.Namespace):
         print(json.dumps(r.json(), indent=1))
     else:
         print("Started. {}".format(r.json()))
+
+    if (args.schedule):
+        cli_command = "create instance"
+        api_endpoint = "/api/v0" + "/asks/{id}/".format(id=args.ID)
+        add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")    
 
 @parser.command(
     argument("--email", help="email address to use for login", type=str),
@@ -1877,7 +1888,12 @@ def execute(args):
                 if (r.status_code == 200):
                     filtered_text = r.text.replace(rj["writeable_path"], '');
                     print(filtered_text)
+                    if (args.schedule):
+                        cli_command = "execute"
+                        api_endpoint = "/api/v0" + "/instances/command/{id}/".format(id=args.ID)
+                        add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
                     break
+
         else:
             print(rj);
     else:
@@ -2183,6 +2199,10 @@ def launch__instance(args):
             print("Started. {}".format(r.json()))
         if response_data.get('success'):
             print(f"Instance launched successfully: {response_data.get('new_contract')}")
+            if (args.schedule):
+                cli_command = "launch instance"
+                api_endpoint = "/api/v0" + "/launch_instance/"
+                add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
         else:
             print(f"Failed to launch instance: {response_data.get('error')}, {response_data.get('message')}")
     except requests.exceptions.HTTPError as err:
@@ -2289,6 +2309,10 @@ def reboot__instance(args):
         rj = r.json();
         if (rj["success"]):
             print("Rebooting instance {args.ID}.".format(**(locals())));
+            if (args.schedule):
+                cli_command = "reboot instance"
+                api_endpoint = "/api/v0" + "/instances/reboot/{id}/".format(id=args.ID)
+                add_scheduled_job(args, {}, cli_command, api_endpoint, "PUT")
         else:
             print(rj["msg"]);
     else:
@@ -3774,6 +3798,10 @@ def transfer__credit(args: argparse.Namespace):
         rj = r.json();
         if (rj["success"]):
             print(f"Sent {args.amount} to {args.recipient} ".format(r.json()))
+            if (args.schedule):
+                cli_command = "transfer credit"
+                api_endpoint = "/api/v0" + "/commands/transfer_credit/"
+                add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
         else:
             print(rj["msg"]);
     else:
@@ -4273,6 +4301,10 @@ def cleanup_machine(args, machine_id):
         rj = r.json()
         if (rj["success"]):
             print(json.dumps(r.json(), indent=1))
+            if (args.schedule):
+                cli_command = "cleanup machine"
+                api_endpoint = "/api/v0" + f"/machines/{machine_id}/cleanup/"
+                add_scheduled_job(args, {}, cli_command, api_endpoint, "PUT")
         else:
             if args.raw:
                 print(json.dumps(r.json(), indent=1))
@@ -4892,7 +4924,7 @@ def main():
     parser.add_argument("--retry", help="retry limit", default=3)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json")
     parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
-    parser.add_argument("--schedule", help="try to schedule a command to run every x mins, hours, etc. by passing in time interval in cron syntax to --schedule option. Must also have --start_time and --end_time options with valid values. Default will be every 2 hours. For ex. --schedule \"0 */2 * * *\"", default="0 */2 * * *")
+    parser.add_argument("--schedule", help="try to schedule a command to run every x mins, hours, etc. by passing in time interval in cron syntax to --schedule option. Can also choose to have --start_time and --end_time options with valid values. For ex. --schedule \"0 */2 * * *\"")
     parser.add_argument("--start_time", help="the start time for your scheduled job in millis since unix epoch. Default will be current time. For ex. --start_time 1728510298144", default=(time.time() * 1000))
     parser.add_argument("--end_time", help="the end time for your scheduled job in millis since unix epoch. Default will be 7 days from now. For ex. --end_time 1729115232881", default=(time.time() * 1000 + 7 * 24 * 60 * 60 * 1000))
     parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
