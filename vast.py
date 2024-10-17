@@ -1045,8 +1045,6 @@ def copy(args: argparse.Namespace):
         print("request json: ")
         print(req_json)
 
-
-
     r = http_put(args, url,  headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
@@ -1076,10 +1074,6 @@ def copy(args: argparse.Namespace):
         else:
             if (rj["success"]):
                 print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
-                if (args.schedule):
-                    cli_command = "copy"
-                    api_endpoint = "/api/v0" + "/commands/rsync/"
-                    add_scheduled_job(args, req_json, cli_command, api_endpoint, "PUT") 
             else:
                 print(rj["msg"]);
     else:
@@ -1890,7 +1884,6 @@ def execute(args):
                         json_blob["instance_id"] = args.ID
                         add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
                     break
-
         else:
             print(rj);
     else:
@@ -2196,10 +2189,6 @@ def launch__instance(args):
             print("Started. {}".format(r.json()))
         if response_data.get('success'):
             print(f"Instance launched successfully: {response_data.get('new_contract')}")
-            if (args.schedule):
-                cli_command = "launch instance"
-                api_endpoint = "/api/v0" + "/launch_instance/"
-                add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
         else:
             print(f"Failed to launch instance: {response_data.get('error')}, {response_data.get('message')}")
     except requests.exceptions.HTTPError as err:
@@ -3796,10 +3785,6 @@ def transfer__credit(args: argparse.Namespace):
         rj = r.json();
         if (rj["success"]):
             print(f"Sent {args.amount} to {args.recipient} ".format(r.json()))
-            if (args.schedule):
-                cli_command = "transfer credit"
-                api_endpoint = "/api/v0" + "/commands/transfer_credit/"
-                add_scheduled_job(args, json_blob, cli_command, api_endpoint, "PUT")
         else:
             print(rj["msg"]);
     else:
@@ -4299,10 +4284,6 @@ def cleanup_machine(args, machine_id):
         rj = r.json()
         if (rj["success"]):
             print(json.dumps(r.json(), indent=1))
-            if (args.schedule):
-                cli_command = "cleanup machine"
-                api_endpoint = "/api/v0" + f"/machines/{machine_id}/cleanup/"
-                add_scheduled_job(args, {}, cli_command, api_endpoint, "PUT")
         else:
             if args.raw:
                 print(json.dumps(r.json(), indent=1))
@@ -4649,169 +4630,6 @@ def millis_to_hours(milliseconds):
 
 def hours_to_millis(hours):
     return hours * 60 * 60 * 1000
-
-def is_time_inputs_valid(args):    
-    start_time = args.start_time
-    if not start_time:
-        print(f"You must specify the start_time in milliseconds since unix epoch using --start_time option")
-        return False
-
-    end_time = args.end_time
-
-    if not end_time:
-        print(f"You must specify the end_time in milliseconds since unix epoch using --end_time option")
-        return False
-    
-    if end_time < start_time: 
-        print(f"Your end time is smaller than start time. This is an invalid range for a scheduled job.")
-        return False
-
-    time_interval = args.time_interval
-
-    if time_interval:
-        if not isinstance(time_interval, float) and time_interval.is_integer():
-            print(f"Value passed into --time_interval must be an integer")
-            return False
-    else:
-        print(f"You must specify how often you want scheduled job to run in terms of hours by passing in value to --time_interval.")
-        return False
-
-def parse_out_command_and_json_blob(cli_command):
-    # Use shlex to split the command while preserving quoted strings
-    parts = shlex.split(cli_command)
-    
-    # The main command is the first part, and the subcommand starts after 'vastai'
-    main_command = parts[0]  # 'vastai'
-    sub_command = " ".join(parts[1:3])  # e.g., 'create instance' or 'cloud copy'
-
-    # Initialize an empty dictionary to hold the options and their values
-    json_blob = {}
-
-    # Regular expression to detect the "--option value" format
-    option_pattern = re.compile(r'^--\w+')
-
-    # Start parsing options after the subcommand (which ends at index 3)
-    i = 3
-    while i < len(parts):
-        part = parts[i]
-
-        # Check if the part is an option (starts with "--")
-        if option_pattern.match(part):
-            option_name = part[2:]  # Remove the '--'
-
-            # Check if the next part exists and is not another option
-            if i + 1 < len(parts) and not option_pattern.match(parts[i + 1]):
-                # If the value has multiple words, check for unquoted or quoted values
-                if parts[i + 1].startswith('"') and parts[i + 1].endswith('"'):
-                    # Handle quoted values
-                    option_value = parts[i + 1][1:-1]  # Remove surrounding quotes
-                else:
-                    option_value = parts[i + 1]  # Normal single-word value
-
-                json_blob[option_name] = option_value
-                i += 2  # Skip to the next option after this value
-            else:
-                # If no value is provided for the option, treat it as a flag
-                json_blob[option_name] = True
-                i += 1  # Move to the next option
-        else:
-            i += 1  # Continue if the part is not an option
-
-    # Output the parsed command
-    print(f"Main Command: {main_command}")
-    print(f"Subcommand: {sub_command}")
-    print(f"Options and Values: {json_blob}")
-    return sub_command, json_blob
-
-@parser.command(
-    argument("--start_time",      help="start time of the job in milliseconds since unix epoch (00:00:00 UTC on 1 January 1970)", type=float),
-    argument("--end_time",   help="end time of the job in milliseconds since unix epoch (00:00:00 UTC on 1 January 1970)", type=float),
-    argument("--time_interval",   help="how often you want the job to be executed, only allowed in increments of hours. For ex. 2", type=float),
-    argument("--cli_command",   help="other commands from list of vast cli commands For ex. \"vastai cloud copy --src SRC --dst DST --instance INSTANCE_ID -connection CONNECTION_ID --transfer TRANSFER_TYPE\""),
-    usage="vastai schedule job --start_time START_TIME --end_time END_TIME --time_interval TIME_INTERVAL --instance_id INSTANCE_ID --cli_command ",
-    help="[Host] Schedule a vast cli command to happen in a scheduled job fashion",
-    epilog=deindent("""
-        Make a request to schedule a job to execute an action related to a vast cli command from start time to end time at a certain time interval.
-        Only these commands are allowed at the moment: "cloud copy".
-        For ex. You can try to backup your data from a directory of a instance to cloud storage every 2 hrs.           
-        Example: vastai schedule job --start_time 1727852400000 --end_time 1729666800000 --time_interval 2 --cli_command \"vastai cloud copy --src /folder --dst /workspace --instance 6003036 --connection 1001 --transfer "Instance To Cloud\""
-    """),
-    )
-def schedule__job(args):
-    """
-    Transfer data from one instance to another.
-
-    @param start_time: start of job scheduling period
-    @param end_time: end of job scheduling period
-    @param time_interval: how often the job the user wants the job to be executed
-    @param cli_command: cli command that user wants to execute in a scheduled job fashion
-    @param cli_command_pos_args_json: positional args to the cli command that user wants to execute in a scheduled job fashion
-    @param cli_command_options_json: options and values to the cli command that user wants to execute in a scheduled job fashion
-    """
-
-    start_time = args.start_time
-    end_time = args.end_time
-    time_interval = args.time_interval
-    cli_command = args.cli_command
-
-    print(cli_command)
-
-    cli_command_to_api_endpoint_map = {}
-    cli_command_to_api_endpoint_map["cloud copy"] = "/api/v0/commands/rclone/"
-
-    command, inner_request_body = parse_out_command_and_json_blob(cli_command)
-
-
-    api_endpoint = ''
-    if command in cli_command_to_api_endpoint_map:
-        api_endpoint = cli_command_to_api_endpoint_map[command]
-    else:
-        print(f"{cli_command} is not allowed to be executed in a scheduled job fashion")
-        return
-
-    if not is_time_inputs_valid:
-        return
-
-    time_interval_millis = hours_to_millis(time_interval)
-    start_date = millis_to_date(start_time)
-    end_date = millis_to_date(end_time)
-
-    url = apiurl(args, f"/commands/schedule_job/")
-
-
-    request_body = {
-        "start_time": start_time, 
-        "end_time": end_time, 
-        "time_interval": time_interval_millis,  
-        "api_endpoint": api_endpoint,
-        "request_method": "POST",
-        "request_body": inner_request_body
-    }
-
-
-    if (args.explain):
-        print("request json: ")
-        print(request_body)
-
-    # Send a POST request
-    response = requests.post(url, headers=headers, json=request_body)
-
-    print(f"url: {url}")
-    print(f"headers: {headers}")
-    print(f"request_body: {request_body}")
-
-    # Raise an exception for HTTP errors
-    response.raise_for_status()
-
-    # Handle the response based on the status code
-    if response.status_code == 200:
-        print(response.text)
-        print(f"Scheduling job to {cli_command} from {start_date} to {end_date} every {time_interval} hours")
-    elif response.status_code == 401:
-        print(f"Failed with error {response.status_code}. It could be because you aren't using a valid api_key.")
-    else:
-        # print(r.text)
-        print(f"Failed with error {response.status_code}.")  
 
 @parser.command(
     argument("ID", help="id of machine to display", type=int),
