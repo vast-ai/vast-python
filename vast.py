@@ -17,7 +17,6 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 import getpass
 import subprocess
-import shlex
 from subprocess import PIPE
 from croniter import croniter, CroniterBadCronError
 
