@@ -1,0 +1,14 @@
+{
+    "id": 2,
+    "last_update": 1646341480.881224,
+    "machine_id": 5,
+    "idx": 0,
+    "product_name": "Seagate ST4000DM000",
+    "totalram": 512,
+    "allocram": 0,
+    "freeram": 461,
+    "bw_dev_cpu": 154.95293644673077,
+    "bw_cpu_dev": null,
+    "deleted_at": null,
+    "availram": null
+}
