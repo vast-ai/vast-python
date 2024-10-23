@@ -4190,6 +4190,28 @@ def cancel__maint(args):
 
 
 
+@parser.command(
+   argument("id", help="id of machine to delete", type=int),
+    usage="vastai force delete a machine <id>",
+    help="[Host] Force Delete a machine",
+) 
+def force__delete_machine(args):
+    """
+    Deletes machine if the machine is not being used by clients. host jobs on their own machines are disregarded and machine is force deleted.
+    """
+    req_url = apiurl(args, "/machines/{machine_id}/force_delete/".format(machine_id=args.id));
+    r = http_post(args, req_url, headers=headers)
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print("deleted machine_id ({machine_id}) and all related contracts.".format(machine_id=args.id));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
+
+
 
 def cleanup_machine(args, machine_id):
     req_url = apiurl(args, f"/machines/{machine_id}/cleanup/")
@@ -4323,6 +4345,8 @@ def list__machines(args):
     """
     for id in args.ids:
         list_machine(args, id)
+
+
 
 
 @parser.command(
