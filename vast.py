@@ -423,6 +423,7 @@ instance_fields = (
     ("reliability2", "R", "{:0.1f}", lambda x: x * 100, True),
     ("label", "Label", "{}", None, True),
     ("duration", "age(hours)", "{:0.2f}",  lambda x: x/(3600.0), True),
+    ("uptime_mins", "uptime(mins)", "{:0.2f}",  None, True),
 )
 
 
