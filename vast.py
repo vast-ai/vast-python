@@ -796,7 +796,7 @@ def parse_vast_url(url_str):
     argument("instance_id", help="id of instance to attach to", type=int),
     argument("ssh_key", help="ssh key to attach to instance", type=str),
     usage="vastai attach instance_id ssh_key",
-    help="Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.",
+    help="Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key",
     epilog=deindent("""
         Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.
         Examples:
@@ -814,9 +814,9 @@ def attach__ssh(args):
     print(r.json())
 
 @parser.command(
-    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
+    argument("dst", help="instance_id:/path to target of copy operation", type=str),
     usage="vastai cancel copy DST",
-    help=" Cancel a remote copy in progress, specified by DST id",
+    help="Cancel a remote copy in progress, specified by DST id",
     epilog=deindent("""
         Use this command to cancel any/all current remote copy operations copying to a specific named instance, given by DST.
         Examples:
@@ -856,9 +856,9 @@ def cancel__copy(args: argparse.Namespace):
 
 
 @parser.command(
-    argument("dst", help="instance_id:/path to target of sync operation.", type=str),
+    argument("dst", help="instance_id:/path to target of sync operation", type=str),
     usage="vastai cancel sync DST",
-    help=" Cancel a remote copy in progress, specified by DST id",
+    help="Cancel a remote copy in progress, specified by DST id",
     epilog=deindent("""
         Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
         Examples:
@@ -928,11 +928,11 @@ def change__bid(args: argparse.Namespace):
 
 
 @parser.command(
-    argument("src", help="instance_id:/path to source of object to copy.", type=str),
-    argument("dst", help="instance_id:/path to target of copy operation.", type=str),
+    argument("src", help="instance_id:/path to source of object to copy", type=str),
+    argument("dst", help="instance_id:/path to target of copy operation", type=str),
     argument("-i", "--identity", help="Location of ssh private key", type=str),
     usage="vastai copy SRC DST",
-    help=" Copy directories between instances and/or local",
+    help="Copy directories between instances and/or local",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
         directories can be either local or remote, subject to appropriate read and write
@@ -1017,8 +1017,8 @@ def copy(args: argparse.Namespace):
 
 
 @parser.command(
-    argument("--src", help="path to source of object to copy.", type=str),
-    argument("--dst", help="path to target of copy operation.", type=str, default="/workspace"),
+    argument("--src", help="path to source of object to copy", type=str),
+    argument("--dst", help="path to target of copy operation", type=str, default="/workspace"),
     argument("--instance", help="id of the instance", type=str),
     argument("--connection", help="id of cloud connection on your account (get from calling 'vastai show connections')", type=str),
     argument("--transfer", help="type of transfer, possible options include Instance To Cloud and Cloud To Instance", type=str, default="Instance to Cloud"),
@@ -1028,7 +1028,7 @@ def copy(args: argparse.Namespace):
     argument("--update", help="skip files that are newer on the destination", action="store_true"),
     argument("--delete-excluded", help="delete files on dest excluded from transfer", action="store_true"),
     usage="vastai cloud copy --src SRC --dst DST --instance INSTANCE_ID -connection CONNECTION_ID --transfer TRANSFER_TYPE",
-    help=" Copy files/folders to and from cloud providers",
+    help="Copy files/folders to and from cloud providers",
     epilog=deindent("""
         Copies a directory from a source location to a target location. Each of source and destination
         directories can be either local or remote, subject to appropriate read and write
@@ -1283,13 +1283,13 @@ def get_runtype(args):
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--entrypoint", help="override entrypoint for args launch instance", type=str),
-    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
-    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
-    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
+    argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab", action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8", action="store_true"),
     argument("--extra", help=argparse.SUPPRESS),
     argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
@@ -1459,7 +1459,7 @@ def create__team(args):
     argument("--name", help="name of the role", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
     usage="vastai create team-role --name NAME --permissions PERMISSIONS",
-    help="Add a new role to your",
+    help="Add a new role to your team",
     epilog=deindent("""
         Creating a new team role involves understanding how permissions must be sent via json format.
         You can find more information about permissions here: https://vast.ai/docs/cli/roles-and-permissions
@@ -1479,11 +1479,11 @@ def create__team_role(args):
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
     
-    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
-    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+    argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab", action="store_true"),
 
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--search_params", help="search offers filters", type=str),
@@ -1967,13 +1967,13 @@ def _parse_region(region):
     argument("--onstart", help="filename to use as onstart script", type=str),
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--entrypoint", help="override entrypoint for args launch instance", type=str),
-    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
-    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
-    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8.", action="store_true"),
-    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8.", action="store_true"),
+    argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab", action="store_true"),
+    argument("--lang-utf8", help="Workaround for images with locale problems: install and generate locales before instance launch, and set locale to C.UTF-8", action="store_true"),
+    argument("--python-utf8", help="Workaround for images with locale problems: set python's locale to C.UTF-8", action="store_true"),
     argument("--extra", help=argparse.SUPPRESS),
     argument("--env",   help="env variables and port mapping options, surround with '' ", type=str),
     argument("--args",  nargs=argparse.REMAINDER, help="list of arguments passed to container ENTRYPOINT. Onstart is recommended for this purpose. (must be last argument)"),
@@ -2124,7 +2124,7 @@ def launch__instance(args):
     argument("INSTANCE_ID", help="id of instance", type=int),
     argument("--tail", help="Number of lines to show from the end of the logs (default '1000')", type=str),
     argument("--filter", help="Grep filter for log entries", type=str),
-    argument("--daemon-logs", help="Fetch daemon system logs instead of container logs.", action="store_true"),
+    argument("--daemon-logs", help="Fetch daemon system logs instead of container logs", action="store_true"),
     usage="vastai logs INSTANCE_ID [OPTIONS] ",
     help="Get the logs for an instance",
 )
@@ -2170,7 +2170,7 @@ def logs(args):
     argument("ID", help="id of instance to prepay for", type=int),
     argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
     usage="vastai prepay instance ID AMOUNT",
-    help="Deposit credits into reserved instance.",
+    help="Deposit credits into reserved instance",
 )
 def prepay__instance(args):
     """
@@ -2300,7 +2300,7 @@ def reports(args):
 
 @parser.command(
     usage="vastai reset api-key",
-    help="Reset your api-key (get new key from website).",
+    help="Reset your api-key (get new key from website)",
 )
 def reset__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.
@@ -3271,7 +3271,7 @@ def show__endpoints(args):
 
 @parser.command(
     usage="vastai show connections [--api-key API_KEY] [--raw]",
-    help="Displays user's cloud connections"
+    help="Display user's cloud connections"
 )
 def show__connections(args):
     """
@@ -3423,8 +3423,8 @@ def show__env_vars(args):
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
     argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
-    argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
-    argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
+    argument("-c", "--only_charges", action="store_true", help="Show only charge items"),
+    argument("-p", "--only_credits", action="store_true", help="Show only credit items"),
     argument("--instance_label", help="Filter charges on a particular instance label (useful for autoscaler groups)"),
     usage="vastai show invoices [OPTIONS]",
     help="Get billing history reports",
@@ -3586,7 +3586,7 @@ def show__ipaddrs(args):
 @parser.command(
     argument("-q", "--quiet", action="store_true", help="display information about user"),
     usage="vastai show user [OPTIONS]",
-    help="   Get current user data",
+    help="Get current user data",
     epilog=deindent("""
         Shows stats for logged-in user. These include user balance, email, and ssh key. Does not show API key.
     """)
@@ -3886,11 +3886,11 @@ def update__team_role(args):
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
     
-    argument("--ssh",     help="Launch as an ssh instance type.", action="store_true"),
-    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance.", action="store_true"),
-    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh.", action="store_true"),
-    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory.", type=str),
-    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab.", action="store_true"),
+    argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
+    argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance", action="store_true"),
+    argument("--direct",  help="Use (faster) direct connections for jupyter & ssh", action="store_true"),
+    argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory", type=str),
+    argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab", action="store_true"),
 
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--search_params", help="search offers filters", type=str),
@@ -4236,7 +4236,7 @@ def cleanup_machine(args, machine_id):
 @parser.command(
     argument("ID", help="id of machine to cleanup", type=int),
     usage="vastai cleanup machine ID [options]",
-    help="[Host] Remove all expired storage instances from the machine, freeing up space.",
+    help="[Host] Remove all expired storage instances from the machine, freeing up space",
     epilog=deindent("""
         Instances expire on their end date. Expired instances still pay storage fees, but can not start.
         Since hosts are still paid storage fees for expired instances, we do not auto delete them.
