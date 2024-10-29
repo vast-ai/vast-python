@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 from __future__ import unicode_literals, print_function
 
 import re
 import json
 import sys
-import argparse
+import argcomplete, argparse
 import os
 import time
 from typing import Dict, List, Tuple
@@ -18,7 +19,7 @@ import requests
 import getpass
 import subprocess
 from subprocess import PIPE
-import xdg_base_dirs
+from typing import Optional
 import shutil
 import logging
 import textwrap
@@ -53,10 +54,19 @@ logging.basicConfig(
 
 APP_NAME = "vastai"
 
-DIRS = {
-    'config': xdg_base_dirs.xdg_config_home(),
-    'temp': xdg_base_dirs.xdg_cache_home()
-}
+try:
+  import xdg_base_dirs
+  DIRS = {
+      'config': xdg_base_dirs.xdg_config_home(),
+      'temp': xdg_base_dirs.xdg_cache_home()
+  }
+
+except:
+  # Reasonable defaults.
+  DIRS = {
+      'config': os.path.join(os.getenv('HOME'), '.config'),
+      'temp': os.path.join(os.getenv('HOME'), '.cache'),
+  }
 
 for key in DIRS.keys():
   DIRS[key] = path = os.path.join(DIRS[key], APP_NAME)
@@ -79,6 +89,8 @@ api_key_guard = object()
 
 
 headers = {}
+
+VAST_INSTANCE = os.getenv("VAST_INSTANCE")
 
 
 class Object(object):
@@ -252,7 +264,9 @@ class apwrap(object):
             for x in aliases:
                 verb, _, obj = x.partition(" ")
                 aliases_transformed.append(self.get_name(verb, obj))
+
             kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
+            print("adding {}".format(name), aliases, aliases_transformed)
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
             self.subparser_objs.append(sp)
             for arg in arguments:
@@ -283,6 +297,13 @@ class apwrap(object):
 
 parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
 
+def get_choices(what: str, args: Optional[Dict] = {}) -> List:
+    #req_url = apiurl(args, "/{}".format(what), {"owner": "me"});
+    #r = http_get(args, req_url)
+    #r.raise_for_status()
+    #return r.json()[what]
+    return []
+    
 def translate_null_strings_to_blanks(d: Dict) -> Dict:
     """Map over a dict and translate any null string values into ' '.
     Leave everything else as is. This is needed because you cannot add TableCell
@@ -2253,7 +2274,7 @@ def prepay__instance(args):
     if rj["success"]:
         timescale = round( rj["timescale"], 3)
         discount_rate = 100.0*round( rj["discount_rate"], 3)
-        print("prepaid for {timescale} months of instance {args.ID} applying ${args.amount} credits for a discount of {discount_rate}%.".format(**(locals())));
+        print("prepaid for {timescale} months of instance {args.ID} applying ${args.amount} credits for a discount of {discount_rate}%".format(**(locals())));
     else:
         print(rj["msg"]);
 
@@ -4171,55 +4192,55 @@ def filter_invoice_items(args: argparse.Namespace, rows: List) -> Dict:
     return {"rows": rows, "header_text": header_text, "pdf_filename": filename}
 
 
-@parser.command(
-    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
-    argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
-    argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
-    argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
-    argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
-    usage="vastai generate pdf-invoices [OPTIONS]",
-)
-def generate__pdf_invoices(args):
-    """
-    Makes a PDF version of the data returned by the "show invoices" command. Takes the same command line args as that
-    command.
-
-    :param argparse.Namespace args: should supply all the command-line options
-    :rtype:
-    """
-
-    try:
-        import vast_pdf
-    except ImportError:
-        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
-        you do not need this feature you can ignore this message. To get the library you should download the vast-python
-        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
-        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
-        package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
-
-    sdate,edate = convert_dates_to_timestamps(args)
-    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate})
-
-    r_inv = http_get(args, req_url_inv, headers=headers)
-    r_inv.raise_for_status()
-    rows_inv = r_inv.json()["invoices"]
-    invoice_filter_data = filter_invoice_items(args, rows_inv)
-    rows_inv = invoice_filter_data["rows"]
-    req_url = apiurl(args, "/users/current", {"owner": "me"})
-    r = http_get(args, req_url)
-    r.raise_for_status()
-    user_blob = r.json()
-    user_blob = translate_null_strings_to_blanks(user_blob)
-
-    if args.raw:
-        print(json.dumps(rows_inv, indent=1, sort_keys=True))
-        print("Current: ", user_blob)
-        print("Raw mode")
-    else:
-        display_table(rows_inv, invoice_fields)
-        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data)
-
-
+#@parser.command(
+#    argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
+#    argument("-s", "--start_date", help="start date and time for report. Many formats accepted (optional)", type=str),
+#    argument("-e", "--end_date", help="end date and time for report. Many formats accepted (optional)", type=str),
+#    argument("-c", "--only_charges", action="store_true", help="Show only charge items."),
+#    argument("-p", "--only_credits", action="store_true", help="Show only credit items."),
+#    usage="vastai generate pdf-invoices [OPTIONS]",
+#)
+#def generate__pdf_invoices(args):
+#    """
+#    Makes a PDF version of the data returned by the "show invoices" command. Takes the same command line args as that
+#    command.
+#
+#    :param argparse.Namespace args: should supply all the command-line options
+#    :rtype:
+#    """
+#
+#    try:
+#        import vast_pdf
+#    except ImportError:
+#        print("""\nWARNING: The 'vast_pdf' library is not present. This library is used to print invoices in PDF format. If
+#        you do not need this feature you can ignore this message. To get the library you should download the vast-python
+#        github repository. Just do 'git@github.com:vast-ai/vast-python.git' and then 'cd vast-python'. Once in that
+#        directory you can run 'vast.py' and it will have access to 'vast_pdf.py'. The library depends on a Python
+#        package called Borb to make the PDF files. To install this package do 'pip3 install borb'.\n""")
+#
+#    sdate,edate = convert_dates_to_timestamps(args)
+#    req_url_inv = apiurl(args, "/users/me/invoices", {"owner": "me", "sdate":sdate, "edate":edate})
+#
+#    r_inv = http_get(args, req_url_inv, headers=headers)
+#    r_inv.raise_for_status()
+#    rows_inv = r_inv.json()["invoices"]
+#    invoice_filter_data = filter_invoice_items(args, rows_inv)
+#    rows_inv = invoice_filter_data["rows"]
+#    req_url = apiurl(args, "/users/current", {"owner": "me"})
+#    r = http_get(args, req_url)
+#    r.raise_for_status()
+#    user_blob = r.json()
+#    user_blob = translate_null_strings_to_blanks(user_blob)
+#
+#    if args.raw:
+#        print(json.dumps(rows_inv, indent=1, sort_keys=True))
+#        print("Current: ", user_blob)
+#        print("Raw mode")
+#    else:
+#        display_table(rows_inv, invoice_fields)
+#        vast_pdf.generate_invoice(user_blob, rows_inv, invoice_filter_data)
+#
+#
 
 
 
@@ -4725,6 +4746,51 @@ def login(args):
     print(login_deprecated_message)
 """
 
+
+class MyAutocomplete(argcomplete.CompletionFinder):
+  def _get_completions(self, comp_words, cword_prefix, cword_prequote, last_wordbreak_pos):
+    self.eaten_tokens = ''
+    # So the first thing we do is take the first comp_word (argument) and 
+    # prepend it to the cword_prefix hoping for a match.
+    with open('/tmp/keycomp', 'a') as f:
+      print("-----\n", file=f)
+      print(["get", self.eaten_tokens, comp_words, cword_prefix, cword_prequote], file=f)
+
+    """
+    if len(comp_words) > 1:
+      self.eaten_tokens = comp_words[1] + ' '
+      cword_prefix = self.eaten_tokens + cword_prefix
+      comp_words = comp_words[:1]
+    """
+
+    res = super()._get_completions(comp_words, cword_prefix, cword_prequote, last_wordbreak_pos)
+
+    # if we get a match then we need to re-introduce the escapes as the secondary token
+    if len(res) <= 1:
+      pass
+
+    with open('/tmp/keycomp', 'a') as f:
+      print(["get", self.eaten_tokens, comp_words, cword_prefix, cword_prequote, res], file=f)
+
+    return res
+
+  def collect_completions( self, active_parsers: List[argparse.ArgumentParser], parsed_args: argparse.Namespace, cword_prefix: str) -> List[str]:
+    pre = super().collect_completions(active_parsers, parsed_args, cword_prefix)
+    with open('/tmp/keycomp', 'a') as f:
+      print(["collect", cword_prefix, vars(parsed_args)], file=f)
+
+    return pre
+ 
+  def quote_completions(self, completions: List[str], cword_prequote: str, last_wordbreak_pos: Optional[int]) -> List[str]:
+    pre = super().quote_completions(completions, cword_prequote, last_wordbreak_pos)
+    post = pre #list(map(lambda x: x.replace('\\', '').replace(self.eaten_tokens, ''), pre))
+
+    with open('/tmp/keycomp', 'a') as f:
+      print(["quote", pre, post], file=f)
+
+    return post
+
+
 def main():
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--retry", help="retry limit", default=3)
@@ -4732,6 +4798,8 @@ def main():
     parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
     parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(APIKEY_FILE), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
 
+    myautocc = MyAutocomplete()
+    myautocc(parser.parser)#, default_completer=argcomplete.completers.ChoicesCompleter)
     args = parser.parse_args()
 
     if args.api_key is api_key_guard:
@@ -4754,6 +4822,8 @@ def main():
             else:
                 errmsg = "(no detail message supplied)"
         print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));
+    except ValueError as e:
+      print(e)
 
 
 
