@@ -791,6 +791,39 @@ def parse_vast_url(url_str):
 
     return (instance_id, path)
 
+def get_ssh_key(argstr):
+    ssh_key = argstr
+    # Including a path to a public key is pretty reasonable.
+    if os.path.exists(argstr):
+      with open(argstr) as f:
+        ssh_key = f.read()
+
+    if "PRIVATE KEY" in ssh_key:
+      raise ValueError(deindent("""
+        🐴 Woah, hold on there, partner!
+
+        That's a *private* SSH key.  You need to give the *public* 
+        one. It usually starts with 'ssh-rsa', is on a single line, 
+        has around 200 or so "base64" characters and ends with 
+        some-user@some-where. "Generate public ssh key" would be 
+        a good search term if you don't know how to do this.
+      """))
+
+    if not ssh_key.lower().startswith('ssh'):
+      raise ValueError(deindent("""
+        Are you sure that's an SSH public key?
+
+        Usually it starts with the stanza 'ssh-(keytype)' 
+        where the keytype can be things such as rsa, ed25519-sk, 
+        or dsa. What you passed me was:
+
+        {}
+
+        And welp, that just don't look right.
+      """.format(ssh_key)))
+
+    return ssh_key
+
 
 @parser.command(
     argument("instance_id", help="id of instance to attach to", type=int),
@@ -807,8 +840,9 @@ def parse_vast_url(url_str):
     """),
 )
 def attach__ssh(args):
+    ssh_key = get_ssh_key(args.ssh_key)
     url = apiurl(args, "/instances/{id}/ssh/".format(id=args.instance_id))
-    req_json = {"ssh_key": args.ssh_key}
+    req_json = {"ssh_key": ssh_key}
     r = http_post(args, url, headers=headers, json=req_json)
     r.raise_for_status()
     print(r.json())
@@ -3968,8 +4002,9 @@ def update__template(args):
     help="Update an existing ssh key",
 )
 def update__ssh_key(args):
+    ssh_key = get_ssh_key(args.ssh_key)
     url = apiurl(args, "/ssh/{id}/".format(id=args.ID))
-    r = http_put(args, url,  headers=headers, json={"ssh_key": args.ssh_key})
+    r = http_put(args, url,  headers=headers, json={"ssh_key": ssh_key})
     r.raise_for_status()
     print(r.json())
 
