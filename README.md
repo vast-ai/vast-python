@@ -7,6 +7,8 @@ same underlying REST API. Most of the functionality is self-contained in the sin
 script file `vast.py`, although the invoice generating commands
 require installing an additional second script called `vast_pdf.py`.
 
+[![PyPI version](https://badge.fury.io/py/vastai.svg)](https://badge.fury.io/py/vastai)
+
 ## Quickstart
 
 You should probably create a subdirectory in which to put this script and related files if you
