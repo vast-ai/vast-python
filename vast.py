@@ -2448,7 +2448,7 @@ def stop_instance(id,args):
     if (r.status_code == 200):
         rj = r.json()
         if (rj["success"]):
-            print("starting instance {id}.".format(**(locals())))
+            print("stopping instance {id}.".format(**(locals())))
         else:
             print(rj["msg"])
         return True
