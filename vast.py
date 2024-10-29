@@ -18,8 +18,10 @@ import requests
 import getpass
 import subprocess
 from subprocess import PIPE
-from xdg import BaseDirectory
+import xdg_base_dirs
 import shutil
+import logging
+import textwrap
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -44,14 +46,20 @@ server_url_default = "https://console.vast.ai"
 #server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
 
+logging.basicConfig(
+    level=os.getenv("LOGLEVEL") or logging.WARN,
+    format="%(levelname)s - %(message)s"
+)
+
 APP_NAME = "vastai"
 
 DIRS = {
-    'config': next(BaseDirectory.load_config_paths(APP_NAME)),
-    'temp': os.path.join(BaseDirectory.xdg_cache_home, APP_NAME)
+    'config': xdg_base_dirs.xdg_config_home(),
+    'temp': xdg_base_dirs.xdg_cache_home()
 }
 
-for path in DIRS.values():
+for key in DIRS.keys():
+  DIRS[key] = path = os.path.join(DIRS[key], APP_NAME)
   if not os.path.exists(path):
     os.makedirs(path)
 
@@ -62,6 +70,8 @@ APIKEY_FILE = os.path.join(DIRS['config'], "vast_api_key")
 APIKEY_FILE_HOME = os.path.expanduser("~/.vast_api_key") # Legacy
 
 if os.path.exists(APIKEY_FILE_HOME):
+  logging.warning(textwrap.dedent("""API key has moved from {} to {}
+    Copying automatically. Remove {} to silence this message.""".format(APIKEY_FILE_HOME, APIKEY_FILE, APIKEY_FILE_HOME)))
   shutil.copyfile(APIKEY_FILE_HOME, APIKEY_FILE)
 
 
