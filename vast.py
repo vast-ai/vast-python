@@ -9,9 +9,9 @@ import sys
 import argcomplete, argparse
 import os
 import time
-from typing import Dict, List, Tuple
-import hashlib
+from typing import Dict, List, Tuple, Optional
 from datetime import date, datetime, timedelta
+import hashlib
 import math
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -23,6 +23,15 @@ from typing import Optional
 import shutil
 import logging
 import textwrap
+from pathlib import Path
+
+TABCOMPLETE = False
+try:
+    import argcomplete
+    TABCOMPLETE = True
+except:
+    # No tab-completion for you
+    pass
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -90,8 +99,7 @@ api_key_guard = object()
 
 headers = {}
 
-VAST_INSTANCE = os.getenv("VAST_INSTANCE")
-
+ARGS = None
 
 class Object(object):
     pass
@@ -204,6 +212,15 @@ def load_permissions_from_file(file_path):
     with open(file_path, 'r') as file:
         return json.load(file)
 
+def complete_instance_machine(prefix=None, action=None, parser=None, parsed_args=None):
+  return show__instances(ARGS, {'internal': True, 'field': 'machine_id'})
+
+def complete_instance(prefix=None, action=None, parser=None, parsed_args=None):
+  return show__instances(ARGS, {'internal': True, 'field': 'id'})
+
+def complete_sshkeys(prefix=None, action=None, parser=None, parsed_args=None):
+  return [str(m) for m in Path.home().joinpath('.ssh').glob('*.pub')]
+
 class apwrap(object):
     def __init__(self, *args, **kwargs):
         kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
@@ -266,11 +283,29 @@ class apwrap(object):
                 aliases_transformed.append(self.get_name(verb, obj))
 
             kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
+<<<<<<< HEAD
             print("adding {}".format(name), aliases, aliases_transformed)
+||||||| parent of bc8e09a (Fixes #138 - adds tab completion)
+=======
+           
+>>>>>>> bc8e09a (Fixes #138 - adds tab completion)
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
             self.subparser_objs.append(sp)
             for arg in arguments:
-                sp.add_argument(*arg.args, **arg.kwargs)
+                tsp = sp.add_argument(*arg.args, **arg.kwargs)
+                myCompleter= None
+                comparator = arg.args[0].lower()
+                if comparator.startswith('machine'):
+                  myCompleter = complete_instance_machine
+                elif comparator.startswith('id') or comparator.endswith('id'):
+                  myCompleter = complete_instance
+                elif comparator.startswith('ssh'):
+                  myCompleter = complete_sshkeys
+                  
+                if myCompleter:
+                  setattr(tsp, 'completer', myCompleter)
+
+
             sp.set_defaults(func=func)
             return func
 
@@ -3632,7 +3667,9 @@ def show__instances(args):
         row = {k: strip_strings(v) for k, v in row.items()} 
         row['duration'] = time.time() - row['start_date']
         row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
-    if args.quiet:
+    if 'internal' in extra:
+        return [str(row[extra['field']]) for row in rows]
+    elif args.quiet:
         for row in rows:
             id = row.get("id", None)
             if id is not None:
@@ -4645,7 +4682,7 @@ def schedule__maint(args):
     print(f"Maintenance window scheduled for {dt} success".format(r.json()))
 
 @parser.command(
-    argument("ID", help="id of machine to display", type=int),
+    argument("Machine", help="id of machine to display", type=int),
     argument("-q", "--quiet", action="store_true", help="only display numeric ids"),
     usage="vastai show machine ID [OPTIONS]",
     help="[Host] Show hosted machines",
@@ -4657,7 +4694,7 @@ def show__machine(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, f"/machines/{args.ID}", {"owner": "me"});
+    req_url = apiurl(args, f"/machines/{args.Machine}", {"owner": "me"});
     r = http_get(args, req_url)
     r.raise_for_status()
     rows = r.json()
@@ -4746,6 +4783,7 @@ def login(args):
     print(login_deprecated_message)
 """
 
+<<<<<<< HEAD
 
 class MyAutocomplete(argcomplete.CompletionFinder):
   def _get_completions(self, comp_words, cword_prefix, cword_prequote, last_wordbreak_pos):
@@ -4791,17 +4829,42 @@ class MyAutocomplete(argcomplete.CompletionFinder):
     return post
 
 
+||||||| parent of bc8e09a (Fixes #138 - adds tab completion)
+=======
+try:
+  class MyAutocomplete(argcomplete.CompletionFinder):
+    def quote_completions(self, completions: List[str], cword_prequote: str, last_wordbreak_pos: Optional[int]) -> List[str]:
+      pre = super().quote_completions(completions, cword_prequote, last_wordbreak_pos)
+      # preference the non-hyphenated options first
+      return sorted(pre, key=lambda x: x.startswith('-'))
+except:
+  pass
+
+
+>>>>>>> bc8e09a (Fixes #138 - adds tab completion)
 def main():
+    global ARGS
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--retry", help="retry limit", default=3)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json")
     parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
+<<<<<<< HEAD
     parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(APIKEY_FILE), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
 
     myautocc = MyAutocomplete()
     myautocc(parser.parser)#, default_completer=argcomplete.completers.ChoicesCompleter)
     args = parser.parse_args()
 
+||||||| parent of bc8e09a (Fixes #138 - adds tab completion)
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
+
+
+    args = parser.parse_args()
+=======
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
+
+    ARGS = args = parser.parse_args()
+>>>>>>> bc8e09a (Fixes #138 - adds tab completion)
     if args.api_key is api_key_guard:
         if os.path.exists(APIKEY_FILE):
             with open(APIKEY_FILE, "r") as reader:
@@ -4810,6 +4873,10 @@ def main():
             args.api_key = None
     if args.api_key:
         headers["Authorization"] = "Bearer " + args.api_key
+
+    if TABCOMPLETE:
+      myautocc = MyAutocomplete()
+      myautocc(parser.parser)
 
     try:
         sys.exit(args.func(args) or 0)
