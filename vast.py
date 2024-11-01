@@ -3651,7 +3651,7 @@ def show__instance(args):
     usage="vastai show instances [OPTIONS] [--api-key API_KEY] [--raw]",
     help="Display user's current instances"
 )
-def show__instances(args):
+def show__instances(args = {}, extra = {}):
     """
     Shows the stats on the machine the user is renting.
 
