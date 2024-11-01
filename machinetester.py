@@ -5,6 +5,7 @@ import json
 import argparse
 import requests
 import urllib3
+import atexit
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -22,13 +23,11 @@ def is_instance(instance_id, debugging=False):
             json_output = result.stdout.strip()
             if debugging:
                 print(f"is_instance(): Output from vast show instance: {json_output}")
-            # Break the loop if command is successful
-            break
+            break  # Exit loop if command is successful
         except subprocess.CalledProcessError as e:
             if debugging:
                 print(f"is_instance(): Error running vast show instance: {e}")
                 print(f"is_instance(): stderr: {e.stderr}")
-            # Increment the retry count
             retry_count += 1
             if retry_count == max_retries:
                 return 'unknown'
@@ -44,10 +43,13 @@ def is_instance(instance_id, debugging=False):
             print(f"is_instance(): json_output: {json_output}")
         return 'unknown'
 
-    if intended_status in ['running', 'offline', 'exited', 'created']:
-        return intended_status
-    else:
-        return 'unknown'
+    return intended_status if intended_status in ['running', 'offline', 'exited', 'created'] else 'unknown'
+
+def destroy_instance(instance_id, debugging=False):
+    """Destroy the instance."""
+    if debugging:
+        print(f"Destroying instance {instance_id}")
+    subprocess.run(['./vast', 'destroy', 'instance', instance_id])
 
 def main():
     parser = argparse.ArgumentParser(description='Machine Tester Script')
@@ -75,6 +77,9 @@ def main():
 
     delay = int(delay)
 
+    # Register the destroy_instance function to run at exit
+    atexit.register(destroy_instance, instances_id, debugging)
+
     # Validate the delay variable
     if delay > 0:
         if debugging:
@@ -85,83 +90,72 @@ def main():
     no_response_seconds = 0
     printed_lines = set()
 
-    while time.time() - start_time < 300:
-        try:
-            if debugging:
-                print(f"Sending GET request to https://{IP}:{PORT}/progress")
-            response = requests.get(f'https://{IP}:{PORT}/progress', verify=False, timeout=10)
-            message = response.text.strip()
-            if debugging:
-                print(f"Received message: '{message}'")
-        except requests.exceptions.RequestException as e:
-            if debugging:
-                print(f"Error making HTTPS request: {e}")
-            message = ''
+    try:
+        while time.time() - start_time < 300:
+            try:
+                if debugging:
+                    print(f"Sending GET request to https://{IP}:{PORT}/progress")
+                response = requests.get(f'https://{IP}:{PORT}/progress', verify=False, timeout=10)
+                message = response.text.strip()
+                if debugging:
+                    print(f"Received message: '{message}'")
+            except requests.exceptions.RequestException as e:
+                if debugging:
+                    print(f"Error making HTTPS request: {e}")
+                message = ''
 
-        # Process the message
-        if message:
-            lines = message.split('\n')
-            new_lines = [line for line in lines if line not in printed_lines]
-            for line in new_lines:
-                if line == 'DONE':
-                    print("Test completed successfully.")
-                    with open("Pass_testresults.log", "a") as f:
-                        f.write(f"{machine_id}\n")
-                    if debugging:
-                        print(f"Test passed. Destroying instance {instances_id}.")
-                    subprocess.run(['./vast', 'destroy', 'instance', instances_id])
-                    sys.exit(0)
-                elif line.startswith('ERROR'):
-                    print(line)
-                    with open("Error_testresults.log", "a") as f:
-                        f.write(f"{machine_id}:{instances_id} {line}\n")
-                    if debugging:
-                        print(f"Test failed with error: {line}. Destroying instance {instances_id}.")
-                    subprocess.run(['./vast', 'destroy', 'instance', instances_id])
-                    sys.exit(1)
-                else:
-                    print(line)
-                printed_lines.add(line)
-            no_response_seconds = 0  # Reset if a response is received
-        else:
-            no_response_seconds += 20
+            if message:
+                lines = message.split('\n')
+                new_lines = [line for line in lines if line not in printed_lines]
+                for line in new_lines:
+                    if line == 'DONE':
+                        print("Test completed successfully.")
+                        with open("Pass_testresults.log", "a") as f:
+                            f.write(f"{machine_id}\n")
+                        if debugging:
+                            print(f"Test passed. Destroying instance {instances_id}.")
+                        sys.exit(0)
+                    elif line.startswith('ERROR'):
+                        print(line)
+                        with open("Error_testresults.log", "a") as f:
+                            f.write(f"{machine_id}:{instances_id} {line}\n")
+                        if debugging:
+                            print(f"Test failed with error: {line}. Destroying instance {instances_id}.")
+                        sys.exit(1)
+                    else:
+                        print(line)
+                    printed_lines.add(line)
+                no_response_seconds = 0
+            else:
+                no_response_seconds += 20
+                if debugging:
+                    print(f"No message received. Incremented no_response_seconds to {no_response_seconds}.")
+
+            status = is_instance(instances_id, debugging)
             if debugging:
-                print(f"No message received. Incremented no_response_seconds to {no_response_seconds}.")
+                print(f"Instance {instances_id} status: {status}")
 
-        # Check instance status using is_instance function
-        status = is_instance(instances_id, debugging)
-        if debugging:
-            print(f"Instance {instances_id} status: {status}")
-
-        if status == 'running':
-            # If no response for 60 seconds with running instance, log and exit
-            if no_response_seconds >= 60:
+            if status == 'running' and no_response_seconds >= 60:
                 with open("Error_testresults.log", "a") as f:
                     f.write(f"{machine_id}:{instances_id} No response from port {PORT} for 60s with running instance\n")
                 if debugging:
                     print(f"No response for 60s with running instance. Destroying instance {instances_id}.")
-                subprocess.run(['./vast', 'destroy', 'instance', instances_id])
                 sys.exit(1)
-        else:
-            # Handle other statuses (offline, exited, created, unknown)
-            with open("Error_testresults.log", "a") as f:
-                f.write(f"{machine_id}:{instances_id} Instance status '{status}' during testing.\n")
+            elif status != 'running':
+                with open("Error_testresults.log", "a") as f:
+                    f.write(f"{machine_id}:{instances_id} Instance status '{status}' during testing.\n")
+                if debugging:
+                    print(f"Instance {instances_id} status '{status}'. Destroying instance.")
+                sys.exit(1)
+
             if debugging:
-                print(f"Instance {instances_id} status '{status}'. Destroying instance.")
-            subprocess.run(['./vast', 'destroy', 'instance', instances_id])
-            sys.exit(1)
+                print("Waiting for 20 seconds before the next check.")
+            time.sleep(20)
 
-        # Wait for 20 seconds before the next iteration
         if debugging:
-            print("Waiting for 20 seconds before the next check.")
-        time.sleep(20)
-
-    # Destroy the instance after the loop completes if it was running
-    if debugging:
-        print(f"Time limit reached. Destroying instance {instances_id}.")
-    else:
-        print(f"Time limit reached. Destroying instance {instances_id}.")
-    subprocess.run(['./vast', 'destroy', 'instance', instances_id])
+            print(f"Time limit reached. Destroying instance {instances_id}.")
+    finally:
+        destroy_instance(instances_id, debugging)
 
     print(f"Machine: {machine_id} Done with testing remote.py results {message}")
 
