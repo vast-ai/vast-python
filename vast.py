@@ -4777,55 +4777,6 @@ def create__account(args):
 def login(args):
     print(login_deprecated_message)
 """
-
-<<<<<<< HEAD
-
-class MyAutocomplete(argcomplete.CompletionFinder):
-  def _get_completions(self, comp_words, cword_prefix, cword_prequote, last_wordbreak_pos):
-    self.eaten_tokens = ''
-    # So the first thing we do is take the first comp_word (argument) and 
-    # prepend it to the cword_prefix hoping for a match.
-    with open('/tmp/keycomp', 'a') as f:
-      print("-----\n", file=f)
-      print(["get", self.eaten_tokens, comp_words, cword_prefix, cword_prequote], file=f)
-
-    """
-    if len(comp_words) > 1:
-      self.eaten_tokens = comp_words[1] + ' '
-      cword_prefix = self.eaten_tokens + cword_prefix
-      comp_words = comp_words[:1]
-    """
-
-    res = super()._get_completions(comp_words, cword_prefix, cword_prequote, last_wordbreak_pos)
-
-    # if we get a match then we need to re-introduce the escapes as the secondary token
-    if len(res) <= 1:
-      pass
-
-    with open('/tmp/keycomp', 'a') as f:
-      print(["get", self.eaten_tokens, comp_words, cword_prefix, cword_prequote, res], file=f)
-
-    return res
-
-  def collect_completions( self, active_parsers: List[argparse.ArgumentParser], parsed_args: argparse.Namespace, cword_prefix: str) -> List[str]:
-    pre = super().collect_completions(active_parsers, parsed_args, cword_prefix)
-    with open('/tmp/keycomp', 'a') as f:
-      print(["collect", cword_prefix, vars(parsed_args)], file=f)
-
-    return pre
- 
-  def quote_completions(self, completions: List[str], cword_prequote: str, last_wordbreak_pos: Optional[int]) -> List[str]:
-    pre = super().quote_completions(completions, cword_prequote, last_wordbreak_pos)
-    post = pre #list(map(lambda x: x.replace('\\', '').replace(self.eaten_tokens, ''), pre))
-
-    with open('/tmp/keycomp', 'a') as f:
-      print(["quote", pre, post], file=f)
-
-    return post
-
-
-||||||| parent of bc8e09a (Fixes #138 - adds tab completion)
-=======
 try:
   class MyAutocomplete(argcomplete.CompletionFinder):
     def quote_completions(self, completions: List[str], cword_prequote: str, last_wordbreak_pos: Optional[int]) -> List[str]:
@@ -4836,30 +4787,21 @@ except:
   pass
 
 
->>>>>>> bc8e09a (Fixes #138 - adds tab completion)
 def main():
     global ARGS
     parser.add_argument("--url", help="server REST api url", default=server_url_default)
     parser.add_argument("--retry", help="retry limit", default=3)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json")
     parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
-<<<<<<< HEAD
     parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(APIKEY_FILE), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
+
+    ARGS = args = parser.parse_args()
 
     myautocc = MyAutocomplete()
     myautocc(parser.parser)#, default_completer=argcomplete.completers.ChoicesCompleter)
-    args = parser.parse_args()
-
-||||||| parent of bc8e09a (Fixes #138 - adds tab completion)
-    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
-
 
     args = parser.parse_args()
-=======
-    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
 
-    ARGS = args = parser.parse_args()
->>>>>>> bc8e09a (Fixes #138 - adds tab completion)
     if args.api_key is api_key_guard:
         if os.path.exists(APIKEY_FILE):
             with open(APIKEY_FILE, "r") as reader:
