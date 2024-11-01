@@ -18,7 +18,8 @@ import requests
 import getpass
 import subprocess
 from subprocess import PIPE
-import tempfile
+from xdg import BaseDirectory
+import shutil
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -42,8 +43,28 @@ server_url_default = "https://console.vast.ai"
 #server_url_default = "host.docker.internal"
 #server_url_default = "http://localhost:5002"
 #server_url_default  = "https://vast.ai/api/v0"
-api_key_file_base = "~/.vast_api_key"
-api_key_file = os.path.expanduser(api_key_file_base)
+
+APP_NAME = "vastai"
+
+DIRS = {
+    'config': next(BaseDirectory.load_config_paths(APP_NAME)),
+    'temp': os.path.join(BaseDirectory.xdg_cache_home, APP_NAME)
+}
+
+for path in DIRS.values():
+  if not os.path.exists(path):
+    os.makedirs(path)
+
+CACHE_FILE = os.path.join(DIRS['temp'], "gpu_names_cache.json")
+CACHE_DURATION = timedelta(hours=24)
+
+APIKEY_FILE = os.path.join(DIRS['config'], "vast_api_key")
+APIKEY_FILE_HOME = os.path.expanduser("~/.vast_api_key") # Legacy
+
+if os.path.exists(APIKEY_FILE_HOME):
+  shutil.copyfile(APIKEY_FILE_HOME, APIKEY_FILE)
+
+
 api_key_guard = object()
 
 
@@ -1935,9 +1956,6 @@ def fetch_url_content(url):
     return response.text
 
 
-CACHE_FILE = os.path.join(tempfile.gettempdir(), "gpu_names_cache.json")
-CACHE_DURATION = timedelta(hours=24)
-
 def _get_gpu_names() -> List[str]:
     """Returns a set of GPU names available on Vast.ai, with results cached for 24 hours."""
     
@@ -3055,9 +3073,9 @@ def set__api_key(args):
     """Caution: a bad API key will make it impossible to connect to the servers.
     :param argparse.Namespace args: should supply all the command-line options
     """
-    with open(api_key_file, "w") as writer:
+    with open(APIKEY_FILE, "w") as writer:
         writer.write(args.new_api_key)
-    print("Your api key has been saved in {}".format(api_key_file_base))
+    print("Your api key has been saved in {}".format(APIKEY_FILE))
 
 
 
@@ -4702,13 +4720,13 @@ def main():
     parser.add_argument("--retry", help="retry limit", default=3)
     parser.add_argument("--raw", action="store_true", help="output machine-readable json")
     parser.add_argument("--explain", action="store_true", help="output verbose explanation of mapping of CLI calls to HTTPS API endpoints")
-    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(api_key_file_base), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
-
+    parser.add_argument("--api-key", help="api key. defaults to using the one stored in {}".format(APIKEY_FILE), type=str, required=False, default=os.getenv("VAST_API_KEY", api_key_guard))
 
     args = parser.parse_args()
+
     if args.api_key is api_key_guard:
-        if os.path.exists(api_key_file):
-            with open(api_key_file, "r") as reader:
+        if os.path.exists(APIKEY_FILE):
+            with open(APIKEY_FILE, "r") as reader:
                 args.api_key = reader.read().strip()
         else:
             args.api_key = None
