@@ -68,3 +68,4 @@ wadllib==1.3.2
 xdg-base-dirs==6.0.2
 xkit==0.0.0
 zope.interface==4.3.2
+argcomplete==3.5.1
