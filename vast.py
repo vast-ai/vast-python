@@ -283,12 +283,7 @@ class apwrap(object):
                 aliases_transformed.append(self.get_name(verb, obj))
 
             kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
-<<<<<<< HEAD
-            print("adding {}".format(name), aliases, aliases_transformed)
-||||||| parent of bc8e09a (Fixes #138 - adds tab completion)
-=======
-           
->>>>>>> bc8e09a (Fixes #138 - adds tab completion)
+          
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
             self.subparser_objs.append(sp)
             for arg in arguments:
