@@ -25,6 +25,7 @@ import logging
 import textwrap
 from pathlib import Path
 
+ARGS = None
 TABCOMPLETE = False
 try:
     import argcomplete
@@ -89,17 +90,13 @@ APIKEY_FILE = os.path.join(DIRS['config'], "vast_api_key")
 APIKEY_FILE_HOME = os.path.expanduser("~/.vast_api_key") # Legacy
 
 if os.path.exists(APIKEY_FILE_HOME):
-  logging.warning(textwrap.dedent("""API key has moved from {} to {}
-    Copying automatically. Remove {} to silence this message.""".format(APIKEY_FILE_HOME, APIKEY_FILE, APIKEY_FILE_HOME)))
   shutil.copyfile(APIKEY_FILE_HOME, APIKEY_FILE)
 
 
 api_key_guard = object()
 
-
 headers = {}
 
-ARGS = None
 
 class Object(object):
     pass
@@ -285,6 +282,8 @@ class apwrap(object):
             kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
           
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
+            setattr(func, "signature", sp)
+ 
             self.subparser_objs.append(sp)
             for arg in arguments:
                 tsp = sp.add_argument(*arg.args, **arg.kwargs)
@@ -327,13 +326,6 @@ class apwrap(object):
 
 parser = apwrap(epilog="Use 'vast COMMAND --help' for more info about a command")
 
-def get_choices(what: str, args: Optional[Dict] = {}) -> List:
-    #req_url = apiurl(args, "/{}".format(what), {"owner": "me"});
-    #r = http_get(args, req_url)
-    #r.raise_for_status()
-    #return r.json()[what]
-    return []
-    
 def translate_null_strings_to_blanks(d: Dict) -> Dict:
     """Map over a dict and translate any null string values into ' '.
     Leave everything else as is. This is needed because you cannot add TableCell
@@ -1498,7 +1490,7 @@ def create__instance(args: argparse.Namespace):
     r = http_put(args, url,  headers=headers,json=json_blob)
     r.raise_for_status()
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     else:
         print("Started. {}".format(r.json()))
 
@@ -1812,7 +1804,7 @@ def destroy_instance(id,args):
     r = http_del(args, url, headers=headers,json={})
     r.raise_for_status()
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     elif (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
@@ -1960,7 +1952,8 @@ def get__endpt_logs(args):
     if (r.status_code == 200):
         rj = r.json()
         if args.raw:
-            print(json.dumps(rj, indent=1, sort_keys=True))
+            # sort_keys
+            return rj
         else:
             dbg_lvl = levels[args.level]
             print(rj[dbg_lvl])
@@ -2222,7 +2215,7 @@ def launch__instance(args):
         r.raise_for_status()  # This will raise an exception for HTTP error codes
         response_data = r.json()
         if args.raw:
-            print(json.dumps(r.json(), indent=1))
+            return r
         else:
             print("Started. {}".format(r.json()))
         if response_data.get('success'):
@@ -2563,7 +2556,7 @@ def stop_instance(id,args):
     if (r.status_code == 200):
         rj = r.json()
         if (rj["success"]):
-            print("starting instance {id}.".format(**(locals())))
+            print("stopping instance {id}.".format(**(locals())))
         else:
             print(rj["msg"])
         return True
@@ -2705,7 +2698,7 @@ def search__benchmarks(args):
     r.raise_for_status()
     rows = r.json()
     if True: # args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, displayable_fields)
 
@@ -2811,7 +2804,7 @@ def search__invoices(args):
     r.raise_for_status()
     rows = r.json()
     if True: # args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, displayable_fields)
 
@@ -2929,7 +2922,6 @@ def search__offers(args):
     :param argparse.Namespace args: should supply all the command-line options
     """
 
-
     try:
 
         if args.no_default:
@@ -3030,7 +3022,7 @@ def search__offers(args):
         rows = new_rows
 
     if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         if args.type == "reserved":           
             display_table(rows, displayable_fields_reserved)
@@ -3120,7 +3112,7 @@ def search__templates(args):
     r.raise_for_status()
     rows = r.json()
     if True: # args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, displayable_fields)
 
@@ -3286,7 +3278,7 @@ def show__api_keys(args):
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     else:
         print(r.json())
 
@@ -3307,7 +3299,7 @@ def show__audit_logs(args):
     r.raise_for_status()
     rows = r.json()
     if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, audit_log_fields)
 
@@ -3321,7 +3313,7 @@ def show__ssh_keys(args):
     r = http_get(args, url, headers=headers)
     r.raise_for_status()
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     else:
         print(r.json())
 
@@ -3347,7 +3339,7 @@ def show__autogroups(args):
         if (rj["success"]):
             rows = rj["results"] 
             if args.raw:
-                print(json.dumps(rows, indent=1, sort_keys=True))
+                return rows
             else:
                 #print(rows)
                 print(json.dumps(rows, indent=1, sort_keys=True))
@@ -3376,7 +3368,7 @@ def show__endpoints(args):
         if (rj["success"]):
             rows = rj["results"] 
             if args.raw:
-                print(json.dumps(rows, indent=1, sort_keys=True))
+                return rows
             else:
                 #print(rows)
                 print(json.dumps(rows, indent=1, sort_keys=True))
@@ -3402,7 +3394,7 @@ def show__connections(args):
     rows = r.json()
 
     if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, connection_fields)
 
@@ -3516,9 +3508,10 @@ def show__env_vars(args):
         if not args.show_values:
             # Replace values with placeholder in raw output
             masked_env_vars = {k: "*****" for k, v in env_vars.items()}
-            print(json.dumps(masked_env_vars, indent=2))
+            # indent was 2
+            return masked_env_vars
         else:
-            print(json.dumps(env_vars, indent=2))
+            return env_vars
     else:
         if not env_vars:
             print("No environment variables found.")
@@ -3604,7 +3597,8 @@ def show__invoices(args):
             if id is not None:
                 print(id)
     elif args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        # sort keys
+        return rows
         # print("Current: ", current_charges)
     else:
         print(filter_header)
@@ -3636,7 +3630,7 @@ def show__instance(args):
     row['duration'] = time.time() - row['start_date']
     row['extra_env'] = {env_var[0]: env_var[1] for env_var in row['extra_env']}
     if args.raw:
-        print(json.dumps(row, indent=1, sort_keys=True))
+        return row
     else:
         #print(row)
         display_table([row], instance_fields)
@@ -3670,7 +3664,7 @@ def show__instances(args = {}, extra = {}):
             if id is not None:
                 print(id)
     elif args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, instance_fields)
 
@@ -3694,7 +3688,7 @@ def show__ipaddrs(args):
     r.raise_for_status()
     rows = r.json()["results"]
     if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, ipaddr_fields)
 
@@ -3722,7 +3716,7 @@ def show__user(args):
     user_blob.pop("api_key")
 
     if args.raw:
-        print(json.dumps(user_blob, indent=1, sort_keys=True))
+        return user_blob
     else:
         display_table([user_blob], user_fields)
 
@@ -3743,7 +3737,7 @@ def show__subaccounts(args):
     r.raise_for_status()
     rows = r.json()["users"]
     if args.raw:
-        print(json.dumps(rows, indent=1, sort_keys=True))
+        return rows
     else:
         display_table(rows, user_fields)
 
@@ -3757,7 +3751,7 @@ def show__team_members(args):
     r.raise_for_status()
 
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     else:
         print(r.json())
 
@@ -3782,7 +3776,7 @@ def show__team_roles(args):
     r.raise_for_status()
 
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     else:
         print(r.json())
 
@@ -3989,7 +3983,7 @@ def update__team_role(args):
     r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
     if args.raw:
-        print(json.dumps(r.json(), indent=1))
+        return r
     else:
         print(json.dumps(r.json(), indent=1))
 
@@ -4344,7 +4338,7 @@ def cleanup_machine(args, machine_id):
             print(json.dumps(r.json(), indent=1))
         else:
             if args.raw:
-                print(json.dumps(r.json(), indent=1))
+                return r
             else:
                 print(rj["msg"])
     else:
@@ -4391,7 +4385,7 @@ def list_machine(args, id):
             end_date_ = string_to_unix_epoch(args.end_date)
             discount_rate_ = str(args.discount_rate)
             if args.raw:
-                print(json.dumps(r.json(), indent=1))
+                return r
             else:
                 print("offers created/updated for machine {id},  @ ${price_gpu_}/gpu/hr, ${price_inetu_}/GB up, ${price_inetd_}/GB down, {min_chunk_}/min gpus, max discount_rate {discount_rate_}, till {end_date_}".format(**locals()))
                 num_extended = rj.get("extended", 0)
@@ -4401,7 +4395,7 @@ def list_machine(args, id):
 
         else:
             if args.raw:
-                print(json.dumps(r.json(), indent=1))
+                return r
             else:
                 print(rj["msg"])
     else:
@@ -4436,7 +4430,7 @@ def list__machine(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    list_machine(args, args.ID)
+    return list_machine(args, args.ID)
 
 
 @parser.command(
@@ -4461,8 +4455,8 @@ def list__machine(args):
 def list__machines(args):
     """
     """
-    for id in args.ids:
-        list_machine(args, id)
+    return [list_machine(args, id) for id in args.ids]
+    return res
 
 
 
@@ -4694,7 +4688,7 @@ def show__machine(args):
     r.raise_for_status()
     rows = r.json()
     if args.raw:
-        print(json.dumps(r.json(), indent=1, sort_keys=True))
+        return r
     else:
         if args.quiet:
             ids = [f"{row['id']}" for row in rows]
@@ -4720,7 +4714,7 @@ def show__machines(args):
     r.raise_for_status()
     rows = r.json()["machines"]
     if args.raw:
-        print(json.dumps(r.json(), indent=1, sort_keys=True))
+        return r
     else:
         if args.quiet:            
             ids = [f"{row['id']}" for row in rows]
@@ -4797,11 +4791,6 @@ def main():
 
     ARGS = args = parser.parse_args()
 
-    myautocc = MyAutocomplete()
-    myautocc(parser.parser)#, default_completer=argcomplete.completers.ChoicesCompleter)
-
-    args = parser.parse_args()
-
     if args.api_key is api_key_guard:
         if os.path.exists(APIKEY_FILE):
             with open(APIKEY_FILE, "r") as reader:
@@ -4816,7 +4805,15 @@ def main():
       myautocc(parser.parser)
 
     try:
-        sys.exit(args.func(args) or 0)
+        res = args.func(args)
+        if res:
+            # There's two types of responses right now
+            try:
+                print(json.dumps(res, indent=1, sort_keys=True))
+            except:
+                print(json.dumps(res.json(), indent=1, sort_keys=True))
+            sys.exit(0)
+        sys.exit(res)
     except requests.exceptions.HTTPError as e:
         try:
             errmsg = e.response.json().get("msg");
@@ -4828,9 +4825,6 @@ def main():
         print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));
     except ValueError as e:
       print(e)
-
-
-
 
 
 

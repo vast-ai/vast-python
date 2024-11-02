@@ -1,13 +1,14 @@
 import importlib
 import types
 import argparse
-from typing import Optional
+from typing import Optional, Any
 import io
 import contextlib
 import requests
+import inspect
 
-from .vastai_base import VastAIBase
-from .vast import parser
+from vastai_base import VastAIBase
+from vast import parser
 
 
 class VastAI(VastAIBase):
@@ -18,7 +19,7 @@ class VastAI(VastAIBase):
         api_key,
         server_url="https://console.vast.ai",
         retry=3,
-        raw=False,
+        raw=True,
         explain=False,
         quiet=False,
     ):
@@ -32,6 +33,34 @@ class VastAI(VastAIBase):
         self.quiet = quiet
         self.imported_methods = {}
         self.import_cli_functions()
+
+    def generate_signature_from_argparse(self, parser):
+        parameters = [inspect.Parameter("self", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+        
+        for action in parser._actions:
+            if action.dest == 'help':  # Skip the help argument
+                continue
+            
+            # Determine parameter kind
+            kind = inspect.Parameter.POSITIONAL_OR_KEYWORD
+            if action.option_strings:
+                kind = inspect.Parameter.KEYWORD_ONLY
+            
+            # Determine default and annotation
+            default = action.default if action.default != argparse.SUPPRESS else None
+            annotation = action.type if action.type else Any
+
+            # Create the parameter
+            param = inspect.Parameter(
+                action.dest,
+                kind=kind,
+                default=default,
+                annotation=annotation
+            )
+            parameters.append(param)
+        
+        # Return a custom Signature object
+        return inspect.Signature(parameters)
 
     def import_cli_functions(self):
         """Dynamically import functions from vast.py and bind them as instance methods."""
@@ -99,15 +128,18 @@ class VastAI(VastAIBase):
 
             args = argparse.Namespace(**kwargs)
 
-            with io.StringIO() as buf, contextlib.redirect_stdout(buf):
-                func(args)  # Execute the function, which prints output
-                output = buf.getvalue()  # Capture the output
+            return func(args) 
 
-            return output
-
-        wrapper.__doc__ = (
-            f"Wrapper for {func.__name__}, dynamically imported from vast.py."
-        )
+        func_name = func.__name__.replace("__", "_")
+        wrapper.__doc__ = func.__doc__
+        wrapper.__name__ = func_name
+        sig = getattr(func, "signature")
+        if sig:
+            #print("success : {}".format(func_name))
+            try:
+                wrapper.__signature__ = self.generate_signature_from_argparse(sig)
+            except:
+                pass
         return wrapper
 
     def __getattr__(self, name):
