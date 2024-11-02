@@ -18,6 +18,11 @@ import requests
 import getpass
 import subprocess
 from subprocess import PIPE
+import urllib3
+import atexit
+from contextlib import redirect_stdout
+from io import StringIO
+import urllib3
 
 try:
     from urllib import quote_plus  # Python 2.X
@@ -4635,9 +4640,418 @@ def unlist__machine(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+def run_machinetester(ip_address, port, instance_id, machine_id, delay, debugging=False, api_key=None):
+    # Temporarily disable SSL warnings
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    delay = int(delay)  # Ensure delay is an integer
 
+    def destroy_instance(instance_id):
+        """Uses destroy__instance to remove the instance if it exists."""
+        destroy_args = argparse.Namespace(id=instance_id, explain=False, api_key=api_key, url="https://console.vast.ai", retry=3, raw=True)
+        if debugging:
+            print(f"Attempting to destroy instance {instance_id} with arguments:", destroy_args)
+        try:
+            buffer = StringIO()
+            with redirect_stdout(buffer):
+                destroy__instance(destroy_args)
+            if debugging:
+                print(f"Destroy output: {buffer.getvalue().strip()}")
+        except Exception as e:
+            if debugging:
+                print(f"Failed to destroy instance {instance_id}: {e}")
+
+    def is_instance(instance_id):
+        """Check instance status via show__instance."""
+        show_args = argparse.Namespace(id=instance_id, explain=False, api_key=api_key, url="https://console.vast.ai", retry=3, raw=True)
+        try:
+            buffer = StringIO()
+            with redirect_stdout(buffer):
+                show__instance(show_args)
+            json_output = buffer.getvalue().strip()
+            if debugging:
+                print(f"is_instance(): Output from vast show instance: {json_output}")
+
+            data = json.loads(json_output)
+            intended_status = data.get('intended_status', 'unknown')
+            return intended_status if intended_status in ['running', 'offline', 'exited', 'created'] else 'unknown'
+        except (json.JSONDecodeError, Exception) as e:
+            if debugging:
+                print(f"is_instance(): Error: {e}")
+            return 'unknown'
+
+    # Register the instance to be destroyed at exit
+    atexit.register(lambda: destroy_instance(instance_id))
+
+    # Delay start if specified
+    if delay > 0:
+        if debugging:
+            print(f"Sleeping for {delay} seconds before starting tests.")
+        time.sleep(delay)
+
+    start_time = time.time()
+    no_response_seconds = 0
+    printed_lines = set()
+
+    try:
+        while time.time() - start_time < 300:
+            try:
+                if debugging:
+                    print(f"Sending GET request to https://{ip_address}:{port}/progress")
+                response = requests.get(f'https://{ip_address}:{port}/progress', verify=False, timeout=10)
+                message = response.text.strip()
+                if debugging:
+                    print(f"Received message: '{message}'")
+            except requests.exceptions.RequestException as e:
+                if debugging:
+                    print(f"Error making HTTPS request: {e}")
+                message = ''
+
+            # Process response messages
+            if message:
+                lines = message.split('\n')
+                new_lines = [line for line in lines if line not in printed_lines]
+                for line in new_lines:
+                    if line == 'DONE':
+                        print("Test completed successfully.")
+                        with open("Pass_testresults.log", "a") as f:
+                            f.write(f"{machine_id}\n")
+                        if debugging:
+                            print(f"Test passed. Destroying instance {instance_id}.")
+                        sys.exit(0)
+                    elif line.startswith('ERROR'):
+                        print(line)
+                        with open("Error_testresults.log", "a") as f:
+                            f.write(f"{machine_id}:{instance_id} {line}\n")
+                        if debugging:
+                            print(f"Test failed with error: {line}. Destroying instance {instance_id}.")
+                        sys.exit(1)
+                    else:
+                        print(line)
+                    printed_lines.add(line)
+                no_response_seconds = 0
+            else:
+                no_response_seconds += 20
+                if debugging:
+                    print(f"No message received. Incremented no_response_seconds to {no_response_seconds}.")
+
+            # Check instance status
+            status = is_instance(instance_id)
+            if debugging:
+                print(f"Instance {instance_id} status: {status}")
+
+            if status == 'running' and no_response_seconds >= 60:
+                with open("Error_testresults.log", "a") as f:
+                    f.write(f"{machine_id}:{instance_id} No response from port {port} for 60s with running instance\n")
+                if debugging:
+                    print(f"No response for 60s with running instance. Destroying instance {instance_id}.")
+                sys.exit(1)
+            elif status != 'running':
+                with open("Error_testresults.log", "a") as f:
+                    f.write(f"{machine_id}:{instance_id} Instance status '{status}' during testing.\n")
+                if debugging:
+                    print(f"Instance {instance_id} status '{status}'. Destroying instance.")
+                sys.exit(1)
+
+            if debugging:
+                print("Waiting for 20 seconds before the next check.")
+            time.sleep(20)
+
+        if debugging:
+            print(f"Time limit reached. Destroying instance {instance_id}.")
+    finally:
+        destroy_instance(instance_id)
+
+    print(f"Machine: {machine_id} Done with testing remote.py results {message}")
+    urllib3.enable_warnings()
+
+def check_requirements(machine_id, api_key, args):
+    """Checks if a machine meets the specified requirements using search__offers."""
+    unmet_reasons = []
+
+    # Prepare search arguments to get machine offers
+    search_args = argparse.Namespace(
+        query=[f"machine_id={machine_id}", "verified=any", "rentable=true"],
+        type="on-demand",
+        quiet=False,
+        no_default=False,
+        new=False,
+        limit=None,
+        disable_bundling=False,
+        storage=5.0,
+        order="score-",
+        raw=True,
+        explain=args.explain,
+        api_key=api_key,
+        url=args.url,
+        retry=args.retry
+    )
+
+    # Capture the output of search__offers
+    buffer = StringIO()
+    with redirect_stdout(buffer):
+        search__offers(search_args)
+
+    # Parse the output and validate requirements
+    output = buffer.getvalue().strip()
+    try:
+        offers = json.loads(output)
+        if not offers:
+            unmet_reasons.append(f"Machine ID {machine_id} not found or not rentable.")
+            return False, unmet_reasons
+
+        offer = offers[0]  # Take the top offer for checking requirements
+        # Requirement checks
+        if float(offer.get('cuda_max_good', 0)) < 12.4:
+            unmet_reasons.append("CUDA version < 12.4")
+        if float(offer.get('reliability', 0)) <= 0.90:
+            unmet_reasons.append("Reliability <= 0.90")
+        if int(offer.get('direct_port_count', 0)) <= 3:
+            unmet_reasons.append("Direct port count <= 3")
+        if float(offer.get('pcie_bw', 0)) <= 2.85:
+            unmet_reasons.append("PCIe bandwidth <= 2.85")
+        if float(offer.get('inet_down', 0)) <= 10:
+            unmet_reasons.append("Download speed <= 10 Mb/s")
+        if float(offer.get('inet_up', 0)) <= 10:
+            unmet_reasons.append("Upload speed <= 10 Mb/s")
+        if float(offer.get('gpu_ram', 0)) <= 7:
+            unmet_reasons.append("GPU RAM <= 7 GB")
+
+        # Return True if all requirements are met, False otherwise
+        if unmet_reasons:
+            print(f"Machine ID {machine_id} does not meet the requirements:")
+            for reason in unmet_reasons:
+                print(f"- {reason}")
+            return False, unmet_reasons
+        else:
+            print(f"Machine ID {machine_id} meets all the requirements.")
+            return True, []
+
+    except json.JSONDecodeError:
+        print(f"Error parsing JSON output from search__offers for machine ID {machine_id}.")
+        return False, ["Error parsing JSON output."]
+
+def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
+    """Waits for the instance to start up and provides feedback on its status."""
+    start_time = time.time()
+    show_args = argparse.Namespace(
+        id=instance_id,
+        quiet=False,
+        raw=True,
+        explain=args.explain,
+        api_key=api_key,
+        url=args.url,
+        retry=args.retry
+    )
+    
+    if args.debugging:
+        print("Starting wait_for_instance with ID:", instance_id)
+    
+    while time.time() - start_time < timeout:
+        # Capture the output of show__instance
+        buffer = StringIO()
+        with redirect_stdout(buffer):
+            show__instance(show_args)
+        
+        try:
+            instance_info = json.loads(buffer.getvalue().strip())
+            
+            # Check if instance data was retrieved and validate status
+            if instance_info.get('intended_status') == 'running' and instance_info.get('actual_status') == 'running':
+                if args.debugging:
+                    print(f"Instance {instance_id} is now running.")
+                return instance_info
+            
+            # Print feedback about the current status
+            current_status = instance_info.get('actual_status', 'unknown')
+            print(f"Instance {instance_id} status: {current_status}... waiting for 'running' status.")
+            time.sleep(interval)
+        
+        except json.JSONDecodeError:
+            print(f"Error parsing JSON output for instance {instance_id}. Retrying...")
+            time.sleep(interval)
+    
+    print(f"Instance {instance_id} did not become running within {timeout} seconds.")
+    return False
+
+@parser.command(
+    argument("machine_id", help="Machine ID", type=str),
+    argument("--debugging", action="store_true", help="Enable debugging output"),
+    argument("--explain", action="store_true", help="Output verbose explanation of mapping of CLI calls to HTTPS API endpoints"),
+    argument("--api_key", help="API key for authentication", type=str, required=False),
+    argument("--url", help="Server REST API URL", default="https://console.vast.ai"),
+    argument("--retry", help="Retry limit", type=int, default=3),
+    argument("--raw", action="store_true", help="Output machine-readable JSON", default=True),
+    usage="vast self-test machine <machine_id> [--debugging] [--explain] [--api_key API_KEY] [--url URL] [--retry RETRY] [--raw]",
+    help="Perform a self-test on the specified machine",
+    epilog=deindent("""
+        This command tests if a machine meets specific requirements and 
+        runs a series of tests to ensure it's functioning correctly.
+
+        Examples:
+         vast self-test machine 12345
+         vast self-test machine 12345 --debugging
+         vast self-test machine 12345 --explain
+         vast self-test machine 12345 --api_key <YOUR_API_KEY>
+    """),
+)
+
+def self_test__machine(args):
+    instance_id = None  # Store instance ID for cleanup if needed
+
+    # Set `--raw` to True for consistent JSON responses
+    args.raw = True
+
+    # Ensure the API key is used if provided, else default to environment or stored key
+    api_key = args.api_key if args.api_key else os.getenv("VAST_API_KEY")
+
+    def destroy_instance(instance_id):
+        """Use destroy__instance to remove instance if it exists."""
+        if instance_id:
+            destroy_args = argparse.Namespace(id=instance_id, explain=args.explain, api_key=api_key, url=args.url, retry=args.retry, raw=True)
+            if args.debugging:
+                print(f"Attempting to destroy instance {instance_id} with arguments:", destroy_args)
+            try:
+                destroy__instance(destroy_args)
+            except requests.exceptions.HTTPError as e:
+                if args.debugging:
+                    print(f"Failed to destroy instance {instance_id}: {e}")
+                    
+    def search_offers_and_get_top(machine_id):
+        """Capture and parse the JSON output from search__offers to find the top offer by dlperf."""
+        search_args = argparse.Namespace(
+            query=[f"machine_id={machine_id}", "verified=any", "rentable=true"],
+            type="on-demand",
+            quiet=False,
+            no_default=False,
+            new=False,
+            limit=None,
+            disable_bundling=False,
+            storage=5.0,
+            order="score-",
+            raw=True,
+            explain=args.explain,
+            api_key=api_key,
+            url=args.url,
+            retry=args.retry
+        )
+
+        if args.debugging:
+            print("Starting search__offers with arguments:", search_args)
+
+        buffer = StringIO()
+        with redirect_stdout(buffer):
+            search__offers(search_args)
+
+        try:
+            offers = json.loads(buffer.getvalue().strip())
+            if not offers:
+                print(f"Machine ID {machine_id} not found or not rentable.")
+                return None
+            sorted_offers = sorted(offers, key=lambda x: x.get('dlperf', 0), reverse=True)
+            top_offer = sorted_offers[0]
+            if args.debugging:
+                print("Top offer found:", top_offer)
+            return top_offer
+        except json.JSONDecodeError as e:
+            if args.debugging:
+                print(f"Error parsing JSON output from search__offers: {str(e)}")
+            return None
+
+
+    # Check requirements before proceeding
+    meets_requirements, unmet_reasons = check_requirements(args.machine_id, api_key, args)
+    if not meets_requirements:
+        destroy_instance(instance_id)
+        sys.exit(1)
+
+    top_offer = search_offers_and_get_top(args.machine_id)
+    if not top_offer:
+        print("Failed to find a valid offer for machine ID:", args.machine_id)
+        sys.exit(1)
+
+    ask_contract_id = top_offer['id']  # Offer ID with the highest DLP score
+
+    create_args = argparse.Namespace(
+        ID=ask_contract_id,
+        price=None,
+        disk=20,
+        image='jjziets/vasttest:latest',
+        login=None,
+        label=None,
+        onstart=None,
+        onstart_cmd="python3 remote.py",
+        entrypoint=None,
+        ssh=True,
+        jupyter=False,
+        direct=True,
+        jupyter_dir=None,
+        jupyter_lab=False,
+        lang_utf8=False,
+        python_utf8=False,
+        extra=None,
+        env='-e TZ=PDT -e XNAME=XX4 -p 5000:5000',
+        args=None,
+        force=False,
+        cancel_unavail=False,
+        template_hash=None,
+        raw=True,
+        explain=args.explain,
+        api_key=api_key,
+        url=args.url,
+        retry=args.retry
+    )
+
+    if args.debugging:
+        print("Starting create__instance with arguments:", create_args)
+
+    try:
+        # Create the instance
+        buffer = StringIO()
+        with redirect_stdout(buffer):
+            create__instance(create_args)
+        
+        instance_info = json.loads(buffer.getvalue().strip())
+        if not instance_info or 'new_contract' not in instance_info:
+            print("Could not create instance.")
+            sys.exit(1)
+        
+        instance_id = instance_info['new_contract']
+        if args.debugging:
+            print("Instance created with ID:", instance_id)
+
+        # Wait for the instance to start and provide status updates
+        instance_info = wait_for_instance(instance_id, api_key, args)
+        if not instance_info:
+            print("Instance did not start properly.")
+            sys.exit(1)
+
+        # Retrieve connection details once instance is running
+        ip_address = instance_info.get('public_ipaddr')
+        if not ip_address:
+            print("Could not get IP address from instance info.")
+            sys.exit(1)
+
+        port_mappings = instance_info.get('ports', {}).get('5000/tcp', [])
+        if not port_mappings:
+            print("Could not find port mapping for port 5000.")
+            sys.exit(1)
+
+        port = port_mappings[0].get('HostPort')
+        if not port:
+            print("Could not get host port for port 5000.")
+            sys.exit(1)
+
+        delay = '15'
+        print(f"Starting machinetester with IP: {ip_address}, Port: {port}, Instance ID: {instance_id}, Machine ID: {args.machine_id}, Delay: {delay}")
+        run_machinetester(ip_address, port, str(instance_id), args.machine_id, delay, args.debugging, api_key=args.api_key)
+
+    finally:
+        # Ensure instance cleanup
+        destroy_instance(instance_id)
 
 login_deprecated_message = """
+
+
 login via the command line is no longer supported.
 go to https://console.vast.ai/cli in a web browser to get your api key, then run:
 
@@ -4689,11 +5103,6 @@ def main():
             else:
                 errmsg = "(no detail message supplied)"
         print("failed with error {e.response.status_code}: {errmsg}".format(**locals()));
-
-
-
-
-
 
 
 if __name__ == "__main__":

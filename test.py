@@ -4,108 +4,110 @@ import json
 import time
 import argparse
 
+# Global variable to store instance ID
+instance_id = None
+
+def destroy_instance():
+    """Destroy the instance if it exists."""
+    global instance_id
+    if instance_id:
+        print(f"Destroying instance {instance_id} before exit.")
+        subprocess.run(['./vast.py', 'destroy', 'instance', str(instance_id)])
+        instance_id = None  # Clear instance_id after destroying
+
 def check_requirements(machine_id):
     unmet_reasons = []
-
-    # Build the command
-    cmd = ['./vast', 'search', 'offers', f"machine_id={machine_id} verified=any rentable=true", '--raw']
+    cmd = ['./vast.py', 'search', 'offers', f"machine_id={machine_id} verified=any rentable=true", '--raw']
     try:
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
         output = result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"Error running command: {' '.join(cmd)}")
         print(e.stderr)
+        destroy_instance()
         sys.exit(1)
 
     if output == '[]':
-        unmet_reasons.append(f"Machine ID {machine_id} not found or not rentable. Please ensure the machine is listed and not rented on demand.")
+        unmet_reasons.append(f"Machine ID {machine_id} not found or not rentable.")
     else:
-        # Parse the JSON output
         try:
             data = json.loads(output)
         except json.JSONDecodeError:
             print(f"Error parsing JSON output from command: {' '.join(cmd)}")
             print(output)
+            destroy_instance()
             sys.exit(1)
 
         if not data:
-            unmet_reasons.append(f"Machine ID {machine_id} not found or not rentable. Please ensure the machine is listed and not rented on demand.")
+            unmet_reasons.append(f"Machine ID {machine_id} not found or not rentable.")
         else:
-            # Extract the relevant fields from the first element
             offer = data[0]
-            cuda_version = float(offer.get('cuda_max_good', 0))
-            reliability = float(offer.get('reliability', 0))
-            direct_ports = int(offer.get('direct_port_count', 0))
-            pcie_bandwidth = float(offer.get('pcie_bw', 0))
-            inet_down_speed = float(offer.get('inet_down', 0))
-            inet_up_speed = float(offer.get('inet_up', 0))
-            gpu_ram = float(offer.get('gpu_ram', 0))
+            # Checking each requirement and adding to the list if not met
+            if float(offer.get('cuda_max_good', 0)) < 12.4:
+                unmet_reasons.append("CUDA version < 12.4")
+            if float(offer.get('reliability', 0)) <= 0.90:
+                unmet_reasons.append("Reliability <= 0.90")
+            if int(offer.get('direct_port_count', 0)) <= 3:
+                unmet_reasons.append("Direct port count <= 3")
+            if float(offer.get('pcie_bw', 0)) <= 2.85:
+                unmet_reasons.append("PCIe bandwidth <= 2.85")
+            if float(offer.get('inet_down', 0)) <= 10:
+                unmet_reasons.append("Download speed <= 10 Mb/s")
+            if float(offer.get('inet_up', 0)) <= 10:
+                unmet_reasons.append("Upload speed <= 10 Mb/s")
+            if float(offer.get('gpu_ram', 0)) <= 7:
+                unmet_reasons.append("GPU RAM <= 7 GB")
 
-            # Check each requirement and add to the list if not met
-            if cuda_version < 12.4:
-                unmet_reasons.append(f"CUDA version is {cuda_version} (required >= 12.4)")
-            if reliability <= 0.90:
-                unmet_reasons.append(f"Reliability is {reliability} (required > 0.90)")
-            if direct_ports <= 3:
-                unmet_reasons.append(f"Direct port count is {direct_ports} (required > 3)")
-            if pcie_bandwidth <= 2.85:
-                unmet_reasons.append(f"PCIe bandwidth is {pcie_bandwidth} (required > 2.85)")
-            if inet_down_speed <= 10:
-                unmet_reasons.append(f"Internet download speed is {inet_down_speed} Mb/s (required > 10 Mb/s)")
-            if inet_up_speed <= 10:
-                unmet_reasons.append(f"Internet upload speed is {inet_up_speed} Mb/s (required > 10 Mb/s)")
-            if gpu_ram <= 7:
-                unmet_reasons.append(f"GPU RAM is {gpu_ram} MB (required > 7 GB)")
-
-    if len(unmet_reasons) == 0:
-        print(f"Machine ID {machine_id} meets all the requirements.")
-        return True
-    else:
+    if unmet_reasons:
         print(f"Machine ID {machine_id} does not meet the requirements:")
         for reason in unmet_reasons:
             print(f"- {reason}")
-        return False
+        destroy_instance()
+        sys.exit(1)
+    else:
+        print(f"Machine ID {machine_id} meets all the requirements.")
+        return True
 
 def main():
+    global instance_id
     parser = argparse.ArgumentParser(description='Test Script')
     parser.add_argument('machine_id', help='Machine ID')
     parser.add_argument('--debugging', action='store_true', help='Enable debugging output')
-
     args = parser.parse_args()
 
     machine_id = args.machine_id
     debugging = args.debugging
 
-    # Call check_requirements before proceeding
     if not check_requirements(machine_id):
-        sys.exit(1)  # Exit if requirements are not met
+        sys.exit(1)
 
-    # Step 1: Search offers based on the machine_id
-    search_cmd = ['./vast', 'search', 'offers', f"machine_id={machine_id}", 'verified=any' ,'--raw']
+    # Search offers based on the machine_id
+    search_cmd = ['./vast.py', 'search', 'offers', f"machine_id={machine_id}", 'verified=any', '--raw']
     result = subprocess.run(search_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:
         print(f"Error running command: {' '.join(search_cmd)}")
         print(result.stderr)
+        destroy_instance()
         sys.exit(1)
 
     try:
         offers = json.loads(result.stdout)
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         print(f"Error parsing JSON output from command: {' '.join(search_cmd)}")
-        print(e)
+        destroy_instance()
         sys.exit(1)
 
     if not offers:
         print(f"No offers found for machine_id {machine_id}")
+        destroy_instance()
         sys.exit(1)
 
-    # Step 2: Pick an offer (e.g., the first one)
     offer = offers[0]
     ask_contract_id = offer['ask_contract_id']
 
-   # Step 3: Create the instance using the selected offer
+    # Create the instance
     create_cmd = [
-        './vast', 'create', 'instance', str(ask_contract_id),
+        './vast.py', 'create', 'instance', str(ask_contract_id),
         '--image', 'jjziets/vasttest:latest',
         '--ssh',
         '--direct',
@@ -119,26 +121,27 @@ def main():
     if result.returncode != 0:
         print(f"Error running command: {' '.join(create_cmd)}")
         print(result.stderr)
+        destroy_instance()
         sys.exit(1)
 
     try:
         instance_info = json.loads(result.stdout)
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         print(f"Error parsing JSON output from command: {' '.join(create_cmd)}")
-        print(e)
+        destroy_instance()
         sys.exit(1)
 
-    # Adjusted to get 'instance_id' from 'new_contract'
     instance_id = instance_info.get('new_contract')
     if not instance_id:
         print("Could not get instance ID from create instance output.")
+        destroy_instance()
         sys.exit(1)
 
-    # Step 4: Wait for the instance to start up
-    def wait_for_instance(instance_id, timeout=300, interval=10):
+    # Wait for the instance to start up
+    def wait_for_instance(instance_id, timeout=900, interval=10):
         start_time = time.time()
         while time.time() - start_time < timeout:
-            cmd = ['./vast', 'show', 'instance', str(instance_id), '--raw']
+            cmd = ['./vast.py', 'show', 'instance', str(instance_id), '--raw']
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if result.returncode != 0:
                 print(f"Error running command: {' '.join(cmd)}")
@@ -146,55 +149,53 @@ def main():
                 return False
             try:
                 instance_info = json.loads(result.stdout)
-            except json.JSONDecodeError as e:
+            except json.JSONDecodeError:
                 print(f"Error parsing JSON output from command: {' '.join(cmd)}")
-                print(e)
                 return False
-            intended_status = instance_info.get('intended_status', 'unknown')
-            actual_status = instance_info.get('actual_status', 'unknown')
-            if intended_status == 'running' and actual_status == 'running':
+            if instance_info.get('intended_status') == 'running' and instance_info.get('actual_status') == 'running':
                 return instance_info
-            else:
-                print(f"Instance {instance_id} status: intended={intended_status}, actual={actual_status}. Waiting...")
-                time.sleep(interval)
+            print(f"Instance {instance_id} status: waiting...")
+            time.sleep(interval)
         print(f"Instance {instance_id} did not become running within {timeout} seconds.")
         return False
 
-    instance_info = wait_for_instance(instance_id)
-    if not instance_info:
-        print("Instance did not start properly.")
-        sys.exit(1)
+    # Main execution with a try-finally block to ensure cleanup
+    try:
+        instance_info = wait_for_instance(instance_id)
+        if not instance_info:
+            print("Instance did not start properly.")
+            destroy_instance()
+            sys.exit(1)
+        
+        # Obtain IP and Port information, assuming success up to this point
+        ip_address = instance_info.get('public_ipaddr')
+        if not ip_address:
+            print("Could not get IP address from instance info.")
+            destroy_instance()
+            sys.exit(1)
+        
+        port_mappings = instance_info.get('ports', {}).get('5000/tcp', [])
+        if not port_mappings:
+            print("Could not find port mapping for port 5000.")
+            destroy_instance()
+            sys.exit(1)
+        
+        port = port_mappings[0].get('HostPort')
+        if not port:
+            print("Could not get host port for port 5000.")
+            destroy_instance()
+            sys.exit(1)
+        
+        # Start machinetester.py
+        delay = '15'
+        machinetester_cmd = ['python3', 'machinetester.py', ip_address, port, str(instance_id), machine_id, delay]
+        if debugging:
+            machinetester_cmd.append('--debugging')
+        print(f"Starting machinetester.py with command: {' '.join(machinetester_cmd)}")
+        subprocess.run(machinetester_cmd)
 
-    # Step 5: Get the IP address, port, machine_id, and delay
-    # Get the public_ipaddr from instance_info
-    ip_address = instance_info.get('public_ipaddr')
-    if not ip_address:
-        print("Could not get IP address from instance info.")
-        sys.exit(1)
-
-    # Get the port mapping for port 5000
-    ports = instance_info.get('ports', {})
-    port_mappings = ports.get('5000/tcp', [])
-    if not port_mappings:
-        print("Could not find port mapping for port 5000.")
-        sys.exit(1)
-    # Assuming the first mapping
-    port = port_mappings[0].get('HostPort')
-    if not port:
-        print("Could not get host port for port 5000.")
-        sys.exit(1)
-
-    delay = '15'    # You can adjust this as needed
-
-    # Step 6: Start machinetester.py with the obtained parameters
-    machinetester_cmd = [
-        'python3', 'machinetester.py', ip_address, port, str(instance_id), machine_id, delay
-    ]
-    if debugging:
-        machinetester_cmd.append('--debugging')
-
-    print(f"Starting machinetester.py with command: {' '.join(machinetester_cmd)}")
-    subprocess.run(machinetester_cmd)
+    finally:
+        destroy_instance()
 
 if __name__ == '__main__':
     main()
