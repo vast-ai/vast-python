@@ -4640,25 +4640,39 @@ def unlist__machine(args):
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
+# Function to check if an instance exists
+def instance_exist(instance_id, api_key, args):
+    show_args = argparse.Namespace(id=instance_id, api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=True)
+    try:
+        buffer = StringIO()
+        with redirect_stdout(buffer):
+            show__instance(show_args)
+        instance_info = json.loads(buffer.getvalue().strip())
+
+        # Check if `intended_status` or `actual_status` indicates the instance is destroyed
+        if instance_info:
+            status = instance_info.get('intended_status') or instance_info.get('actual_status')
+            # Treat statuses indicating deletion or shutdown as non-existence
+            if status in ['destroyed', 'terminated', 'offline']:
+                return False
+
+        # Return True if any instance info is retrieved and no indication of deletion is found
+        return bool(instance_info)
+        
+    except (json.JSONDecodeError, KeyError, TypeError):
+        # Return False if there's a decoding error or the expected fields are missing
+        return False
+    except requests.exceptions.HTTPError as e:
+        # Return False specifically for 404 errors (instance not found)
+        if e.response.status_code == 404:
+            return False
+        raise  # Reraise other HTTP errors for handling elsewhere
+
+
 def run_machinetester(ip_address, port, instance_id, machine_id, delay, debugging=False, api_key=None):
     # Temporarily disable SSL warnings
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    delay = int(delay)  # Ensure delay is an integer
-
-    def destroy_instance(instance_id):
-        """Uses destroy__instance to remove the instance if it exists."""
-        destroy_args = argparse.Namespace(id=instance_id, explain=False, api_key=api_key, url="https://console.vast.ai", retry=3, raw=True)
-        if debugging:
-            print(f"Attempting to destroy instance {instance_id} with arguments:", destroy_args)
-        try:
-            buffer = StringIO()
-            with redirect_stdout(buffer):
-                destroy__instance(destroy_args)
-            if debugging:
-                print(f"Destroy output: {buffer.getvalue().strip()}")
-        except Exception as e:
-            if debugging:
-                print(f"Failed to destroy instance {instance_id}: {e}")
+    delay = int(delay)
 
     def is_instance(instance_id):
         """Check instance status via show__instance."""
@@ -4679,8 +4693,9 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
                 print(f"is_instance(): Error: {e}")
             return 'unknown'
 
-    # Register the instance to be destroyed at exit
-    atexit.register(lambda: destroy_instance(instance_id))
+    # Prepare destroy_args with required attributes set to False as needed
+    destroy_args = argparse.Namespace(api_key=api_key, url="https://console.vast.ai", retry=3, explain=False, raw=False)
+
 
     # Delay start if specified
     if delay > 0:
@@ -4691,6 +4706,8 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
     start_time = time.time()
     no_response_seconds = 0
     printed_lines = set()
+    first_connection_established = False  # Flag to track first successful connection
+
 
     try:
         while time.time() - start_time < 300:
@@ -4698,6 +4715,11 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
                 if debugging:
                     print(f"Sending GET request to https://{ip_address}:{port}/progress")
                 response = requests.get(f'https://{ip_address}:{port}/progress', verify=False, timeout=10)
+                # Check if the connection was successful
+                if response.status_code == 200 and not first_connection_established:
+                    print("Successfully established HTTPS connection to the server.")
+                    first_connection_established = True  # Set the flag to True after first success
+
                 message = response.text.strip()
                 if debugging:
                     print(f"Received message: '{message}'")
@@ -4715,19 +4737,19 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
                         print("Test completed successfully.")
                         with open("Pass_testresults.log", "a") as f:
                             f.write(f"{machine_id}\n")
-                        if debugging:
-                            print(f"Test passed. Destroying instance {instance_id}.")
+                        print(f"Test passed. Destroying instance {instance_id}.")
+                        destroy_instance(instance_id, destroy_args)
                         sys.exit(0)
                     elif line.startswith('ERROR'):
                         print(line)
                         with open("Error_testresults.log", "a") as f:
                             f.write(f"{machine_id}:{instance_id} {line}\n")
-                        if debugging:
-                            print(f"Test failed with error: {line}. Destroying instance {instance_id}.")
+                        print(f"Test failed with error: {line}. Destroying instance {instance_id}.")
+                        destroy_instance(instance_id, destroy_args)
                         sys.exit(1)
                     else:
                         print(line)
-                    printed_lines.add(line)
+                    printed_lines.add(line)  # Only add lines after they are processed
                 no_response_seconds = 0
             else:
                 no_response_seconds += 20
@@ -4742,14 +4764,14 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
             if status == 'running' and no_response_seconds >= 60:
                 with open("Error_testresults.log", "a") as f:
                     f.write(f"{machine_id}:{instance_id} No response from port {port} for 60s with running instance\n")
-                if debugging:
-                    print(f"No response for 60s with running instance. Destroying instance {instance_id}.")
+                print(f"No response for 60s with running instance. This may indicate a misconfiguration of ports on the machine. Destroying instance {instance_id}.")
+                destroy_instance(instance_id, destroy_args)
                 sys.exit(1)
             elif status != 'running':
                 with open("Error_testresults.log", "a") as f:
                     f.write(f"{machine_id}:{instance_id} Instance status '{status}' during testing.\n")
-                if debugging:
-                    print(f"Instance {instance_id} status '{status}'. Destroying instance.")
+                print(f"Instance {instance_id} status '{status}'. Destroying instance.")
+                destroy_instance(instance_id, destroy_args)
                 sys.exit(1)
 
             if debugging:
@@ -4759,10 +4781,13 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
         if debugging:
             print(f"Time limit reached. Destroying instance {instance_id}.")
     finally:
-        destroy_instance(instance_id)
+        # Ensure instance cleanup
+        if instance_id and instance_exist(instance_id, api_key, destroy_args):
+           destroy_instance(instance_id, destroy_args)
 
     print(f"Machine: {machine_id} Done with testing remote.py results {message}")
     urllib3.enable_warnings()
+
 
 def check_requirements(machine_id, api_key, args):
     """Checks if a machine meets the specified requirements using search__offers."""
@@ -4913,21 +4938,18 @@ def self_test__machine(args):
             sys.exit(1)
     api_key = args.api_key  # Now use api_key in the rest of the function
 
-    # Update the global headers with the API key
-    headers["Authorization"] = "Bearer " + api_key
+    # Prepare destroy_args with `raw` and `explain` explicitly set to False
+    destroy_args = argparse.Namespace(api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=False)
 
-    def destroy_instance(instance_id):
-        """Use destroy__instance to remove instance if it exists."""
-        if instance_id:
-            destroy_args = argparse.Namespace(id=instance_id, explain=args.explain, api_key=api_key, url=args.url, retry=args.retry, raw=True)
-            if args.debugging:
-                print(f"Attempting to destroy instance {instance_id} with arguments:", destroy_args)
-            try:
-                destroy__instance(destroy_args)
-            except requests.exceptions.HTTPError as e:
-                if args.debugging:
-                    print(f"Failed to destroy instance {instance_id}: {e}")
-                    
+    # Check requirements before proceeding
+    meets_requirements, unmet_reasons = check_requirements(args.machine_id, api_key, args)
+    if not meets_requirements:
+        print(f"Machine ID {args.machine_id} does not meet the requirements:")
+        for reason in unmet_reasons:
+            print(f"- {reason}")
+        destroy_instance(instance_id, destroy_args)
+        sys.exit(1)
+           
     def search_offers_and_get_top(machine_id):
         """Capture and parse the JSON output from search__offers to find the top offer by dlperf."""
         search_args = argparse.Namespace(
@@ -4969,12 +4991,6 @@ def self_test__machine(args):
                 print(f"Error parsing JSON output from search__offers: {str(e)}")
             return None
 
-
-    # Check requirements before proceeding
-    meets_requirements, unmet_reasons = check_requirements(args.machine_id, api_key, args)
-    if not meets_requirements:
-        destroy_instance(instance_id)
-        sys.exit(1)
 
     top_offer = search_offers_and_get_top(args.machine_id)
     if not top_offer:
@@ -5050,7 +5066,7 @@ def self_test__machine(args):
 
         port = port_mappings[0].get('HostPort')
         if not port:
-            print("Could not get host port for port 5000.")
+            print("Could not get host mapped port for port 5000.")
             sys.exit(1)
 
         delay = '15'
@@ -5059,7 +5075,9 @@ def self_test__machine(args):
 
     finally:
         # Ensure instance cleanup
-        destroy_instance(instance_id)
+        if instance_id and instance_exist(instance_id, api_key, destroy_args):
+           destroy_instance(instance_id, destroy_args)
+
 
 login_deprecated_message = """
 
