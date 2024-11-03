@@ -4881,7 +4881,7 @@ def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
     argument("--url", help="Server REST API URL", default="https://console.vast.ai"),
     argument("--retry", help="Retry limit", type=int, default=3),
     argument("--raw", action="store_true", help="Output machine-readable JSON", default=True),
-    usage="vast self-test machine <machine_id> [--debugging] [--explain] [--api_key API_KEY] [--url URL] [--retry RETRY] [--raw]",
+    usage="vastai self-test machine <machine_id> [--debugging] [--explain] [--api_key API_KEY] [--url URL] [--retry RETRY] [--raw]",
     help="Perform a self-test on the specified machine",
     epilog=deindent("""
         This command tests if a machine meets specific requirements and 
@@ -4901,8 +4901,20 @@ def self_test__machine(args):
     # Set `--raw` to True for consistent JSON responses
     args.raw = True
 
-    # Ensure the API key is used if provided, else default to environment or stored key
-    api_key = args.api_key if args.api_key else os.getenv("VAST_API_KEY")
+    if not args.api_key:
+        # Define the API key file path
+        api_key_file_base = "~/.vast_api_key"
+        api_key_file = os.path.expanduser(api_key_file_base)
+        if os.path.exists(api_key_file):
+            with open(api_key_file, "r") as reader:
+                args.api_key = reader.read().strip()
+        else:
+            print("No API key found. Please set it using 'vast set api-key YOUR_API_KEY_HERE'")
+            sys.exit(1)
+    api_key = args.api_key  # Now use api_key in the rest of the function
+
+    # Update the global headers with the API key
+    headers["Authorization"] = "Bearer " + api_key
 
     def destroy_instance(instance_id):
         """Use destroy__instance to remove instance if it exists."""
