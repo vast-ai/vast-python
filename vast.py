@@ -283,6 +283,10 @@ class apwrap(object):
           
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
             setattr(func, "signature", sp)
+            # TODO: Sometimes the parser.command has a help parameter. Ideally
+            # I'd extract this during the sdk phase but for the life of me
+            # I can't find it.
+            setattr(func, "signature_help", help_)
  
             self.subparser_objs.append(sp)
             for arg in arguments:
@@ -908,6 +912,7 @@ def get_ssh_key(argstr):
     help="Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key",
     epilog=deindent("""
         Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.
+
         Examples:
          vast attach 12371 ssh-rsa AAAAB3NzaC1yc2EAAA...
          vast attach 12371 ssh-rsa $(cat ~/.ssh/id_rsa)
@@ -929,6 +934,7 @@ def attach__ssh(args):
     help="Cancel a remote copy in progress, specified by DST id",
     epilog=deindent("""
         Use this command to cancel any/all current remote copy operations copying to a specific named instance, given by DST.
+
         Examples:
          vast cancel copy 12371
 
@@ -971,6 +977,7 @@ def cancel__copy(args: argparse.Namespace):
     help="Cancel a remote copy in progress, specified by DST id",
     epilog=deindent("""
         Use this command to cancel any/all current remote cloud sync operations copying to a specific named instance, given by DST.
+
         Examples:
          vast cancel sync 12371
 
@@ -1146,7 +1153,6 @@ def copy(args: argparse.Namespace):
         You can find more information about the cloud copy operation here: https://vast.ai/docs/gpu-instances/cloud-sync
                     
         Examples:
-         
          vastai show connections
          ID    NAME      Cloud Type
          1001  test_dir  drive 
@@ -1603,7 +1609,8 @@ def create__team_role(args):
     help="Create a new template",
     epilog=deindent("""
         Create a template that can be used to create instances with
-        example: 
+
+        Example: 
             vast ai create template --name "tgi-llama2-7B-quantized" --image_path "ghcr.io/huggingface/text-generation-inference:1.0.3" 
                                     --env "-p 3000:3000 -e MODEL_ARGS='--model-id TheBloke/Llama-2-7B-chat-GPTQ --quantize gptq'" 
                                     --onstart_cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' 
@@ -1874,7 +1881,7 @@ def detach__ssh(args):
     usage="vastai execute ID COMMAND",
     help="Execute a (constrained) remote command on a machine",
     epilog=deindent("""
-        examples:
+        Examples:
           vastai execute 99999 'ls -l -o -r'
           vastai execute 99999 'rm -r home/delete_this.txt'
           vastai execute 99999 'du -d2 -h'
@@ -2836,7 +2843,6 @@ def search__invoices(args):
 
         note: to pass '>' and '<' on the command line, make sure to use quotes
         note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
-
 
         Examples:
 
@@ -4011,7 +4017,8 @@ def update__team_role(args):
     help="Update an existing template",
     epilog=deindent("""
         Update a template
-        example: 
+
+        Example: 
             vastai update template c81e7ab0e928a508510d1979346de10d --name "tgi-llama2-7B-quantized" --image_path "ghcr.io/huggingface/text-generation-inference:1.0.3" 
                                     --env "-p 3000:3000 -e MODEL_ARGS='--model-id TheBloke/Llama-2-7B-chat-GPTQ --quantize gptq'" 
                                     --onstart_cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' 
@@ -4645,6 +4652,7 @@ def set__min_bid(args):
         The proper way to perform maintenance on your machine is to wait until all active contracts have expired or the machine is vacant.
         For unplanned or unscheduled maintenance, use this schedule maint command. That will notify the client that you have to take the machine down and that they should save their work. 
         You can specify a date, duration, reason and category for the maintenance.         
+
         Example: vastai schedule maint 8207 --sdate 1677562671 --duration 0.5 --maintenance_reason "maintenance reason as a string that briefly helps clients understand why the maintenance was necessary" --maintenance_category "power"
     """),
     )
