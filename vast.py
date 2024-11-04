@@ -1694,21 +1694,28 @@ def delete__template(args):
         print("The response is not JSON. Content-Type:", r.headers.get('Content-Type'))
         print(r.text)
 
-def destroy_instance(id,args):
-    url = apiurl(args, "/instances/{id}/".format(id=id))
-    r = http_del(args, url, headers=headers,json={})
-    r.raise_for_status()
-    if args.raw:
-        print(json.dumps(r.json(), indent=1))
-    elif (r.status_code == 200):
-        rj = r.json();
-        if (rj["success"]):
-            print("destroying instance {id}.".format(**(locals())));
+def destroy_instance(id, args):
+    url = apiurl(args, f"/instances/{id}/")
+    try:
+        r = http_del(args, url, headers=headers, json={})
+        r.raise_for_status()
+        if args.raw:
+            response_json = r.json()
+            print(json.dumps(response_json, indent=1) if response_json else json.dumps({"success": False, "msg": "No JSON response"}))
+        elif r.status_code == 200:
+            rj = r.json()
+            if rj.get("success"):
+                progress_print(args, f"Destroying instance {id}.")
+            else:
+                progress_print(args, rj.get("msg", "Unknown error"))
         else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
+            progress_print(args, r.text)
+            progress_print(args, f"Failed with error {r.status_code}")
+    except requests.exceptions.HTTPError as e:
+        if args.raw:
+            print(json.dumps({"success": False, "msg": str(e)}))
+        else:
+            print(f"Destroy instance error: {e}")
 
 
 @parser.command(
@@ -4621,6 +4628,7 @@ def show__machines(args):
     usage="vastai unlist machine <id>",
     help="[Host] Unlist a listed machine",
 )
+
 def unlist__machine(args):
     """
     Removes machine from list of machines for rent.
@@ -4639,6 +4647,38 @@ def unlist__machine(args):
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
+
+
+def suppress_stdout():
+    """
+    A context manager to suppress stdout within its block.
+    """
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:
+            yield
+        finally:
+            sys.stdout = old_stdout
+
+def destroy_instance_silent(id, args):
+    """
+    Calls destroy_instance while suppressing its output if args.raw is True.
+    """
+    if args.raw:
+        with open(os.devnull, 'w') as devnull, redirect_stdout(devnull):
+            destroy_instance(id, args)
+    else:
+        destroy_instance(id, args)
+
+
+def progress_print(args, *args_to_print):
+    if not args.raw:
+        print(*args_to_print)
+
+def debug_print(args, *args_to_print):
+    if args.debugging and not args.raw:
+        print(*args_to_print)
 
 # Function to check if an instance exists
 def instance_exist(instance_id, api_key, args):
@@ -4669,7 +4709,8 @@ def instance_exist(instance_id, api_key, args):
         raise  # Reraise other HTTP errors for handling elsewhere
 
 
-def run_machinetester(ip_address, port, instance_id, machine_id, delay, debugging=False, api_key=None):
+def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, api_key=None):
+
     # Temporarily disable SSL warnings
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     delay = int(delay)
@@ -4682,25 +4723,25 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
             with redirect_stdout(buffer):
                 show__instance(show_args)
             json_output = buffer.getvalue().strip()
-            if debugging:
-                print(f"is_instance(): Output from vast show instance: {json_output}")
+            if args.debugging:
+                debug_print(args, f"is_instance(): Output from vast show instance: {json_output}")
 
             data = json.loads(json_output)
             intended_status = data.get('intended_status', 'unknown')
             return intended_status if intended_status in ['running', 'offline', 'exited', 'created'] else 'unknown'
         except (json.JSONDecodeError, Exception) as e:
-            if debugging:
-                print(f"is_instance(): Error: {e}")
+            if args.debugging:
+                debug_print(args, f"is_instance(): Error: {e}")
             return 'unknown'
 
     # Prepare destroy_args with required attributes set to False as needed
-    destroy_args = argparse.Namespace(api_key=api_key, url="https://console.vast.ai", retry=3, explain=False, raw=False)
+    destroy_args = argparse.Namespace(api_key=api_key, url="https://console.vast.ai", retry=3, explain=False, raw=args.raw)
 
 
     # Delay start if specified
     if delay > 0:
-        if debugging:
-            print(f"Sleeping for {delay} seconds before starting tests.")
+        if args.debugging:
+            debug_print(args, f"Sleeping for {delay} seconds before starting tests.")
         time.sleep(delay)
 
     start_time = time.time()
@@ -4712,20 +4753,20 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
     try:
         while time.time() - start_time < 300:
             try:
-                if debugging:
-                    print(f"Sending GET request to https://{ip_address}:{port}/progress")
+                if args.debugging:
+                    debug_print(args, f"Sending GET request to https://{ip_address}:{port}/progress")
                 response = requests.get(f'https://{ip_address}:{port}/progress', verify=False, timeout=10)
                 # Check if the connection was successful
                 if response.status_code == 200 and not first_connection_established:
-                    print("Successfully established HTTPS connection to the server.")
+                    progress_print(args, "Successfully established HTTPS connection to the server.")
                     first_connection_established = True  # Set the flag to True after first success
 
                 message = response.text.strip()
-                if debugging:
-                    print(f"Received message: '{message}'")
+                if args.debugging:
+                    debug_print(args, f"Received message: '{message}'")
             except requests.exceptions.RequestException as e:
-                if debugging:
-                    print(f"Error making HTTPS request: {e}")
+                if args.debugging:
+                    progress_print(args, f"Error making HTTPS request: {e}")
                 message = ''
 
             # Process response messages
@@ -4734,58 +4775,60 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, debuggin
                 new_lines = [line for line in lines if line not in printed_lines]
                 for line in new_lines:
                     if line == 'DONE':
-                        print("Test completed successfully.")
+                        progress_print(args, "Test completed successfully.")
                         with open("Pass_testresults.log", "a") as f:
                             f.write(f"{machine_id}\n")
-                        print(f"Test passed. Destroying instance {instance_id}.")
-                        destroy_instance(instance_id, destroy_args)
-                        sys.exit(0)
+                        progress_print(args, f"Test passed.")
+                        destroy_instance_silent(instance_id, destroy_args)
+                        return True, ""
                     elif line.startswith('ERROR'):
-                        print(line)
+                        progress_print(args, line)
                         with open("Error_testresults.log", "a") as f:
                             f.write(f"{machine_id}:{instance_id} {line}\n")
-                        print(f"Test failed with error: {line}. Destroying instance {instance_id}.")
-                        destroy_instance(instance_id, destroy_args)
-                        sys.exit(1)
+                        progress_print(args, f"Test failed with error: {line}.")
+                        destroy_instance_silent(instance_id, destroy_args)
+                        return False, line
                     else:
-                        print(line)
+                        progress_print(args, line)
                     printed_lines.add(line)  # Only add lines after they are processed
                 no_response_seconds = 0
             else:
                 no_response_seconds += 20
-                if debugging:
-                    print(f"No message received. Incremented no_response_seconds to {no_response_seconds}.")
+                if args.debugging:
+                    debug_print(args, f"No message received. Incremented no_response_seconds to {no_response_seconds}.")
 
             # Check instance status
             status = is_instance(instance_id)
-            if debugging:
-                print(f"Instance {instance_id} status: {status}")
+            if args.debugging:
+                debug_print(args, f"Instance {instance_id} status: {status}")
 
             if status == 'running' and no_response_seconds >= 60:
                 with open("Error_testresults.log", "a") as f:
                     f.write(f"{machine_id}:{instance_id} No response from port {port} for 60s with running instance\n")
-                print(f"No response for 60s with running instance. This may indicate a misconfiguration of ports on the machine. Destroying instance {instance_id}.")
-                destroy_instance(instance_id, destroy_args)
-                sys.exit(1)
+                progress_print(args, f"No response for 60s with running instance. This may indicate a misconfiguration of ports on the machine.")
+                destroy_instance_silent(instance_id, destroy_args)
+                return False, line
             elif status != 'running':
                 with open("Error_testresults.log", "a") as f:
                     f.write(f"{machine_id}:{instance_id} Instance status '{status}' during testing.\n")
-                print(f"Instance {instance_id} status '{status}'. Destroying instance.")
-                destroy_instance(instance_id, destroy_args)
-                sys.exit(1)
+                progress_print(args, f"Instance {instance_id} status '{status}'")
+                destroy_instance_silent(instance_id, destroy_args)
+                return False, line
 
-            if debugging:
-                print("Waiting for 20 seconds before the next check.")
+            if args.debugging:
+                debug_print(args, "Waiting for 20 seconds before the next check.")
             time.sleep(20)
 
-        if debugging:
-            print(f"Time limit reached. Destroying instance {instance_id}.")
+        if args.debugging:
+            debug_print(args, f"Time limit reached. Destroying instance {instance_id}.")
+        return False, "Test did not complete within the time limit"
     finally:
         # Ensure instance cleanup
         if instance_id and instance_exist(instance_id, api_key, destroy_args):
-           destroy_instance(instance_id, destroy_args)
+           destroy_instance_silent(instance_id, destroy_args)
 
-    print(f"Machine: {machine_id} Done with testing remote.py results {message}")
+
+    progress_print(args, f"Machine: {machine_id} Done with testing remote.py results {message}")
     urllib3.enable_warnings()
 
 
@@ -4843,16 +4886,16 @@ def check_requirements(machine_id, api_key, args):
 
         # Return True if all requirements are met, False otherwise
         if unmet_reasons:
-            print(f"Machine ID {machine_id} does not meet the requirements:")
+            progress_print(args, f"Machine ID {machine_id} does not meet the requirements:")
             for reason in unmet_reasons:
-                print(f"- {reason}")
+                progress_print(args, f"- {reason}")
             return False, unmet_reasons
         else:
-            print(f"Machine ID {machine_id} meets all the requirements.")
+            progress_print(args, f"Machine ID {machine_id} meets all the requirements.")
             return True, []
 
     except json.JSONDecodeError:
-        print(f"Error parsing JSON output from search__offers for machine ID {machine_id}.")
+        progress_print(args, f"Error parsing JSON output from search__offers for machine ID {machine_id}.")
         return False, ["Error parsing JSON output."]
 
 def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
@@ -4869,7 +4912,7 @@ def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
     )
     
     if args.debugging:
-        print("Starting wait_for_instance with ID:", instance_id)
+        debug_print(args, "Starting wait_for_instance with ID:", instance_id)
     
     while time.time() - start_time < timeout:
         # Capture the output of show__instance
@@ -4883,29 +4926,28 @@ def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
             # Check if instance data was retrieved and validate status
             if instance_info.get('intended_status') == 'running' and instance_info.get('actual_status') == 'running':
                 if args.debugging:
-                    print(f"Instance {instance_id} is now running.")
+                    debug_print(args, f"Instance {instance_id} is now running.")
                 return instance_info
             
             # Print feedback about the current status
             current_status = instance_info.get('actual_status', 'unknown')
-            print(f"Instance {instance_id} status: {current_status}... waiting for 'running' status.")
+            progress_print(args, f"Instance {instance_id} status: {current_status}... waiting for 'running' status.")
             time.sleep(interval)
         
         except json.JSONDecodeError:
-            print(f"Error parsing JSON output for instance {instance_id}. Retrying...")
+            progress_print(args, f"Error parsing JSON output for instance {instance_id}. Retrying...")
             time.sleep(interval)
     
-    print(f"Instance {instance_id} did not become running within {timeout} seconds.")
-    return False
+    progress_print(args, f"Instance {instance_id} did not become running within {timeout} seconds.")
+    return False, f"Instance {instance_id} did not become running within {timeout} seconds."
 
 @parser.command(
     argument("machine_id", help="Machine ID", type=str),
     argument("--debugging", action="store_true", help="Enable debugging output"),
     argument("--explain", action="store_true", help="Output verbose explanation of mapping of CLI calls to HTTPS API endpoints"),
-    argument("--api_key", help="API key for authentication", type=str, required=False),
+    argument("--raw", action="store_true", help="Output machine-readable JSON"), 
     argument("--url", help="Server REST API URL", default="https://console.vast.ai"),
     argument("--retry", help="Retry limit", type=int, default=3),
-    argument("--raw", action="store_true", help="Output machine-readable JSON", default=True),
     usage="vastai self-test machine <machine_id> [--debugging] [--explain] [--api_key API_KEY] [--url URL] [--retry RETRY] [--raw]",
     help="Perform a self-test on the specified machine",
     epilog=deindent("""
@@ -4922,46 +4964,105 @@ def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
 
 def self_test__machine(args):
     instance_id = None  # Store instance ID for cleanup if needed
+    result = {"success": False, "reason": ""}
+    
+    try:
+        if not args.api_key:
+            # Define the API key file path
+            api_key_file_base = "~/.vast_api_key"
+            api_key_file = os.path.expanduser(api_key_file_base)
+            if os.path.exists(api_key_file):
+                with open(api_key_file, "r") as reader:
+                    args.api_key = reader.read().strip()
+            else:
+                progress_print(args, "No API key found. Please set it using 'vast set api-key YOUR_API_KEY_HERE'")
+                sys.exit(1)
+        api_key = args.api_key  # Now use api_key in the rest of the function
 
-    # Set `--raw` to True for consistent JSON responses
-    args.raw = True
+        # Prepare destroy_args with `raw` and `explain` explicitly set to False
+        destroy_args = argparse.Namespace(api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=args.raw)
 
-    if not args.api_key:
-        # Define the API key file path
-        api_key_file_base = "~/.vast_api_key"
-        api_key_file = os.path.expanduser(api_key_file_base)
-        if os.path.exists(api_key_file):
-            with open(api_key_file, "r") as reader:
-                args.api_key = reader.read().strip()
-        else:
-            print("No API key found. Please set it using 'vast set api-key YOUR_API_KEY_HERE'")
+        # Check requirements before proceeding
+        meets_requirements, unmet_reasons = check_requirements(args.machine_id, api_key, args)
+        if not meets_requirements:
+            progress_print(args, f"Machine ID {args.machine_id} does not meet the requirements:")
+            for reason in unmet_reasons:
+                progress_print(args, f"- {reason}")
+            destroy_instance_silent(instance_id, destroy_args)
             sys.exit(1)
-    api_key = args.api_key  # Now use api_key in the rest of the function
+            
+        def search_offers_and_get_top(machine_id):
+            """Capture and parse the JSON output from search__offers to find the top offer by dlperf."""
+            search_args = argparse.Namespace(
+                query=[f"machine_id={machine_id}", "verified=any", "rentable=true"],
+                type="on-demand",
+                quiet=False,
+                no_default=False,
+                new=False,
+                limit=None,
+                disable_bundling=False,
+                storage=5.0,
+                order="score-",
+                raw=True,
+                explain=args.explain,
+                api_key=api_key,
+                url=args.url,
+                retry=args.retry
+            )
 
-    # Prepare destroy_args with `raw` and `explain` explicitly set to False
-    destroy_args = argparse.Namespace(api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=False)
+            if args.debugging:
+                debug_print(args, "Starting search__offers with arguments:", search_args)
 
-    # Check requirements before proceeding
-    meets_requirements, unmet_reasons = check_requirements(args.machine_id, api_key, args)
-    if not meets_requirements:
-        print(f"Machine ID {args.machine_id} does not meet the requirements:")
-        for reason in unmet_reasons:
-            print(f"- {reason}")
-        destroy_instance(instance_id, destroy_args)
-        sys.exit(1)
-           
-    def search_offers_and_get_top(machine_id):
-        """Capture and parse the JSON output from search__offers to find the top offer by dlperf."""
-        search_args = argparse.Namespace(
-            query=[f"machine_id={machine_id}", "verified=any", "rentable=true"],
-            type="on-demand",
-            quiet=False,
-            no_default=False,
-            new=False,
-            limit=None,
-            disable_bundling=False,
-            storage=5.0,
-            order="score-",
+            buffer = StringIO()
+            with redirect_stdout(buffer):
+                search__offers(search_args)
+
+            try:
+                offers = json.loads(buffer.getvalue().strip())
+                if not offers:
+                    progress_print(args, f"Machine ID {machine_id} not found or not rentable.")
+                    return None
+                sorted_offers = sorted(offers, key=lambda x: x.get('dlperf', 0), reverse=True)
+                top_offer = sorted_offers[0]
+                if args.debugging:
+                    debug_print(args, "Top offer found:", top_offer)
+                return top_offer
+            except json.JSONDecodeError as e:
+                if args.debugging:
+                    debug_print(args, f"Error parsing JSON output from search__offers: {str(e)}")
+                return None
+
+
+        top_offer = search_offers_and_get_top(args.machine_id)
+        if not top_offer:
+            progress_print(args, "Failed to find a valid offer for machine ID:", args.machine_id)
+            sys.exit(1)
+
+        ask_contract_id = top_offer['id']  # Offer ID with the highest DLP score
+
+        create_args = argparse.Namespace(
+            ID=ask_contract_id,
+            price=None,
+            disk=20,
+            image='jjziets/vasttest:latest',
+            login=None,
+            label=None,
+            onstart=None,
+            onstart_cmd="python3 remote.py",
+            entrypoint=None,
+            ssh=True,
+            jupyter=False,
+            direct=True,
+            jupyter_dir=None,
+            jupyter_lab=False,
+            lang_utf8=False,
+            python_utf8=False,
+            extra=None,
+            env='-e TZ=PDT -e XNAME=XX4 -p 5000:5000',
+            args=None,
+            force=False,
+            cancel_unavail=False,
+            template_hash=None,
             raw=True,
             explain=args.explain,
             api_key=api_key,
@@ -4970,69 +5071,8 @@ def self_test__machine(args):
         )
 
         if args.debugging:
-            print("Starting search__offers with arguments:", search_args)
+            debug_print(args, "Starting create__instance with arguments:", create_args)
 
-        buffer = StringIO()
-        with redirect_stdout(buffer):
-            search__offers(search_args)
-
-        try:
-            offers = json.loads(buffer.getvalue().strip())
-            if not offers:
-                print(f"Machine ID {machine_id} not found or not rentable.")
-                return None
-            sorted_offers = sorted(offers, key=lambda x: x.get('dlperf', 0), reverse=True)
-            top_offer = sorted_offers[0]
-            if args.debugging:
-                print("Top offer found:", top_offer)
-            return top_offer
-        except json.JSONDecodeError as e:
-            if args.debugging:
-                print(f"Error parsing JSON output from search__offers: {str(e)}")
-            return None
-
-
-    top_offer = search_offers_and_get_top(args.machine_id)
-    if not top_offer:
-        print("Failed to find a valid offer for machine ID:", args.machine_id)
-        sys.exit(1)
-
-    ask_contract_id = top_offer['id']  # Offer ID with the highest DLP score
-
-    create_args = argparse.Namespace(
-        ID=ask_contract_id,
-        price=None,
-        disk=20,
-        image='jjziets/vasttest:latest',
-        login=None,
-        label=None,
-        onstart=None,
-        onstart_cmd="python3 remote.py",
-        entrypoint=None,
-        ssh=True,
-        jupyter=False,
-        direct=True,
-        jupyter_dir=None,
-        jupyter_lab=False,
-        lang_utf8=False,
-        python_utf8=False,
-        extra=None,
-        env='-e TZ=PDT -e XNAME=XX4 -p 5000:5000',
-        args=None,
-        force=False,
-        cancel_unavail=False,
-        template_hash=None,
-        raw=True,
-        explain=args.explain,
-        api_key=api_key,
-        url=args.url,
-        retry=args.retry
-    )
-
-    if args.debugging:
-        print("Starting create__instance with arguments:", create_args)
-
-    try:
         # Create the instance
         buffer = StringIO()
         with redirect_stdout(buffer):
@@ -5040,43 +5080,58 @@ def self_test__machine(args):
         
         instance_info = json.loads(buffer.getvalue().strip())
         if not instance_info or 'new_contract' not in instance_info:
-            print("Could not create instance.")
+            progress_print(args, "Could not create instance.")
             sys.exit(1)
         
         instance_id = instance_info['new_contract']
         if args.debugging:
-            print("Instance created with ID:", instance_id)
+            debug_print(args, "Instance created with ID:", instance_id)
 
         # Wait for the instance to start and provide status updates
         instance_info = wait_for_instance(instance_id, api_key, args)
         if not instance_info:
-            print("Instance did not start properly.")
+            progress_print(args, "Instance did not start properly.")
             sys.exit(1)
 
         # Retrieve connection details once instance is running
         ip_address = instance_info.get('public_ipaddr')
         if not ip_address:
-            print("Could not get IP address from instance info.")
+            progress_print(args, "Could not get IP address from instance info.")
             sys.exit(1)
 
         port_mappings = instance_info.get('ports', {}).get('5000/tcp', [])
         if not port_mappings:
-            print("Could not find port mapping for port 5000.")
+            progress_print(args, "Could not find port mapping for port 5000.")
             sys.exit(1)
 
         port = port_mappings[0].get('HostPort')
         if not port:
-            print("Could not get host mapped port for port 5000.")
+            progress_print(args, "Could not get host mapped port for port 5000.")
             sys.exit(1)
 
         delay = '15'
-        print(f"Starting machinetester with IP: {ip_address}, Port: {port}, Instance ID: {instance_id}, Machine ID: {args.machine_id}, Delay: {delay}")
-        run_machinetester(ip_address, port, str(instance_id), args.machine_id, delay, args.debugging, api_key=args.api_key)
+        progress_print(args, f"Starting machinetester with IP: {ip_address}, Port: {port}, Instance ID: {instance_id}, Machine ID: {args.machine_id}, Delay: {delay}")
+        success, reason = run_machinetester(ip_address, port, str(instance_id), args.machine_id, delay, args, api_key=args.api_key)
+        result["success"] = success
+        result["reason"] = reason
+    except Exception as e:
+        result["success"] = False
+        result["reason"] = str(e)
 
     finally:
         # Ensure instance cleanup
         if instance_id and instance_exist(instance_id, api_key, destroy_args):
-           destroy_instance(instance_id, destroy_args)
+            destroy_instance_silent(instance_id, destroy_args)
+
+    if args.raw:
+        print(json.dumps(result))
+        sys.exit(0 if result["success"] else 1)
+    else:
+        if result["success"]:
+            print("Test completed successfully.")
+        else:
+            print(f"Test failed: {result['reason']}")
+        sys.exit(0 if result["success"] else 1)
 
 
 login_deprecated_message = """

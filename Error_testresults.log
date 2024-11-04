@@ -27,3 +27,13 @@
 29260:13479396 No response from port 40616 for 60s with running instance
 29260:13479474 No response from port 40666 for 60s with running instance
 25802:13480393 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13495065 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+22394:13495127 ERROR 2: Test All GPU ResNet50 failed. Benchmarking ResNet50 on batch size 512 with 10 GPUs
+22394:13495859 ERROR 2: Test All GPU ResNet50 failed. Benchmarking ResNet50 on batch size 512 with 10 GPUs
+22394:13495892 ERROR 2: Test All GPU ResNet50 failed. Benchmarking ResNet50 on batch size 512 with 10 GPUs
+22394:13496163 ERROR 2: Test All GPU ResNet50 failed. Benchmarking ResNet50 on batch size 512 with 10 GPUs
+25802:13496992 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13497005 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13497144 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13497200 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13497439 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
