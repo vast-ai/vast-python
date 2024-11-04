@@ -37,3 +37,7 @@
 25802:13497144 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
 25802:13497200 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
 25802:13497439 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13499071 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13499151 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+25802:13499153 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
+24126:13500233 Instance status 'unknown' during testing.

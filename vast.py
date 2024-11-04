@@ -4665,7 +4665,7 @@ def destroy_instance_silent(id, args):
     """
     Calls destroy_instance while suppressing its output if args.raw is True.
     """
-    if not instance_id and not args.raw:
+    if not id and not args.raw:
         debug_print(destroy_args, "No instance_id provided. Skipping destruction.")
         return
 
@@ -4839,6 +4839,11 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
     urllib3.enable_warnings()
 
 
+import argparse
+import json
+from io import StringIO
+from contextlib import redirect_stdout
+
 def check_requirements(machine_id, api_key, args):
     """Checks if a machine meets the specified requirements using search__offers."""
     unmet_reasons = []
@@ -4872,24 +4877,68 @@ def check_requirements(machine_id, api_key, args):
         offers = json.loads(output)
         if not offers:
             unmet_reasons.append(f"Machine ID {machine_id} not found or not rentable.")
+            progress_print(args, f"Machine ID {machine_id} not found or not rentable.")
             return False, unmet_reasons
 
-        offer = offers[0]  # Take the top offer for checking requirements
+        # Sort offers based on 'dlperf' in descending order
+        sorted_offers = sorted(offers, key=lambda x: x.get('dlperf', 0), reverse=True)
+        top_offer = sorted_offers[0]
+
+        if args.debugging:
+            debug_print(args, "Top offer found:", top_offer)
+
         # Requirement checks
-        if float(offer.get('cuda_max_good', 0)) < 12.4:
+        # 1. CUDA version
+        if float(top_offer.get('cuda_max_good', 0)) < 12.4:
             unmet_reasons.append("CUDA version < 12.4")
-        if float(offer.get('reliability', 0)) <= 0.90:
+
+        # 2. Reliability
+        if float(top_offer.get('reliability', 0)) <= 0.90:
             unmet_reasons.append("Reliability <= 0.90")
-        if int(offer.get('direct_port_count', 0)) <= 3:
+
+        # 3. Direct port count
+        if int(top_offer.get('direct_port_count', 0)) <= 3:
             unmet_reasons.append("Direct port count <= 3")
-        if float(offer.get('pcie_bw', 0)) <= 2.85:
+
+        # 4. PCIe bandwidth
+        if float(top_offer.get('pcie_bw', 0)) <= 2.85:
             unmet_reasons.append("PCIe bandwidth <= 2.85")
-        if float(offer.get('inet_down', 0)) <= 10:
+
+        # 5. Download speed
+        if float(top_offer.get('inet_down', 0)) <= 10:
             unmet_reasons.append("Download speed <= 10 Mb/s")
-        if float(offer.get('inet_up', 0)) <= 10:
+
+        # 6. Upload speed
+        if float(top_offer.get('inet_up', 0)) <= 10:
             unmet_reasons.append("Upload speed <= 10 Mb/s")
-        if float(offer.get('gpu_ram', 0)) <= 7:
+
+        # 7. GPU RAM
+        if float(top_offer.get('gpu_ram', 0)) <= 7:
             unmet_reasons.append("GPU RAM <= 7 GB")
+
+        # Additional Requirement Checks
+
+        # 8. System RAM vs. Total GPU RAM
+        gpu_total_ram = float(top_offer.get('gpu_total_ram', 0))  # in MB
+        cpu_ram = float(top_offer.get('cpu_ram', 0))  # in MB
+        if cpu_ram < gpu_total_ram:
+            unmet_reasons.append("System RAM is less than total VRAM.")
+
+        # Debugging Information for RAM
+        if args.debugging:
+            debug_print(args, f"CPU RAM: {cpu_ram} MB")
+            debug_print(args, f"Total GPU RAM: {gpu_total_ram} MB")
+
+        # 9. CPU Cores vs. Number of GPUs
+        cpu_cores = int(top_offer.get('cpu_cores', 0))
+        num_gpus = int(top_offer.get('num_gpus', 0))
+        if cpu_cores < 2 * num_gpus:
+            unmet_reasons.append("Number of CPU cores is less than twice the number of GPUs.")
+
+        # Debugging Information for CPU Cores
+        if args.debugging:
+            debug_print(args, f"CPU Cores: {cpu_cores}")
+            debug_print(args, f"Number of GPUs: {num_gpus}")
 
         # Return True if all requirements are met, False otherwise
         if unmet_reasons:
@@ -4901,9 +4950,13 @@ def check_requirements(machine_id, api_key, args):
             progress_print(args, f"Machine ID {machine_id} meets all the requirements.")
             return True, []
 
-    except json.JSONDecodeError:
-        progress_print(args, f"Error parsing JSON output from search__offers for machine ID {machine_id}.")
+    except json.JSONDecodeError as e:
+        progress_print(args, f"Error parsing JSON output from search__offers for machine ID {machine_id}: {str(e)}")
         return False, ["Error parsing JSON output."]
+    except Exception as e:
+        progress_print(args, f"An unexpected error occurred: {str(e)}")
+        return False, [f"Unexpected error: {str(e)}"]
+
 
 def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
     """Waits for the instance to start up and provides feedback on its status."""
