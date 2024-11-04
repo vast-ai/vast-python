@@ -4665,6 +4665,10 @@ def destroy_instance_silent(id, args):
     """
     Calls destroy_instance while suppressing its output if args.raw is True.
     """
+    if not instance_id and not args.raw:
+        debug_print(destroy_args, "No instance_id provided. Skipping destruction.")
+        return
+
     if args.raw:
         with open(os.devnull, 'w') as devnull, redirect_stdout(devnull):
             destroy_instance(id, args)
@@ -4682,6 +4686,9 @@ def debug_print(args, *args_to_print):
 
 # Function to check if an instance exists
 def instance_exist(instance_id, api_key, args):
+    if not instance_id:
+        return False  # Immediately return False if instance_id is None or empty
+
     show_args = argparse.Namespace(id=instance_id, api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=True)
     try:
         buffer = StringIO()
@@ -4965,7 +4972,7 @@ def wait_for_instance(instance_id, api_key, args, timeout=900, interval=10):
 def self_test__machine(args):
     instance_id = None  # Store instance ID for cleanup if needed
     result = {"success": False, "reason": ""}
-    
+
     try:
         if not args.api_key:
             # Define the API key file path
@@ -4976,8 +4983,13 @@ def self_test__machine(args):
                     args.api_key = reader.read().strip()
             else:
                 progress_print(args, "No API key found. Please set it using 'vast set api-key YOUR_API_KEY_HERE'")
-                sys.exit(1)
+                result["reason"] = "API key not found."
+                # Do not exit immediately
         api_key = args.api_key  # Now use api_key in the rest of the function
+
+        if not api_key:
+            result["reason"] = "API key is missing."
+            raise Exception("API key is missing.")
 
         # Prepare destroy_args with `raw` and `explain` explicitly set to False
         destroy_args = argparse.Namespace(api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=args.raw)
@@ -4988,132 +5000,134 @@ def self_test__machine(args):
             progress_print(args, f"Machine ID {args.machine_id} does not meet the requirements:")
             for reason in unmet_reasons:
                 progress_print(args, f"- {reason}")
-            destroy_instance_silent(instance_id, destroy_args)
-            sys.exit(1)
-            
-        def search_offers_and_get_top(machine_id):
-            """Capture and parse the JSON output from search__offers to find the top offer by dlperf."""
-            search_args = argparse.Namespace(
-                query=[f"machine_id={machine_id}", "verified=any", "rentable=true"],
-                type="on-demand",
-                quiet=False,
-                no_default=False,
-                new=False,
-                limit=None,
-                disable_bundling=False,
-                storage=5.0,
-                order="score-",
-                raw=True,
-                explain=args.explain,
-                api_key=api_key,
-                url=args.url,
-                retry=args.retry
-            )
+            result["reason"] = "; ".join(unmet_reasons)
+            # Do not exit immediately; allow the script to proceed to output the result
 
-            if args.debugging:
-                debug_print(args, "Starting search__offers with arguments:", search_args)
+        else:
+            # Proceed with creating and testing the instance
+            def search_offers_and_get_top(machine_id):
+                """Capture and parse the JSON output from search__offers to find the top offer by dlperf."""
+                search_args = argparse.Namespace(
+                    query=[f"machine_id={machine_id}", "verified=any", "rentable=true"],
+                    type="on-demand",
+                    quiet=False,
+                    no_default=False,
+                    new=False,
+                    limit=None,
+                    disable_bundling=False,
+                    storage=5.0,
+                    order="score-",
+                    raw=True,
+                    explain=args.explain,
+                    api_key=api_key,
+                    url=args.url,
+                    retry=args.retry
+                )
 
-            buffer = StringIO()
-            with redirect_stdout(buffer):
-                search__offers(search_args)
+                if args.debugging:
+                    debug_print(args, "Starting search__offers with arguments:", search_args)
 
-            try:
-                offers = json.loads(buffer.getvalue().strip())
-                if not offers:
-                    progress_print(args, f"Machine ID {machine_id} not found or not rentable.")
+                buffer = StringIO()
+                with redirect_stdout(buffer):
+                    search__offers(search_args)
+
+                try:
+                    offers = json.loads(buffer.getvalue().strip())
+                    if not offers:
+                        progress_print(args, f"Machine ID {machine_id} not found or not rentable.")
+                        return None
+                    sorted_offers = sorted(offers, key=lambda x: x.get('dlperf', 0), reverse=True)
+                    top_offer = sorted_offers[0]
+                    if args.debugging:
+                        debug_print(args, "Top offer found:", top_offer)
+                    return top_offer
+                except json.JSONDecodeError as e:
+                    if args.debugging:
+                        debug_print(args, f"Error parsing JSON output from search__offers: {str(e)}")
                     return None
-                sorted_offers = sorted(offers, key=lambda x: x.get('dlperf', 0), reverse=True)
-                top_offer = sorted_offers[0]
+
+            top_offer = search_offers_and_get_top(args.machine_id)
+            if not top_offer:
+                progress_print(args, "Failed to find a valid offer for machine ID:", args.machine_id)
+                result["reason"] = "No valid offers found for the machine."
+            else:
+                ask_contract_id = top_offer['id']  # Offer ID with the highest DLP score
+
+                create_args = argparse.Namespace(
+                    ID=ask_contract_id,
+                    price=None,
+                    disk=20,
+                    image='jjziets/vasttest:latest',
+                    login=None,
+                    label=None,
+                    onstart=None,
+                    onstart_cmd="python3 remote.py",
+                    entrypoint=None,
+                    ssh=True,
+                    jupyter=False,
+                    direct=True,
+                    jupyter_dir=None,
+                    jupyter_lab=False,
+                    lang_utf8=False,
+                    python_utf8=False,
+                    extra=None,
+                    env='-e TZ=PDT -e XNAME=XX4 -p 5000:5000',
+                    args=None,
+                    force=False,
+                    cancel_unavail=False,
+                    template_hash=None,
+                    raw=True,
+                    explain=args.explain,
+                    api_key=api_key,
+                    url=args.url,
+                    retry=args.retry
+                )
+
                 if args.debugging:
-                    debug_print(args, "Top offer found:", top_offer)
-                return top_offer
-            except json.JSONDecodeError as e:
-                if args.debugging:
-                    debug_print(args, f"Error parsing JSON output from search__offers: {str(e)}")
-                return None
+                    debug_print(args, "Starting create__instance with arguments:", create_args)
 
+                # Create the instance
+                buffer = StringIO()
+                with redirect_stdout(buffer):
+                    create__instance(create_args)
 
-        top_offer = search_offers_and_get_top(args.machine_id)
-        if not top_offer:
-            progress_print(args, "Failed to find a valid offer for machine ID:", args.machine_id)
-            sys.exit(1)
+                instance_info = json.loads(buffer.getvalue().strip())
+                if not instance_info or 'new_contract' not in instance_info:
+                    progress_print(args, "Could not create instance.")
+                    result["reason"] = "Failed to create instance."
+                else:
+                    instance_id = instance_info['new_contract']
+                    if args.debugging:
+                        debug_print(args, "Instance created with ID:", instance_id)
 
-        ask_contract_id = top_offer['id']  # Offer ID with the highest DLP score
+                    # Wait for the instance to start and provide status updates
+                    instance_info = wait_for_instance(instance_id, api_key, args)
+                    if not instance_info:
+                        progress_print(args, "Instance did not start properly.")
+                        result["reason"] = "Instance did not start properly."
+                    else:
+                        # Retrieve connection details once instance is running
+                        ip_address = instance_info.get('public_ipaddr')
+                        if not ip_address:
+                            progress_print(args, "Could not get IP address from instance info.")
+                            result["reason"] = "IP address not found."
+                        else:
+                            port_mappings = instance_info.get('ports', {}).get('5000/tcp', [])
+                            if not port_mappings:
+                                progress_print(args, "Could not find port mapping for port 5000.")
+                                result["reason"] = "Port mapping for port 5000 not found."
+                            else:
+                                port = port_mappings[0].get('HostPort')
+                                if not port:
+                                    progress_print(args, "Could not get host mapped port for port 5000.")
+                                    result["reason"] = "Host mapped port for port 5000 not found."
+                                else:
+                                    delay = '15'
+                                    progress_print(args, f"Starting machinetester with IP: {ip_address}, Port: {port}, Instance ID: {instance_id}, Machine ID: {args.machine_id}, Delay: {delay}")
+                                    success, reason = run_machinetester(ip_address, port, str(instance_id), args.machine_id, delay, args, api_key=args.api_key)
+                                    result["success"] = success
+                                    result["reason"] = reason
 
-        create_args = argparse.Namespace(
-            ID=ask_contract_id,
-            price=None,
-            disk=20,
-            image='jjziets/vasttest:latest',
-            login=None,
-            label=None,
-            onstart=None,
-            onstart_cmd="python3 remote.py",
-            entrypoint=None,
-            ssh=True,
-            jupyter=False,
-            direct=True,
-            jupyter_dir=None,
-            jupyter_lab=False,
-            lang_utf8=False,
-            python_utf8=False,
-            extra=None,
-            env='-e TZ=PDT -e XNAME=XX4 -p 5000:5000',
-            args=None,
-            force=False,
-            cancel_unavail=False,
-            template_hash=None,
-            raw=True,
-            explain=args.explain,
-            api_key=api_key,
-            url=args.url,
-            retry=args.retry
-        )
-
-        if args.debugging:
-            debug_print(args, "Starting create__instance with arguments:", create_args)
-
-        # Create the instance
-        buffer = StringIO()
-        with redirect_stdout(buffer):
-            create__instance(create_args)
-        
-        instance_info = json.loads(buffer.getvalue().strip())
-        if not instance_info or 'new_contract' not in instance_info:
-            progress_print(args, "Could not create instance.")
-            sys.exit(1)
-        
-        instance_id = instance_info['new_contract']
-        if args.debugging:
-            debug_print(args, "Instance created with ID:", instance_id)
-
-        # Wait for the instance to start and provide status updates
-        instance_info = wait_for_instance(instance_id, api_key, args)
-        if not instance_info:
-            progress_print(args, "Instance did not start properly.")
-            sys.exit(1)
-
-        # Retrieve connection details once instance is running
-        ip_address = instance_info.get('public_ipaddr')
-        if not ip_address:
-            progress_print(args, "Could not get IP address from instance info.")
-            sys.exit(1)
-
-        port_mappings = instance_info.get('ports', {}).get('5000/tcp', [])
-        if not port_mappings:
-            progress_print(args, "Could not find port mapping for port 5000.")
-            sys.exit(1)
-
-        port = port_mappings[0].get('HostPort')
-        if not port:
-            progress_print(args, "Could not get host mapped port for port 5000.")
-            sys.exit(1)
-
-        delay = '15'
-        progress_print(args, f"Starting machinetester with IP: {ip_address}, Port: {port}, Instance ID: {instance_id}, Machine ID: {args.machine_id}, Delay: {delay}")
-        success, reason = run_machinetester(ip_address, port, str(instance_id), args.machine_id, delay, args, api_key=args.api_key)
-        result["success"] = success
-        result["reason"] = reason
     except Exception as e:
         result["success"] = False
         result["reason"] = str(e)
