@@ -41,3 +41,80 @@
 25802:13499151 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
 25802:13499153 ERROR 1: System requirements test failed. System total memory is less than the sum of all the GPUs VRAM.
 24126:13500233 Instance status 'unknown' during testing.
+28331:13517418 No response from port 11581 for 60s with running instance
+29227:13517458 No response from port 40502 for 60s with running instance
+29548:13517279 No response from port 40189 for 60s with running instance
+28332:13517516 No response from port 11613 for 60s with running instance
+28417:13517564 No response from port 40008 for 60s with running instance
+29361:13517536 No response from port 35710 for 60s with running instance
+26747:13517581 No response from port 20009 for 60s with running instance
+24548:13517625 No response from port 33059 for 60s with running instance
+29548:13518006 No response from port 40232 for 60s with running instance
+28332:13518067 No response from port 11683 for 60s with running instance
+18599:13518066 No response from port 40355 for 60s with running instance
+29227:13518090 No response from port 40532 for 60s with running instance
+29553:13518051 No response from port 25567 for 60s with running instance
+28417:13518132 No response from port 40394 for 60s with running instance
+24548:13518139 No response from port 33523 for 60s with running instance
+26747:13518160 No response from port 20104 for 60s with running instance
+8376:13518120 No response from port 57146 for 60s with running instance
+25334:13518252 Instance status 'unknown' during testing.
+29188:13518448 No response from port 38093 for 60s with running instance
+29391:13518524 No response from port 41154 for 60s with running instance
+27437:13518537 No response from port 43127 for 60s with running instance
+29404:13518561 No response from port 40125 for 60s with running instance
+29544:13518455 ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
+29116:13518614 No response from port 40742 for 60s with running instance
+29523:13518557 No response from port 24484 for 60s with running instance
+28270:13518792 No response from port 47386 for 60s with running instance
+27441:13518819 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+27073:13518877 No response from port 63058 for 60s with running instance
+28260:13518871 No response from port 36586 for 60s with running instance
+18599:13519459 No response from port 40070 for 60s with running instance
+29227:13519464 No response from port 40595 for 60s with running instance
+29548:13519448 No response from port 40186 for 60s with running instance
+24548:13519466 No response from port 33147 for 60s with running instance
+26747:13519474 No response from port 20060 for 60s with running instance
+29595:13519452 Instance offline during testing
+29734:13519537 No response from port 16452 for 60s with running instance
+29188:13519541 No response from port 38568 for 60s with running instance
+29391:13519635 No response from port 41006 for 60s with running instance
+29544:13519550 ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
+29404:13519638 No response from port 40767 for 60s with running instance
+29523:13519640 No response from port 24293 for 60s with running instance
+13310:13519590 Instance offline during testing
+29116:13519646 No response from port 40732 for 60s with running instance
+29125:13519655 No response from port 30042 for 60s with running instance
+28270:13519691 No response from port 47473 for 60s with running instance
+27441:13519701 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+28260:13519708 No response from port 36678 for 60s with running instance
+27073:13519709 No response from port 63315 for 60s with running instance
+22448:13519674 No response from port 27909 for 60s with running instance
+28270:13519748 No response from port 47398 for 60s with running instance
+29548:13519952 No response from port 40215 for 60s with running instance
+24836:13519965 No response from port 40350 for 60s with running instance
+29180:13519986 No response from port 33506 for 60s with running instance
+29188:13520039 No response from port 38211 for 60s with running instance
+29391:13520073 No response from port 41235 for 60s with running instance
+29125:13520095 No response from port 30035 for 60s with running instance
+29523:13520083 No response from port 24745 for 60s with running instance
+29116:13520097 No response from port 40694 for 60s with running instance
+29544:13520068 ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
+22448:13520134 No response from port 31895 for 60s with running instance
+28856:13520136 No response from port 53304 for 60s with running instance
+28072:13520135 No response from port 54601 for 60s with running instance
+28068:13520145 No response from port 54387 for 60s with running instance
+28855:13520149 No response from port 53259 for 60s with running instance
+28270:13520156 No response from port 47281 for 60s with running instance
+28074:13520146 No response from port 54811 for 60s with running instance
+29600:13520153 No response from port 35353 for 60s with running instance
+29598:13520157 No response from port 35019 for 60s with running instance
+27441:13520178 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+28260:13520177 No response from port 36617 for 60s with running instance
+29260:13520189 No response from port 40635 for 60s with running instance
+27073:13520190 No response from port 63751 for 60s with running instance
+28924:13520181 No response from port 53736 for 60s with running instance
+23972:13520449 No response from port 40071 for 60s with running instance
+18599:13520466 No response from port 40375 for 60s with running instance
+29540:13520462 No response from port 23892 for 60s with running instance
+29734:13520492 No response from port 17073 for 60s with running instance
