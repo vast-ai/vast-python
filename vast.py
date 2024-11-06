@@ -4650,7 +4650,19 @@ def unlist__machine(args):
 
 def suppress_stdout():
     """
-    A context manager to suppress stdout within its block.
+    A context manager to suppress standard output (stdout) within its block.
+
+    This is useful for silencing output from functions or blocks of code that 
+    print to stdout, especially when such output is not needed or should be 
+    hidden from the user.
+
+    Usage:
+        with suppress_stdout():
+            # Code block with suppressed stdout
+            some_function_that_prints()
+
+    Yields:
+        None
     """
     with open(os.devnull, "w") as devnull:
         old_stdout = sys.stdout
@@ -4662,7 +4674,26 @@ def suppress_stdout():
 
 def destroy_instance_silent(id, args):
     """
-    Calls destroy_instance while suppressing its output if args.raw is True.
+    Destroys a specified instance while optionally suppressing its output.
+
+    This function calls the `destroy_instance` function to terminate an instance.
+    If the `args.raw` flag is set to True, the output of the destruction process
+    is suppressed to keep the console output clean.
+
+    Args:
+        instance_id (str): The ID of the instance to be destroyed.
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `raw`.
+
+    Behavior:
+        - If `instance_id` is not provided and `args.raw` is False, a debug message
+          is printed indicating that no instance ID was provided and destruction is
+          skipped.
+        - If `args.raw` is True, the output of `destroy_instance` is suppressed.
+        - Otherwise, `destroy_instance` is called normally with the provided `instance_id`.
+
+    Returns:
+        None
     """
     if not id and not args.raw:
         debug_print(destroy_args, "No instance_id provided. Skipping destruction.")
@@ -4676,15 +4707,65 @@ def destroy_instance_silent(id, args):
 
 
 def progress_print(args, *args_to_print):
+    """
+    Prints progress messages to the console based on the `raw` flag.
+
+    This function ensures that progress messages are only printed when the `raw`
+    output mode is not enabled. This is useful for controlling the verbosity of
+    the script's output, especially in machine-readable formats.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `raw`.
+        *args_to_print: Variable length argument list of messages to print.
+
+    Returns:
+        None
+    """
     if not args.raw:
         print(*args_to_print)
 
 def debug_print(args, *args_to_print):
+    """
+    Prints debug messages to the console based on the `debugging` and `raw` flags.
+
+    This function ensures that debug messages are only printed when debugging is
+    enabled and the `raw` output mode is not active. It helps in providing detailed
+    logs for troubleshooting without cluttering the standard output during normal
+    operation.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `debugging` and `raw`.
+        *args_to_print: Variable length argument list of debug messages to print.
+
+    Returns:
+        None
+    """
     if args.debugging and not args.raw:
         print(*args_to_print)
 
-# Function to check if an instance exists
+
 def instance_exist(instance_id, api_key, args):
+    """
+    Checks whether a specific instance exists and is active.
+
+    This function verifies the existence and status of an instance by querying
+    its details using the provided `instance_id`. It considers an instance as
+    non-existent if its status indicates it has been destroyed, terminated, or
+    is offline.
+
+    Args:
+        instance_id (str): The ID of the instance to check.
+        api_key (str): API key for authentication with the VAST API.
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `url` and `retry`.
+
+    Returns:
+        bool: 
+            - `True` if the instance exists and is active.
+            - `False` if the instance does not exist or is in a non-active state.
+    """
     if not instance_id:
         return False  # Immediately return False if instance_id is None or empty
 
@@ -4715,7 +4796,34 @@ def instance_exist(instance_id, api_key, args):
         raise  # Reraise other HTTP errors for handling elsewhere
 
 def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, api_key=None):
+    """
+    Executes machine testing by connecting to the specified IP and port, monitoring
+    the instance's status, and handling test completion or failures.
 
+    This function performs the following steps:
+        1. Disables SSL warnings.
+        2. Optionally delays the start of testing.
+        3. Continuously checks the instance status and attempts to connect to the
+           `/progress` endpoint to monitor test progress.
+        4. Handles different response messages, such as completion or errors.
+        5. Implements timeout logic to prevent indefinite waiting.
+        6. Ensures instance cleanup in case of failures or completion.
+
+    Args:
+        ip_address (str): The public IP address of the instance to test.
+        port (int): The port number to connect to for testing.
+        instance_id (str): The ID of the instance being tested.
+        machine_id (str): The machine ID associated with the instance.
+        delay (int): The number of seconds to delay before starting the test.
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `debugging` and `raw`.
+        api_key (str, optional): API key for authentication. Defaults to None.
+
+    Returns:
+        tuple:
+            - bool: `True` if the test was successful, `False` otherwise.
+            - str: Reason for failure if the test was not successful, empty string otherwise.
+    """
     # Temporarily disable SSL warnings
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     delay = int(delay)
@@ -4838,7 +4946,25 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
 
 
 def check_requirements(machine_id, api_key, args):
-    """Checks if a machine meets the specified requirements using search__offers."""
+    """
+    Validates whether a machine meets the specified hardware and performance requirements.
+
+    This function queries the machine's offers and checks various criteria such as CUDA
+    version, reliability, port count, PCIe bandwidth, internet speeds, GPU RAM, system
+    RAM, and CPU cores relative to the number of GPUs. If any of these requirements are
+    not met, it records the reasons for the failure.
+
+    Args:
+        machine_id (str): The ID of the machine to check.
+        api_key (str): API key for authentication with the VAST API.
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `debugging` and `raw`.
+
+    Returns:
+        tuple:
+            - bool: `True` if the machine meets all requirements, `False` otherwise.
+            - list: A list of reasons why the machine does not meet the requirements.
+    """
     unmet_reasons = []
 
     # Prepare search arguments to get machine offers
@@ -4952,21 +5078,31 @@ def check_requirements(machine_id, api_key, args):
 
 
 def wait_for_instance(instance_id, api_key, args, destroy_args, timeout=900, interval=10):
-    """Waits for the instance to start up and provides feedback on its status.
-    
-    If an error is detected in the instance's status message, it reports the failure,
-    destroys the instance, and returns the failure reason.
-    
+    """
+    Waits for an instance to reach a running state and monitors its status for errors.
+
+    This function continuously checks the status of an instance until it becomes
+    running or until a timeout is reached. It also monitors for any error messages
+    during the instance's initialization. If an error is detected or the instance
+    does not become running within the specified timeout, the instance is destroyed.
+
     Args:
-        instance_id (str): The ID of the instance to wait for.
-        api_key (str): API key for authentication.
-        args: Parsed command-line arguments.
+        instance_id (str): The ID of the instance to monitor.
+        api_key (str): API key for authentication with the VAST API.
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `debugging`.
         destroy_args (argparse.Namespace): Arguments required to destroy the instance.
-        timeout (int, optional): Maximum time to wait in seconds. Defaults to 900.
+        timeout (int, optional): Maximum time to wait in seconds. Defaults to 900 (15 minutes).
         interval (int, optional): Time to wait between status checks in seconds. Defaults to 10.
-    
+
     Returns:
-        dict or tuple: Returns instance_info dict if running, else (False, reason).
+        tuple:
+            - dict or bool: 
+                - If the instance reaches the running state, returns its information as a dict.
+                - If an error occurs or timeout is reached, returns `False`.
+            - str or None:
+                - If an error occurs, returns the reason for failure.
+                - Otherwise, returns `None`.
     """
     start_time = time.time()
     show_args = argparse.Namespace(
@@ -5062,9 +5198,35 @@ def wait_for_instance(instance_id, api_key, args, destroy_args, timeout=900, int
     """),
 )
 
-
 def self_test__machine(args):
-    """Performs a self-test on the specified machine."""
+    """
+    Performs a self-test on the specified machine to verify its compliance with
+    required specifications and functionality.
+
+    This function orchestrates the following steps:
+        1. Retrieves the API key if not provided via command-line arguments.
+        2. Checks if the machine meets all specified requirements.
+        3. Searches for the top offer based on download performance.
+        4. Creates an instance using the top offer.
+        5. Waits for the instance to become active.
+        6. Runs the machine tester to perform connectivity and functionality checks.
+        7. Handles cleanup by destroying the instance after testing.
+        8. Outputs the test results in either raw JSON format or human-readable text.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments containing flags
+                                  and options such as `machine_id`, `debugging`,
+                                  `explain`, `raw`, `url`, `retry`, and `api_key`.
+
+    Returns:
+        None
+
+    Behavior:
+        - Exits the script with status code 0 if the test is successful.
+        - Exits with status code 1 if the test fails.
+        - Outputs results in JSON format if `args.raw` is True.
+        - Provides detailed output and debugging information based on flags.
+    """
     instance_id = None  # Store instance ID for cleanup if needed
     result = {"success": False, "reason": ""}
     

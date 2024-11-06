@@ -118,3 +118,113 @@
 18599:13520466 No response from port 40375 for 60s with running instance
 29540:13520462 No response from port 23892 for 60s with running instance
 29734:13520492 No response from port 17073 for 60s with running instance
+26747:13520484 No response from port 20093 for 60s with running instance
+25334:13520520 Instance offline during testing
+21491:13520445 No response from port 41933 for 60s with running instance
+29188:13520539 No response from port 38288 for 60s with running instance
+29391:13520560 No response from port 41204 for 60s with running instance
+29404:13520566 No response from port 40792 for 60s with running instance
+29523:13520572 No response from port 24762 for 60s with running instance
+29544:13520550 ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
+29125:13520583 No response from port 30089 for 60s with running instance
+27233:13520565 No response from port 36390 for 60s with running instance
+29116:13520598 No response from port 40771 for 60s with running instance
+13310:13520601 Instance offline during testing
+22448:13520618 No response from port 28522 for 60s with running instance
+28074:13520623 No response from port 54822 for 60s with running instance
+28072:13520612 No response from port 54630 for 60s with running instance
+28068:13520622 No response from port 54389 for 60s with running instance
+29600:13520627 No response from port 35307 for 60s with running instance
+27441:13520728 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+29598:13520637 No response from port 35087 for 60s with running instance
+29591:13520694 No response from port 10909 for 60s with running instance
+28707:13520713 No response from port 10705 for 60s with running instance
+27618:13520715 No response from port 10550 for 60s with running instance
+28853:13520677 No response from port 52310 for 60s with running instance
+29601:13520691 No response from port 35242 for 60s with running instance
+27073:13520754 No response from port 63980 for 60s with running instance
+28924:13520731 No response from port 53719 for 60s with running instance
+28264:13520600 No response from port 49424 for 60s with running instance
+29548:13525681 No response from port 40063 for 60s with running instance
+24836:13525701 No response from port 40336 for 60s with running instance
+27137:13525683 No response from port 44472 for 60s with running instance
+28229:13525725 No response from port 327 for 60s with running instance
+29553:13525750 No response from port 25426 for 60s with running instance
+28417:13525851 No response from port 40285 for 60s with running instance
+26747:13525872 No response from port 20018 for 60s with running instance
+29734:13525938 No response from port 17261 for 60s with running instance
+29188:13525973 No response from port 38134 for 60s with running instance
+29391:13526047 No response from port 41416 for 60s with running instance
+29544:13526028 ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
+29523:13526068 No response from port 24364 for 60s with running instance
+28678:13526069 No response from port 5630 for 60s with running instance
+29125:13526083 No response from port 30087 for 60s with running instance
+29116:13526094 No response from port 40731 for 60s with running instance
+13310:13526104 Instance offline during testing
+29404:13526081 No response from port 40542 for 60s with running instance
+28431:13526082 No response from port 40489 for 60s with running instance
+28855:13526154 No response from port 53275 for 60s with running instance
+28074:13526162 No response from port 54887 for 60s with running instance
+29500:13526117 ERROR 3: ECC test failed. Allocating memory on cuda:0...
+28068:13526153 No response from port 54302 for 60s with running instance
+29600:13526184 No response from port 35322 for 60s with running instance
+29662:13526185 No response from port 35757 for 60s with running instance
+28270:13526191 No response from port 47380 for 60s with running instance
+27441:13526250 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+28260:13526253 No response from port 36584 for 60s with running instance
+29260:13526289 No response from port 40636 for 60s with running instance
+27073:13526291 No response from port 63785 for 60s with running instance
+17472:13527332 No response from port 41838 for 60s with running instance
+29553:13527482 No response from port 25394 for 60s with running instance
+27141:13527470 No response from port 565 for 60s with running instance
+29227:13527531 No response from port 40508 for 60s with running instance
+28417:13527594 No response from port 40324 for 60s with running instance
+24548:13527646 No response from port 33679 for 60s with running instance
+26747:13527662 No response from port 20214 for 60s with running instance
+29734:13527697 No response from port 17055 for 60s with running instance
+28384:13527742 No response from port 28300 for 60s with running instance
+29188:13527759 No response from port 38392 for 60s with running instance
+29404:13527811 No response from port 40148 for 60s with running instance
+29391:13527828 No response from port 41465 for 60s with running instance
+28678:13527846 No response from port 5836 for 60s with running instance
+29523:13527858 No response from port 24527 for 60s with running instance
+27233:13527880 No response from port 36352 for 60s with running instance
+28431:13527892 No response from port 40414 for 60s with running instance
+28684:13527896 No response from port 10344 for 60s with running instance
+29125:13527923 No response from port 30023 for 60s with running instance
+29116:13527931 No response from port 40643 for 60s with running instance
+29500:13527959 ERROR 3: ECC test failed. Allocating memory on cuda:0...
+28072:13527953 No response from port 54697 for 60s with running instance
+28068:13528016 No response from port 54360 for 60s with running instance
+28855:13528020 No response from port 53284 for 60s with running instance
+27441:13528129 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+28260:13528148 No response from port 36573 for 60s with running instance
+29260:13528210 No response from port 40624 for 60s with running instance
+27073:13528212 No response from port 63983 for 60s with running instance
+29548:13528518 No response from port 40184 for 60s with running instance
+29553:13528586 No response from port 25922 for 60s with running instance
+28334:13528628 No response from port 11821 for 60s with running instance
+29227:13528655 No response from port 40549 for 60s with running instance
+25418:13528675 No response from port 40064 for 60s with running instance
+24548:13528682 No response from port 33288 for 60s with running instance
+26747:13528710 No response from port 20102 for 60s with running instance
+28417:13528714 No response from port 40040 for 60s with running instance
+28384:13528780 No response from port 28367 for 60s with running instance
+29391:13528910 No response from port 41413 for 60s with running instance
+29404:13528905 No response from port 40116 for 60s with running instance
+27235:13528933 No response from port 37301 for 60s with running instance
+28678:13528968 No response from port 5745 for 60s with running instance
+27233:13528982 No response from port 36359 for 60s with running instance
+28431:13528993 No response from port 40465 for 60s with running instance
+29125:13529015 No response from port 30028 for 60s with running instance
+29116:13529023 No response from port 40606 for 60s with running instance
+29500:13529032 ERROR 3: ECC test failed. Allocating memory on cuda:0...
+28270:13529153 No response from port 47403 for 60s with running instance
+29601:13529162 No response from port 35250 for 60s with running instance
+28252:13529030 ERROR 3: ECC test failed. Allocating memory on cuda:0...
+29660:13529180 No response from port 35882 for 60s with running instance
+29598:13529159 No response from port 35097 for 60s with running instance
+27441:13529207 ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
+28853:13529200 No response from port 52333 for 60s with running instance
+28924:13529208 No response from port 53717 for 60s with running instance
+27073:13529272 No response from port 63250 for 60s with running instance

@@ -1,349 +1,334 @@
-2024-11-05 21:42:15
-25645: CUDA version < 12.4
-21917: CUDA version < 12.4
-22974: CUDA version < 12.4
-16319: CUDA version < 12.4
-28766: CUDA version < 12.4
-25046: CUDA version < 12.4; System RAM is less than total VRAM.
-23454: CUDA version < 12.4
-21669: CUDA version < 12.4
+2024-11-06 10:30:42
+20213: CUDA version < 12.4
+18011: CUDA version < 12.4
 14686: CUDA version < 12.4; System RAM is less than total VRAM.
-25686: CUDA version < 12.4
-25684: CUDA version < 12.4
-27615: System RAM is less than total VRAM.
-28304: CUDA version < 12.4; Direct port count <= 3
-16399: CUDA version < 12.4; System RAM is less than total VRAM.
-23954: CUDA version < 12.4
-14993: CUDA version < 12.4
-29595: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-20410: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-26144: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-28749: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-9236: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-25304: CUDA version < 12.4
-16765: CUDA version < 12.4; System RAM is less than total VRAM.
-26056: CUDA version < 12.4
-18231: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-23211: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-17549: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-16597: CUDA version < 12.4
-16686: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-18343: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-17092: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-21383: PCIe bandwidth <= 2.85
-28168: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27114: CUDA version < 12.4; Direct port count <= 3
-27221: CUDA version < 12.4
-22767: CUDA version < 12.4
-27137: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-21436: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-15765: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-24832: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-28367: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-28914: CUDA version < 12.4
-20601: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-13903: CUDA version < 12.4; System RAM is less than total VRAM.
-17825: CUDA version < 12.4
-16466: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-25430: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-17736: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-21105: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-12670: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-15804: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27566: CUDA version < 12.4
-15647: CUDA version < 12.4
-29450: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29085: PCIe bandwidth <= 2.85
-29553: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-16607: CUDA version < 12.4; System RAM is less than total VRAM.
-29664: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-26604: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+25645: CUDA version < 12.4
+22737: CUDA version < 12.4; System RAM is less than total VRAM.
+27918: CUDA version < 12.4
+14571: CUDA version < 12.4
+25818: CUDA version < 12.4
 27506: CUDA version < 12.4
-28330: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-26275: CUDA version < 12.4
-14335: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-26749: CUDA version < 12.4
-23614: CUDA version < 12.4; Direct port count <= 3; System RAM is less than total VRAM.
-26572: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29227: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27693: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-15814: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29295: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-21997: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27325: CUDA version < 12.4
-13970: CUDA version < 12.4
-26573: CUDA version < 12.4
-29690: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29697: CUDA version < 12.4; System RAM is less than total VRAM.
-17310: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-6422: CUDA version < 12.4; System RAM is less than total VRAM.
-25807: CUDA version < 12.4; System RAM is less than total VRAM.
-29298: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-23787: CUDA version < 12.4
-26712: CUDA version < 12.4
-23148: CUDA version < 12.4; PCIe bandwidth <= 2.85
-23355: CUDA version < 12.4
-29361: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-24292: CUDA version < 12.4; System RAM is less than total VRAM.
-18599: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29051: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-18409: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-23093: CUDA version < 12.4; System RAM is less than total VRAM.
-29019: CUDA version < 12.4
-22736: CUDA version < 12.4; System RAM is less than total VRAM.
-22219: CUDA version < 12.4
-29078: CUDA version < 12.4
-29183: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29676: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-24513: CUDA version < 12.4
-24207: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29565: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-16772: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-24206: CUDA version < 12.4
-23313: CUDA version < 12.4
-29624: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29633: CUDA version < 12.4
-24548: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-18307: CUDA version < 12.4
-15512: CUDA version < 12.4
-28458: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-19748: CUDA version < 12.4
-24360: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-17767: CUDA version < 12.4
-15898: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-26081: CUDA version < 12.4
-21172: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-24843: CUDA version < 12.4
-19490: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/asks/11267065/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-21173: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29146: CUDA version < 12.4
-13024: CUDA version < 12.4; System RAM is less than total VRAM.
-29750: Reliability <= 0.90
-24990: CUDA version < 12.4
-22452: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13519985/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29575: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13519984/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-23585: CUDA version < 12.4; System RAM is less than total VRAM.
-21768: PCIe bandwidth <= 2.85
-22109: CUDA version < 12.4
-26747: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13519978/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27422: CUDA version < 12.4
-27169: System RAM is less than total VRAM.
-26986: Instance 13519964 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": dial tcp [2a03:2880:f11b:83:face:b00c:0:25de]:443: connect: network is unreachable
-19481: CUDA version < 12.4
-25604: CUDA version < 12.4
-21699: PCIe bandwidth <= 2.85
-12597: Instance 13519981 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
-29194: CUDA version < 12.4
-27141: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13519961/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29403: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13519951/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-19052: CUDA version < 12.4; System RAM is less than total VRAM.
-29529: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-27237: System RAM is less than total VRAM.
-19779: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-25418: Instance 13519969 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": dial tcp: lookup registry-1.docker.io: no such host
-15690: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520006/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-17399: CUDA version < 12.4
+23446: CUDA version < 12.4
+20410: CUDA version < 12.4
+19005: CUDA version < 12.4; System RAM is less than total VRAM.
+14993: CUDA version < 12.4
+28168: Instance 13528510 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
+18202: CUDA version < 12.4
+24351: CUDA version < 12.4
 29548: No response for 60 seconds with running instance
+16319: CUDA version < 12.4
+17549: CUDA version < 12.4
+28304: CUDA version < 12.4; Direct port count <= 3
+25304: CUDA version < 12.4
+27615: System RAM is less than total VRAM.
+29378: Direct port count <= 3
+29369: CUDA version < 12.4
+21106: PCIe bandwidth <= 2.85
+16765: CUDA version < 12.4; System RAM is less than total VRAM.
+25046: CUDA version < 12.4; System RAM is less than total VRAM.
+16686: CUDA version < 12.4; System RAM is less than total VRAM.
+28542: CUDA version < 12.4
+27114: CUDA version < 12.4; Direct port count <= 3
+23929: CUDA version < 12.4; System RAM is less than total VRAM.
+21436: CUDA version < 12.4
+18343: CUDA version < 12.4
+28367: CUDA version < 12.4
+17825: CUDA version < 12.4
+24832: CUDA version < 12.4
+17736: CUDA version < 12.4
+16466: CUDA version < 12.4; System RAM is less than total VRAM.
+16597: CUDA version < 12.4
+15765: CUDA version < 12.4
+22776: CUDA version < 12.4
+26056: CUDA version < 12.4
+29022: CUDA version < 12.4
+18231: Instance 13528564 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
+22767: Machine ID 22767 not found or not rentable.
+29553: No response for 60 seconds with running instance
+27221: CUDA version < 12.4
+17867: CUDA version < 12.4
+28365: CUDA version < 12.4
+26604: CUDA version < 12.4
+15814: CUDA version < 12.4; System RAM is less than total VRAM.
+26275: CUDA version < 12.4
+16754: CUDA version < 12.4; System RAM is less than total VRAM.
+16271: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13528540/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+29085: PCIe bandwidth <= 2.85
+23614: CUDA version < 12.4; Direct port count <= 3; System RAM is less than total VRAM.
+12670: CUDA version < 12.4
+15647: CUDA version < 12.4
+19499: CUDA version < 12.4
+26749: CUDA version < 12.4
+28263: CUDA version < 12.4
+21099: PCIe bandwidth <= 2.85
+27693: CUDA version < 12.4
+26986: Instance 13528639 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": dial tcp [2a03:2880:f10d:183:face:b00c:0:25de]:443: connect: network is unreachable
+19497: CUDA version < 12.4
+13970: CUDA version < 12.4
+23148: CUDA version < 12.4; PCIe bandwidth <= 2.85
+20511: CUDA version < 12.4
+23787: CUDA version < 12.4
+16607: CUDA version < 12.4; System RAM is less than total VRAM.
+13903: CUDA version < 12.4; System RAM is less than total VRAM.
+6422: CUDA version < 12.4; System RAM is less than total VRAM.
+28334: No response for 60 seconds with running instance
+24292: CUDA version < 12.4; System RAM is less than total VRAM.
+23355: CUDA version < 12.4
+29183: CUDA version < 12.4
+26712: CUDA version < 12.4
+26633: CUDA version < 12.4
+18409: CUDA version < 12.4
+19488: CUDA version < 12.4
+29227: No response for 60 seconds with running instance
+20868: CUDA version < 12.4
+12597: Instance 13528679 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
+26605: CUDA version < 12.4
+15512: CUDA version < 12.4
+25418: No response for 60 seconds with running instance
+22736: CUDA version < 12.4; System RAM is less than total VRAM.
+24548: No response for 60 seconds with running instance
+23093: CUDA version < 12.4; System RAM is less than total VRAM.
+27169: System RAM is less than total VRAM.
+17767: CUDA version < 12.4
+21344: CUDA version < 12.4
+17574: System RAM is less than total VRAM.
+22905: CUDA version < 12.4
+28458: CUDA version < 12.4
+29758: Reliability <= 0.90
+16772: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+19748: CUDA version < 12.4
+19052: CUDA version < 12.4; System RAM is less than total VRAM.
+22219: CUDA version < 12.4
+22371: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
 27739: CUDA version < 12.4
-27238: System RAM is less than total VRAM.
-24836: No response for 60 seconds with running instance
+23313: CUDA version < 12.4
+29633: CUDA version < 12.4
+26747: No response for 60 seconds with running instance
+29326: CUDA version < 12.4
+28417: No response for 60 seconds with running instance
+22109: CUDA version < 12.4
+26817: Test did not complete within the time limit
+24990: CUDA version < 12.4
+21197: PCIe bandwidth <= 2.85
+27422: CUDA version < 12.4
+29573: CUDA version < 12.4
+24364: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+27412: CUDA version < 12.4
+13024: CUDA version < 12.4; System RAM is less than total VRAM.
+29086: Machine ID 29086 not found or not rentable.
 17064: CUDA version < 12.4
-23981: CUDA version < 12.4
-26565: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520012/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27184: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13519966/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-17219: CUDA version < 12.4
+23585: CUDA version < 12.4; System RAM is less than total VRAM.
+29194: CUDA version < 12.4
+10270: CUDA version < 12.4; System RAM is less than total VRAM.
 23768: CUDA version < 12.4
-15650: CUDA version < 12.4
-29620: CUDA version < 12.4
-26829: CUDA version < 12.4
-15444: CUDA version < 12.4
-27939: Invalid JSON output or error message: failed with error 429: (no detail message supplied)
-21899: CUDA version < 12.4
-27243: CUDA version < 12.4
-29196: CUDA version < 12.4
-21553: System RAM is less than total VRAM.
-19058: CUDA version < 12.4; System RAM is less than total VRAM.
-27930: CUDA version < 12.4
-15445: CUDA version < 12.4
-20835: CUDA version < 12.4
-29395: Instance 13520051 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
-26827: CUDA version < 12.4
-29180: No response for 60 seconds with running instance
-16222: CUDA version < 12.4
-12332: CUDA version < 12.4
-26817: Instance offline during testing
-16227: CUDA version < 12.4
-23331: CUDA version < 12.4
-27437: Instance 13520055 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": EOF
-29124: PCIe bandwidth <= 2.85
-22710: CUDA version < 12.4
-24500: CUDA version < 12.4
-25629: CUDA version < 12.4
-28943: CUDA version < 12.4
-28657: Direct port count <= 3
-13539: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520069/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-10830: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-21960: CUDA version < 12.4; Reliability <= 0.90; System RAM is less than total VRAM.
-29503: CUDA version < 12.4
-28736: CUDA version < 12.4
-29630: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520060/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-27931: CUDA version < 12.4
-29588: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-24689: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-27910: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520036/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-21113: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-27764: CUDA version < 12.4; Direct port count <= 3
-25044: CUDA version < 12.4
-26283: CUDA version < 12.4
-29680: System RAM is less than total VRAM.
-16472: CUDA version < 12.4
-23926: CUDA version < 12.4; PCIe bandwidth <= 2.85
-19988: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28741: CUDA version < 12.4
-26520: System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29102: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-26399: CUDA version < 12.4
-24186: CUDA version < 12.4; System RAM is less than total VRAM.
-29341: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-21111: CUDA version < 12.4; System RAM is less than total VRAM.
-27633: CUDA version < 12.4
-29099: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-28445: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520070/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29175: CUDA version < 12.4
-23016: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-29404: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520085/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+17399: CUDA version < 12.4
+19779: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+21381: PCIe bandwidth <= 2.85
+17219: CUDA version < 12.4
+19480: CUDA version < 12.4
+28384: No response for 60 seconds with running instance
+26565: Instance offline during testing
 29762: Reliability <= 0.90
-25802: System RAM is less than total VRAM.
-27466: Instance 13520061 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": dial tcp: lookup registry-1.docker.io on 127.0.0.53:53: read udp 127.0.0.1:56330->127.0.0.53:53: i/o timeout
-28678: Reliability <= 0.90
+25604: CUDA version < 12.4
+29529: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29188: Machine ID 29188 not found or not rentable.
+27238: Machine ID 27238 not found or not rentable.
+21960: Machine ID 21960 not found or not rentable.
+26645: Machine ID 26645 not found or not rentable.
+25065: Machine ID 25065 not found or not rentable.
+15650: CUDA version < 12.4
+20438: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+28148: CUDA version < 12.4
+27243: CUDA version < 12.4
+27437: Machine ID 27437 not found or not rentable.
+15445: CUDA version < 12.4
+29581: Machine ID 29581 not found or not rentable.
+27685: Machine ID 27685 not found or not rentable.
+14025: Machine ID 14025 not found or not rentable.
+20835: CUDA version < 12.4
+27930: CUDA version < 12.4
+29607: Machine ID 29607 not found or not rentable.
+26825: CUDA version < 12.4
+29069: Machine ID 29069 not found or not rentable.
+21553: Machine ID 21553 not found or not rentable.
+25334: Machine ID 25334 not found or not rentable.
+19058: Machine ID 19058 not found or not rentable.
+23608: CUDA version < 12.4
+29178: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13528900/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+29741: Instance 13528903 encountered an error: Error: failed to start containers: C.13528903
+21144: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29196: CUDA version < 12.4
+16227: CUDA version < 12.4
+25629: CUDA version < 12.4
+23316: CUDA version < 12.4
+28657: Direct port count <= 3
+26827: CUDA version < 12.4
+10830: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+16222: CUDA version < 12.4
+28943: CUDA version < 12.4
+29391: No response for 60 seconds with running instance
+29555: CUDA version < 12.4
+27237: System RAM is less than total VRAM.
+29488: CUDA version < 12.4
+22710: CUDA version < 12.4
+29146: CUDA version < 12.4
+29404: No response for 60 seconds with running instance
+23016: CUDA version < 12.4; System RAM is less than total VRAM.
+25044: CUDA version < 12.4
+24689: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+27925: CUDA version < 12.4
+29588: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29561: CUDA version < 12.4
+29680: System RAM is less than total VRAM.
+28736: CUDA version < 12.4
+19990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+26283: CUDA version < 12.4
+15601: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+29102: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+21172: CUDA version < 12.4; System RAM is less than total VRAM.
+23926: CUDA version < 12.4; PCIe bandwidth <= 2.85
+26520: System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+27235: No response for 60 seconds with running instance
+16472: CUDA version < 12.4
+27764: CUDA version < 12.4; Direct port count <= 3
+28424: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+26399: CUDA version < 12.4
+29785: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+21113: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+28684: Test did not complete within the time limit
+28741: CUDA version < 12.4
+29099: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+27633: CUDA version < 12.4
+29503: CUDA version < 12.4
+23923: CUDA version < 12.4; Direct port count <= 3
 27662: CUDA version < 12.4
-29188: No response for 60 seconds with running instance
+24184: CUDA version < 12.4; System RAM is less than total VRAM.
 27665: CUDA version < 12.4
+28678: No response for 60 seconds with running instance
 29152: CUDA version < 12.4
+16798: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+23981: CUDA version < 12.4
+27233: No response for 60 seconds with running instance
 29247: CUDA version < 12.4
 19054: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29758: Reliability <= 0.90
-29678: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520072/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-28684: 404 Client Error: Not Found for url: https://console.vast.ai/api/v0/asks/12951444/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29391: No response for 60 seconds with running instance
-29108: Upload speed <= 10 Mb/s
+29395: Instance 13528745 did not become running within 900 seconds.
+29749: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
 24673: CUDA version < 12.4; System RAM is less than total VRAM.
-28726: CUDA version < 12.4
-29315: System RAM is less than total VRAM.
-28708: CUDA version < 12.4
+28431: No response for 60 seconds with running instance
 16523: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29749: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29125: No response for 60 seconds with running instance
+29620: CUDA version < 12.4
+28726: CUDA version < 12.4
 19987: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29523: No response for 60 seconds with running instance
-29161: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-28724: CUDA version < 12.4
+29108: Upload speed <= 10 Mb/s
 28705: CUDA version < 12.4
-26940: CUDA version < 12.4
 23026: CUDA version < 12.4
+28708: CUDA version < 12.4
+29315: System RAM is less than total VRAM.
+28724: CUDA version < 12.4
+26940: CUDA version < 12.4
+29161: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+29791: Reliability <= 0.90
+17133: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 29263: Upload speed <= 10 Mb/s
-23253: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29198: Machine ID 29198 not found or not rentable.
-16798: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
 25411: CUDA version < 12.4; System RAM is less than total VRAM.
-28309: CUDA version < 12.4
-28722: CUDA version < 12.4
+29125: No response for 60 seconds with running instance
 29116: No response for 60 seconds with running instance
-29544: ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
-29695: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29743: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520064/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29304: CUDA version < 12.4
-27132: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29439: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29599: Download speed <= 10 Mb/s
-20293: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28073: PCIe bandwidth <= 2.85
-29572: Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-19743: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29400: CUDA version < 12.4
-20285: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-27067: CUDA version < 12.4; System RAM is less than total VRAM.
-28087: Invalid JSON output or error message: failed with error 429: (no detail message supplied)
-27028: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29344: CUDA version < 12.4
-29488: CUDA version < 12.4
-24986: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-25985: CUDA version < 12.4
+28722: CUDA version < 12.4
+28309: CUDA version < 12.4
 29694: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-19653: CUDA version < 12.4
+29500: ERROR 3: ECC test failed. Allocating memory on cuda:0...
+28073: PCIe bandwidth <= 2.85
+29599: Download speed <= 10 Mb/s
+17256: System RAM is less than total VRAM.
+27325: CUDA version < 12.4
+24986: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+19743: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29400: Machine ID 29400 not found or not rentable.
+25589: Machine ID 25589 not found or not rentable.
+28925: PCIe bandwidth <= 2.85
+27067: CUDA version < 12.4; System RAM is less than total VRAM.
+29480: CUDA version < 12.4
+27028: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29572: Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29776: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+25985: CUDA version < 12.4
+29439: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 22818: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29121: Invalid JSON output or error message: failed with error 429: (no detail message supplied)
-17147: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28477: CUDA version < 12.4
 28248: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-22448: No response for 60 seconds with running instance
+28079: PCIe bandwidth <= 2.85
+29695: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+19653: CUDA version < 12.4
+28477: CUDA version < 12.4
+17147: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29772: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+23253: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29609: CUDA version < 12.4
+20293: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+28457: 404 Client Error: Not Found for url: https://console.vast.ai/api/v0/asks/13527166/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+28270: No response for 60 seconds with running instance
+29788: Reliability <= 0.90; System RAM is less than total VRAM.
+29745: CUDA version < 12.4
 16496: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 12549: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-14751: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29601: No response for 60 seconds with running instance
+28252: ERROR 3: ECC test failed. Allocating memory on cuda:0...
 29266: System RAM is less than total VRAM.
-18386: System RAM is less than total VRAM.
-28856: No response for 60 seconds with running instance
-28072: No response for 60 seconds with running instance
-16499: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 23849: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28068: No response for 60 seconds with running instance
-29644: CUDA version < 12.4
-29590: CUDA version < 12.4
+18386: System RAM is less than total VRAM.
+16499: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29660: No response for 60 seconds with running instance
 26177: CUDA version < 12.4
-28980: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-17105: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28274: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-13582: CUDA version < 12.4; PCIe bandwidth <= 2.85; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-29754: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-17125: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+17439: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29644: CUDA version < 12.4
+17154: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 29692: Download speed <= 10 Mb/s
-28855: No response for 60 seconds with running instance
-27213: CUDA version < 12.4; PCIe bandwidth <= 2.85
-27815: CUDA version < 12.4
+28980: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+13582: CUDA version < 12.4; PCIe bandwidth <= 2.85; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+29764: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29590: CUDA version < 12.4
+20159: CUDA version < 12.4
 15362: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-29745: CUDA version < 12.4; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-24985: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+27815: CUDA version < 12.4
+29755: CUDA version < 12.4; Reliability <= 0.90
+27213: CUDA version < 12.4; PCIe bandwidth <= 2.85
+17114: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29789: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29775: Machine ID 29775 not found or not rentable.
 23786: CUDA version < 12.4
-28254: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520092/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29193: Direct port count <= 3; PCIe bandwidth <= 2.85; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29598: No response for 60 seconds with running instance
+28707: Machine ID 28707 not found or not rentable.
+24985: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+14751: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 14532: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 23451: CUDA version < 12.4; System RAM is less than total VRAM.
-28270: No response for 60 seconds with running instance
-23990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28074: No response for 60 seconds with running instance
-23248: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 23567: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-27618: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520175/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+23990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 24780: CUDA version < 12.4
-20294: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+17113: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29681: Instance 13529206 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
+29732: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+20285: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 24919: CUDA version < 12.4
-29764: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29600: No response for 60 seconds with running instance
-17133: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 16530: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-15680: CUDA version < 12.4; Reliability <= 0.90; Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-23263: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29533: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-16497: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-16529: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-25788: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29617: Invalid JSON output or error message: failed with error 429: (no detail message supplied)
-29681: Instance 13520180 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
-16512: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-24657: CUDA version < 12.4
-29598: Invalid JSON output or error message: failed with error 429: (no detail message supplied)
-29238: CUDA version < 12.4
-22904: CUDA version < 12.4
-28721: CUDA version < 12.4
-21515: PCIe bandwidth <= 2.85; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29761: Reliability <= 0.90
-29584: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520163/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
+23259: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 27441: ERROR 1: System requirements test failed. GPU 1 is not the same model as the first GPU.
-28260: No response for 60 seconds with running instance
-29747: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/instances/13520075/?owner=me&api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-29260: No response for 60 seconds with running instance
-27073: No response for 60 seconds with running instance
+29533: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+28853: No response for 60 seconds with running instance
 28924: No response for 60 seconds with running instance
-16271: Instance 13519960 did not become running within 900 seconds.
-28078: Instance 13520143 did not become running within 900 seconds.
-27960: Instance 13520161 did not become running within 900 seconds.
+16512: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+16529: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29803: CUDA version < 12.4; Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+25788: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+28727: CUDA version < 12.4
+28260: Machine ID 28260 not found or not rentable.
+16494: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+24657: CUDA version < 12.4
+29238: CUDA version < 12.4
+15680: Machine ID 15680 not found or not rentable.
+22904: CUDA version < 12.4
+28721: CUDA version < 12.4; PCIe bandwidth <= 2.85
+29761: Reliability <= 0.90
+28858: Instance 13529064 did not become running within 900 seconds.
+27073: No response for 60 seconds with running instance
+27959: Instance 13529128 did not become running within 900 seconds.
+29691: Instance 13529160 did not become running within 900 seconds.
