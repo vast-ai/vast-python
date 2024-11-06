@@ -3,7 +3,7 @@
 # Description:
 #     This Python script automates the process of searching for offers using the
 #     VAST tool, filtering unverified offers (when specified), selecting the best
-#     offers based on download performance (dlperf), and performing self-tests
+#     offers based on deep learning performance (dlperf), and performing self-tests
 #     on the associated machines. The results of these tests are then saved to
 #     output files, and a summary of failures is presented.
 #
@@ -35,7 +35,7 @@
 #
 #     get_best_offers(offers):
 #         From the list of offers, selects the best offer for each
-#         machine based on the highest download performance (dlperf). This
+#         machine based on the highest deep learning performance (dlperf). This
 #         results in a dictionary mapping machine IDs to their best offer.
 #
 #     test_machine(machine_id):
@@ -201,7 +201,7 @@ def get_unverified_offers(offers):
 
 def get_best_offers(offers):
     """
-    Selects the best offer for each machine based on the highest download performance (dlperf).
+    Selects the best offer for each machine based on the highest deep learning performance (dlperf).
 
     Parameters:
         offers (list): List of offer dictionaries.
