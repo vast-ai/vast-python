@@ -5321,7 +5321,7 @@ def self_test__machine(args):
                     ID=ask_contract_id,
                     price=None,
                     disk=20,
-                    image='jjziets/vasttest:latest',
+                    image='jjziets/selftest:latest',
                     login=None,
                     label=None,
                     onstart=None,
