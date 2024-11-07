@@ -7,6 +7,12 @@ from unittest.mock import patch, MagicMock
 import argparse
 import unittest
 
+from unittest.mock import patch, MagicMock
+from io import StringIO
+import sys
+import sys
+import contextlib
+from vast import prepay__instance
 import json
 from vast import destroy__instance
 import pytest
@@ -471,3 +477,90 @@ class TestDestroyInstance(unittest.TestCase):
         call_args = mock_http_del.call_args
         expected_url_part = f"/instances/{self.mock_args.id}/"
         self.assertTrue(expected_url_part in call_args[0][1])
+ 
+from vast import prepay__instance
+
+class TestPrepayInstance(unittest.TestCase):
+    def setUp(self):
+        self.args = MagicMock()
+        self.args.ID = 12345
+        self.args.amount = 100.0
+        self.args.explain = False
+        self.args.api_key = "test_key"
+        self.args.url = "https://vast.ai/api/v0"
+
+    @patch('vast.http_put')
+    def test_prepay_instance_success(self, mock_http_put):
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "success": True,
+            "timescale": 1.5,
+            "discount_rate": 0.25
+        }
+        mock_http_put.return_value = mock_response
+
+        # Capture stdout
+        captured_output = StringIO()
+        with contextlib.redirect_stdout(captured_output):
+            prepay__instance(self.args)
+
+        # Verify API call
+        expected_url = f"{self.args.url}/instances/prepay/{self.args.ID}/"
+        expected_json = {"amount": self.args.amount}
+        mock_http_put.assert_called_once()
+        call_args = mock_http_put.call_args[0]
+        self.assertEqual(call_args[1], expected_url)
+        self.assertEqual(mock_http_put.call_args[1]['json'], expected_json)
+
+        # Verify output
+        expected_output = "prepaid for 1.5 months of instance 12345 applying $100.0 credits for a discount of 25.0%\n"
+        self.assertEqual(captured_output.getvalue(), expected_output)
+
+    @patch('vast.http_put')
+    def test_prepay_instance_failure(self, mock_http_put):
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "success": False,
+            "msg": "Insufficient funds"
+        }
+        mock_http_put.return_value = mock_response
+
+        # Capture stdout
+        captured_output = StringIO()
+        with contextlib.redirect_stdout(captured_output):
+            prepay__instance(self.args)
+
+        # Verify error message
+        self.assertEqual(captured_output.getvalue(), "Insufficient funds\n")
+
+    @patch('vast.http_put')
+    def test_prepay_instance_explain(self, mock_http_put):
+        self.args.explain = True
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True, "timescale": 1.0, "discount_rate": 0.2}
+        mock_http_put.return_value = mock_response
+
+        # Capture stdout
+        captured_output = StringIO()
+        with contextlib.redirect_stdout(captured_output):
+            prepay__instance(self.args)
+
+        # Verify explain output includes request JSON
+        output = captured_output.getvalue()
+        self.assertIn("request json:", output)
+        self.assertIn('{"amount": 100.0}', output)
+
+    @patch('vast.http_put')
+    def test_prepay_instance_http_error(self, mock_http_put):
+        # Setup mock to raise HTTP error
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("HTTP Error")
+        mock_http_put.return_value = mock_response
+
+        # Verify exception is raised
+        with self.assertRaises(Exception) as context:
+            prepay__instance(self.args)
+        
+        self.assertEqual(str(context.exception), "HTTP Error")
