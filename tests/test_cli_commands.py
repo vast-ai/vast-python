@@ -2,9 +2,12 @@ import vast
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, MagicMock
 import argparse
 import unittest
 
+import json
+from vast import destroy__instance
 import pytest
 from unittest.mock import patch, mock_open, MagicMock
 import json
@@ -406,3 +409,71 @@ def test_create_instance_explain_mode(base_args, capsys):
         
         captured = capsys.readouterr()
         assert "request json:" in captured.out
+ 
+
+class TestDestroyInstance(unittest.TestCase):
+    def setUp(self):
+        self.args = argparse.Namespace()
+        self.args.id = 12345
+        self.args.api_key = "test_key"
+        self.args.raw = False
+        
+    @patch('vast.http_delete')
+    def test_destroy_instance_success(self, mock_http_delete):
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_http_delete.return_value = mock_response
+        
+        # Execute command
+        destroy__instance(self.args)
+        
+        # Verify correct API call
+        mock_http_delete.assert_called_once()
+        call_args = mock_http_delete.call_args
+        self.assertIn(f"/instances/{self.args.id}/", call_args[0][1])  # Verify URL
+        
+    @patch('vast.http_delete')
+    def test_destroy_instance_api_error(self, mock_http_delete):
+        # Setup mock response for API error
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("API Error")
+        mock_http_delete.return_value = mock_response
+        
+        # Verify error handling
+        with self.assertRaises(Exception):
+            destroy__instance(self.args)
+            
+    @patch('vast.http_delete')
+    def test_destroy_instance_raw_output(self, mock_http_delete):
+        # Test raw output flag
+        self.args.raw = True
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_http_delete.return_value = mock_response
+        
+        # Capture stdout to verify raw output
+        with patch('builtins.print') as mock_print:
+            destroy__instance(self.args)
+            mock_print.assert_called_with(json.dumps({"success": True}, indent=1))
+            
+    def test_destroy_instance_invalid_id(self):
+        # Test with invalid instance ID
+        self.args.id = -1
+        with self.assertRaises(ValueError):
+            destroy__instance(self.args)
+            
+    @patch('vast.http_delete')
+    def test_destroy_instance_headers(self, mock_http_delete):
+        # Verify headers are properly set
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_http_delete.return_value = mock_response
+        
+        destroy__instance(self.args)
+        
+        # Verify headers in API call
+        call_kwargs = mock_http_delete.call_args[1]
+        self.assertIn('headers', call_kwargs)
+        self.assertIn('Authorization', call_kwargs['headers'])
+        self.assertEqual(call_kwargs['headers']['Authorization'], self.args.api_key)
