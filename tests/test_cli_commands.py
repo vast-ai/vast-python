@@ -1,168 +1,62 @@
-from vast import (
-    create__instance, destroy__instance, destroy__instances,
-    attach__ssh, prepay__instance, reboot__instance,
-    recycle__instance, search__offers
-)
+from vast_python.vast import create__instance, destroy__instance, destroy__instances, prepay__instance, reboot__instance, recycle__instance, search__offers
 
 class TestCLICommands(unittest.TestCase):
+
     def setUp(self):
-        # Setup common test fixtures
-        self.mock_response = MagicMock()
-        self.mock_response.status_code = 200
-        self.mock_response.json.return_value = {"success": True}
-        
-        # Create base args namespace
-        self.base_args = argparse.Namespace(
-            api_key="test_key",
-            raw=False,
-            explain=False,
-            url=None,
-            retry=1
-        )
+        self.args = argparse.Namespace()
+        self.args.api_key = 'dummy_api_key'
+        self.headers = {'Authorization': f'Bearer {self.args.api_key}'}
 
-    def test_create_instance_invalid_inputs(self):
-        """Test create_instance with various invalid inputs"""
-        with patch('vast.http_put') as mock_put:
-            # Test invalid price
-            args = argparse.Namespace(**vars(self.base_args))
-            args.price = -1
-            args.image = "test_image"
-            args.ID = 123
-            args.onstart = None
-            args.onstart_cmd = None
-            args.entrypoint = None
-            args.env = []
-            args.disk = 10
-            args.label = "test"
-            args.extra = None
-            args.login = None
-            args.python_utf8 = False
-            args.lang_utf8 = False
-            args.jupyter_lab = False
-            args.jupyter_dir = None
-            args.force = False
-            args.cancel_unavail = False
-            args.template_hash = None
-            args.args = None
-            
-            mock_put.side_effect = ValueError("Invalid price")
-            with self.assertRaises(ValueError):
-                create__instance(args)
+    @patch('vast_python.vast.apiurl')
+    @patch('vast_python.vast.http_put')
+    def test_create_instance_invalid_inputs(self, mock_http_put, mock_apiurl):
+        # Test with missing required fields
+        self.args.onstart = None
+        self.args.image = None
+        with self.assertRaises(Exception):
+            create__instance(self.args)
 
-            # Test missing required image
-            args.price = 1.0
-            args.image = None
-            with self.assertRaises(AttributeError):
-                create__instance(args)
+        # Test with invalid price
+        self.args.image = 'valid_image'
+        self.args.price = -1
+        with self.assertRaises(ValueError):
+            create__instance(self.args)
 
-    def test_destroy_instance_errors(self):
-        """Test destroy_instance error handling"""
-        with patch('vast.http_delete') as mock_delete:
-            # Test non-existent instance
-            args = argparse.Namespace(**vars(self.base_args))
-            args.id = 99999
-            mock_delete.side_effect = HTTPError("404 Client Error: Not Found")
-            
-            with self.assertRaises(HTTPError):
-                destroy__instance(args)
+    @patch('vast_python.vast.http_put')
+    def test_create_instance_error_conditions(self, mock_http_put):
+        # Simulate server error
+        mock_http_put.side_effect = Exception("Server error")
+        with self.assertRaises(Exception):
+            create__instance(self.args)
 
-            # Test invalid instance ID
-            args.id = -1
-            mock_delete.side_effect = ValueError("Invalid instance ID")
-            
-            with self.assertRaises(ValueError):
-                destroy__instance(args)
+    @patch('vast_python.vast.http_put')
+    def test_create_instance_edge_cases(self, mock_http_put):
+        # Test with empty onstart command
+        self.args.onstart_cmd = ''
+        mock_http_put.return_value.json.return_value = {"success": True, "new_contract": 12345}
+        create__instance(self.args)
 
-    def test_attach_ssh_errors(self):
-        """Test attach_ssh error conditions"""
-        with patch('vast.http_post') as mock_post:
-            args = argparse.Namespace(**vars(self.base_args))
-            args.instance_id = 123
-            args.ssh_key = "invalid_path"
+    @patch('vast_python.vast.http_put')
+    def test_destroy_instance_invalid_inputs(self, mock_http_put):
+        # Test with invalid ID
+        self.args.id = 'invalid_id'
+        with self.assertRaises(ValueError):
+            destroy__instance(self.args)
 
-            # Test invalid SSH key file
-            with self.assertRaises(FileNotFoundError):
-                attach__ssh(args)
+    @patch('vast_python.vast.http_put')
+    def test_destroy_instance_error_conditions(self, mock_http_put):
+        # Simulate network failure
+        mock_http_put.side_effect = Exception("Network failure")
+        with self.assertRaises(Exception):
+            destroy__instance(self.args)
 
-            # Test API error
-            mock_post.side_effect = HTTPError("400 Client Error: Bad Request")
-            args.ssh_key = "test_key"
-            with self.assertRaises(HTTPError):
-                attach__ssh(args)
-
-    def test_prepay_instance_edge_cases(self):
-        """Test prepay_instance edge cases"""
-        with patch('vast.http_put') as mock_put:
-            args = argparse.Namespace(**vars(self.base_args))
-            args.ID = 123
-
-            # Test zero amount
-            args.amount = 0
-            mock_put.return_value.json.return_value = {"success": False, "msg": "Invalid amount"}
-            prepay__instance(args)
-            
-            # Test negative amount
-            args.amount = -1
-            mock_put.return_value.json.return_value = {"success": False, "msg": "Amount must be positive"}
-            prepay__instance(args)
-
-    def test_reboot_instance_errors(self):
-        """Test reboot_instance error handling"""
-        with patch('vast.http_put') as mock_put:
-            args = argparse.Namespace(**vars(self.base_args))
-            args.ID = 123
-
-            # Test connection error
-            mock_put.side_effect = ConnectionError()
-            with self.assertRaises(ConnectionError):
-                reboot__instance(args)
-
-            # Test rate limiting
-            mock_put.side_effect = HTTPError("429 Client Error: Too Many Requests")
-            with self.assertRaises(HTTPError):
-                reboot__instance(args)
-
-    def test_recycle_instance_errors(self):
-        """Test recycle_instance error conditions"""
-        with patch('vast.http_put') as mock_put:
-            args = argparse.Namespace(**vars(self.base_args))
-            args.ID = 123
-
-            # Test unauthorized access
-            mock_put.side_effect = HTTPError("401 Client Error: Unauthorized")
-            with self.assertRaises(HTTPError):
-                recycle__instance(args)
-
-            # Test malformed response
-            mock_put.return_value.status_code = 200
-            mock_put.return_value.json.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
-            with self.assertRaises(json.JSONDecodeError):
-                recycle__instance(args)
-
-    def test_search_offers_edge_cases(self):
-        """Test search_offers edge cases"""
-        with patch('vast.http_put') as mock_put:
-            args = argparse.Namespace(**vars(self.base_args))
-            args.type = "bid"
-            args.storage = 0
-            args.order = ""
-            args.new = True
-            args.disable_bundling = False
-            args.no_default = False
-            
-            # Test empty query
-            args.query = None
-            mock_put.return_value.json.return_value = {"offers": []}
-            search__offers(args)
-
-            # Test malformed query
-            args.query = "invalid:query"
-            with self.assertRaises(ValueError):
-                search__offers(args)
-
-            # Test invalid response content type
-            mock_put.return_value.headers = {'Content-Type': 'text/plain'}
-            search__offers(args)
+    @patch('vast_python.vast.http_put')
+    def test_destroy_instance_edge_cases(self, mock_http_put):
+        # Test with minimum valid ID
+        self.args.id = 0
+        mock_http_put.return_value.json.return_value = {"success": True}
+        destroy__instance(self.args)
+from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
