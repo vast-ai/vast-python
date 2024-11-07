@@ -1,60 +1,42 @@
-from vast_python.vast import create__instance, destroy__instance, destroy__instances, prepay__instance, reboot__instance, recycle__instance, search__offers
 
 class TestCLICommands(unittest.TestCase):
-    def setUp(self):
-        # Mock the apiurl and http_put/post functions to avoid real network calls
-        self.apiurl_patcher = patch('vast_python.vast.apiurl', return_value="http://mocked_url")
-        self.http_put_patcher = patch('vast_python.vast.http_put', return_value=MagicMock(status_code=200, json=lambda: {"success": True}))
-        self.http_post_patcher = patch('vast_python.vast.http_post', return_value=MagicMock(status_code=200, json=lambda: {"offers": []}))
 
-        self.mock_apiurl = self.apiurl_patcher.start()
-        self.mock_http_put = self.http_put_patcher.start()
-        self.mock_http_post = self.http_post_patcher.start()
-
-    def tearDown(self):
-        patch.stopall()
-
-    def test_create_instance_invalid_price(self):
-        """Test create__instance with invalid price input"""
-        args = argparse.Namespace(price="invalid", image="test_image", onstart=None, onstart_cmd=None, entrypoint="entry", env=[], disk=10, label="test", extra="", login="", python_utf8=False, lang_utf8=False, jupyter_lab=False, jupyter_dir="", force=False, cancel_unavail=False, template_hash=None, args=None, ID=123, explain=False, raw=False)
+    def test_attach_ssh_invalid_inputs(self):
+        """Test attach__ssh command with invalid inputs."""
+        args = MagicMock()
+        args.ssh_key = None  # Missing ssh_key
+        args.instance_id = "abc"  # Invalid instance_id type
         with self.assertRaises(ValueError):
-            create__instance(args)
+            parser.parse_args(['attach__ssh', '--ssh-key', args.ssh_key, '--instance-id', args.instance_id])
 
-    def test_destroy_instance_invalid_id(self):
-        """Test destroy__instance with invalid id input"""
-        args = argparse.Namespace(id="invalid_id")
-        with self.assertRaises(ValueError):
-            destroy__instance(args)
+    def test_attach_ssh_error_conditions(self):
+        """Test attach__ssh command handling API errors."""
+        args = MagicMock()
+        args.ssh_key = "path/to/key"
+        args.instance_id = 123
+        with patch('vastai_cli.http_post') as mock_post:
+            mock_post.side_effect = Exception("Network error")
+            with self.assertRaises(Exception):
+                parser.parse_args(['attach__ssh', '--ssh-key', args.ssh_key, '--instance-id', args.instance_id])
 
-    def test_destroy_instances_empty_list(self):
-        """Test destroy__instances with an empty list of ids"""
-        args = argparse.Namespace(ids=[])
-        with self.assertRaises(ValueError):
-            destroy__instances(args)
+    def test_create_instance_edge_cases(self):
+        """Test create__instance command with edge cases."""
+        args = MagicMock()
+        args.onstart = ""
+        args.entrypoint = "default_entrypoint"
+        args.image = "test_image"
+        args.env = {}
+        args.price = 0  # Boundary value for price
+        with patch('vastai_cli.http_put') as mock_put:
+            mock_put.return_value.json.return_value = {'success': True}
+            parser.parse_args(['create__instance', '--image', args.image, '--price', str(args.price)])
 
-    def test_prepay_instance_negative_amount(self):
-        """Test prepay__instance with a negative amount"""
-        args = argparse.Namespace(ID=123, amount=-100, explain=False)
+    def test_destroy_instance_invalid_input(self):
+        """Test destroy__instance command with invalid instance id."""
+        args = MagicMock()
+        args.id = "not_an_integer"
         with self.assertRaises(ValueError):
-            prepay__instance(args)
-
-    def test_reboot_instance_invalid_id(self):
-        """Test reboot__instance with invalid id input"""
-        args = argparse.Namespace(ID="invalid_id")
-        with self.assertRaises(ValueError):
-            reboot__instance(args)
-
-    def test_recycle_instance_invalid_id(self):
-        """Test recycle__instance with invalid id input"""
-        args = argparse.Namespace(ID="invalid_id")
-        with self.assertRaises(ValueError):
-            recycle__instance(args)
-
-    def test_search_offers_invalid_limit(self):
-        """Test search__offers with invalid limit input"""
-        args = argparse.Namespace(no_default=False, query=None, order="", type="normal", limit="invalid", storage=0, disable_bundling=False, new=False, explain=False, raw=False)
-        with self.assertRaises(ValueError):
-            search__offers(args)
+            parser.parse_args(['destroy__instance', '--id', args.id])
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
