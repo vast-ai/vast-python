@@ -1,57 +1,71 @@
+import vast_python.vast as vast
 
 class TestCLICommands(unittest.TestCase):
 
-    @patch('vastai.commands.http_put')
-    def test_create_instance_invalid_inputs(self, mock_put):
-        args = MagicMock()
-        args.onstart = "/invalid/path"
-        args.image = None  # Missing required argument
+    @patch('vast_python.vast.http_post')
+    def test_attach_ssh_invalid_inputs(self, mock_post):
+        args = argparse.Namespace(ssh_key=None, instance_id=None)
         with self.assertRaises(ValueError):
-            create__instance(args)
-        mock_put.assert_not_called()
+            vast.attach__ssh(args)
 
-    @patch('vastai.commands.http_delete')
-    def test_destroy_instance_error_handling(self, mock_delete):
-        args = MagicMock()
-        args.id = 9999  # Non-existent ID
-        mock_delete.return_value.raise_for_status.side_effect = Exception("API Error")
+    @patch('vast_python.vast.http_post')
+    def test_attach_ssh_error_condition(self, mock_post):
+        mock_post.return_value = MagicMock(status_code=500, json=lambda: {"error": "Internal Server Error"})
+        args = argparse.Namespace(ssh_key='dummy_key', instance_id='123')
         with self.assertRaises(Exception):
-            destroy__instance(args)
+            vast.attach__ssh(args)
 
-    @patch('vastai.commands.http_put')
-    def test_prepay_instance_edge_cases(self, mock_put):
-        args = MagicMock()
-        args.ID = 123
-        args.amount = -100  # Negative amount
-        prepay__instance(args)
-        args.amount = 1e9  # Very large number
-        prepay__instance(args)
-        self.assertEqual(mock_put.call_count, 2)
+    @patch('vast_python.vast.http_put')
+    def test_create_instance_invalid_inputs(self, mock_put):
+        args = argparse.Namespace(onstart=None, onstart_cmd=None, image=None, ID=None, explain=False, raw=False)
+        with self.assertRaises(ValueError):
+            vast.create__instance(args)
 
-    @patch('vastai.commands.http_put')
-    def test_reboot_instance_missing_id(self, mock_put):
-        args = MagicMock()
-        args.ID = None
-        with self.assertRaises(TypeError):
-            reboot__instance(args)
-        mock_put.assert_not_called()
-
-    @patch('vastai.commands.http_put')
-    def test_recycle_instance_api_error(self, mock_put):
-        args = MagicMock()
-        args.ID = 123
-        mock_put.return_value.status_code = 500
-        mock_put.return_value.raise_for_status.side_effect = Exception("Server Error")
+    @patch('vast_python.vast.http_put')
+    def test_create_instance_error_condition(self, mock_put):
+        mock_put.return_value = MagicMock(status_code=400, json=lambda: {"error": "Bad Request"})
+        args = argparse.Namespace(onstart_cmd='echo hello', image='ubuntu', ID='123', explain=False, raw=False)
         with self.assertRaises(Exception):
-            recycle__instance(args)
+            vast.create__instance(args)
 
-    @patch('vastai.commands.http_post')
-    def test_search_offers_invalid_query(self, mock_post):
-        args = MagicMock()
-        args.query = "invalid_query"
-        args.no_default = True
-        search__offers(args)
-        mock_post.assert_called_once()
+    @patch('vast_python.vast.http_put')
+    def test_create_instance_edge_case(self, mock_put):
+        mock_put.return_value = MagicMock(status_code=200, json=lambda: {"success": True, "new_contract": 7835610})
+        args = argparse.Namespace(onstart_cmd='echo hello', image='ubuntu', ID='999999999', explain=False, raw=False)
+        vast.create__instance(args)
+
+    @patch('vast_python.vast.http_put')
+    def test_destroy_instance_invalid_id(self, mock_put):
+        args = argparse.Namespace(id='invalid_id')
+        with self.assertRaises(ValueError):
+            vast.destroy__instance(args)
+
+    @patch('vast_python.vast.http_put')
+    def test_destroy_instances_error_condition(self, mock_put):
+        mock_put.return_value = MagicMock(status_code=404, json=lambda: {"error": "Instance not found"})
+        args = argparse.Namespace(ids=[123, 456])
+        with self.assertRaises(Exception):
+            vast.destroy__instances(args)
+
+    @patch('vast_python.vast.http_put')
+    def test_prepy_instance_invalid_amount(self, mock_put):
+        args = argparse.Namespace(ID=123, amount=-50)
+        with self.assertRaises(ValueError):
+            vast.prepay__instance(args)
+
+    @patch('vast_python.vast.http_put')
+    def test_reboot_instance_error_condition(self, mock_put):
+        mock_put.return_value = MagicMock(status_code=503, json=lambda: {"error": "Service Unavailable"})
+        args = argparse.Namespace(ID=123)
+        with self.assertRaises(Exception):
+            vast.reboot__instance(args)
+
+    @patch('vast_python.vast.http_post')
+    def test_search_offers_edge_case(self, mock_post):
+        mock_post.return_value = MagicMock(status_code=200, json=lambda: {"offers": []})
+        args = argparse.Namespace(type='reserved', raw=False, explain=False, no_default=False, query=None, order='', limit=0, storage=None, disable_bundling=False, new=False)
+        vast.search__offers(args)
+from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
