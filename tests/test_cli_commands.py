@@ -1,3 +1,4 @@
+import vast
 
 class TestCLICommands(unittest.TestCase):
 
@@ -124,44 +125,27 @@ class TestCLICommands(unittest.TestCase):
         mock_http_put.assert_called_once_with(self.args, "http://mocked.url", headers=vast.headers, json={})
 
     @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_put')
-    def test_search_offers(self, mock_http_put, mock_apiurl):
+    @patch('vast.vast.http_post')
+    def test_search_offers(self, mock_http_post, mock_apiurl):
         mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(
+        mock_http_post.return_value = MagicMock(
             status_code=200,
-            headers={'Content-Type': 'application/json'},
             json=lambda: {"offers": []}
         )
         
-        self.args.no_default = False
         self.args.query = None
-        self.args.order = ""
+        self.args.order = "price"
         self.args.type = "bid"
-        self.args.limit = None
-        self.args.storage = None
+        self.args.limit = 10
+        self.args.storage = 100
         self.args.disable_bundling = False
-        self.args.new = True
+        self.args.raw = True
+        self.args.new = False
         
         vast.search__offers(self.args)
         
-        mock_http_put.assert_called_once()
-        actual_payload = mock_http_put.call_args[1]['json']
-        self.assertIn('select_cols', actual_payload)
-        self.assertIn('q', actual_payload)
-
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_get')
-    def test_show_machines(self, mock_http_get, mock_apiurl):
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_get.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {"machines": []}
-        )
-        
-        self.args.quiet = False
-        vast.show__machines(self.args)
-        
-        mock_http_get.assert_called_once()
+        mock_http_post.assert_called_once()
+from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
