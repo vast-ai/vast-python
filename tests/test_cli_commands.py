@@ -1,8 +1,12 @@
 import vast
 from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 import argparse
 import unittest
 
+import json
+import json
+from vast import attach__ssh
 class TestCLICommands(unittest.TestCase):
 
     def setUp(self):
@@ -218,3 +222,66 @@ from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 import argparse
 from vast import vast
+ 
+
+class TestAttachSSH(unittest.TestCase):
+    def setUp(self):
+        # Setup base arguments that would come from argparse
+        self.args = argparse.Namespace()
+        self.args.id = 12345
+        self.args.api_key = "test_key"
+        self.args.raw = False
+        self.args.url = "https://vast.ai/api/v0"
+        self.args.ssh_key = "ssh-rsa AAAAB3NzaC1..."
+
+    @patch('vast.http_put')
+    def test_attach_ssh_success(self, mock_http_put):
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_http_put.return_value = mock_response
+
+        # Call the function
+        attach__ssh(self.args)
+
+        # Verify correct URL construction
+        expected_url = f"{self.args.url}/instances/{self.args.id}/ssh"
+        mock_http_put.assert_called_once()
+        actual_url = mock_http_put.call_args[0][1]
+        self.assertEqual(actual_url, expected_url)
+
+        # Verify correct payload
+        actual_payload = mock_http_put.call_args[1]['json']
+        self.assertEqual(actual_payload['ssh_key'], self.args.ssh_key)
+
+    @patch('vast.http_put')
+    def test_attach_ssh_raw_output(self, mock_http_put):
+        # Test with raw output enabled
+        self.args.raw = True
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": True}
+        mock_http_put.return_value = mock_response
+
+        with patch('builtins.print') as mock_print:
+            attach__ssh(self.args)
+            mock_print.assert_called_with(json.dumps({"success": True}, indent=1))
+
+    @patch('vast.http_put')
+    def test_attach_ssh_error_handling(self, mock_http_put):
+        # Test API error handling
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("API Error")
+        mock_http_put.return_value = mock_response
+
+        with self.assertRaises(Exception):
+            attach__ssh(self.args)
+
+    @patch('vast.http_put')
+    def test_attach_ssh_missing_key(self, mock_http_put):
+        # Test missing SSH key
+        self.args.ssh_key = None
+        
+        with self.assertRaises(ValueError):
+            attach__ssh(self.args)
+        
+        mock_http_put.assert_not_called()
