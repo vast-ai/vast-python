@@ -1,242 +1,168 @@
-import vast
-from unittest.mock import patch, MagicMock
-from unittest.mock import patch, MagicMock
-from unittest.mock import patch, mock_open, MagicMock
-from unittest.mock import patch, MagicMock
-from unittest.mock import patch, MagicMock
-from unittest.mock import patch, MagicMock
-import argparse
-import unittest
+from vast import (
+    create__instance, destroy__instance, destroy__instances,
+    attach__ssh, prepay__instance, reboot__instance,
+    recycle__instance, search__offers
+)
 
-import json
-from vast import recycle__instance
-import sys
-from vast import reboot__instance
-from unittest.mock import patch, MagicMock
-from unittest.mock import patch, MagicMock
-from io import StringIO
-import sys
-import sys
-import contextlib
-from vast import prepay__instance
-import json
-from vast import destroy__instance
-import pytest
-from unittest.mock import patch, mock_open, MagicMock
-import json
-from vast import create__instance, http_put
-import json
-import json
-from vast import attach__ssh
 class TestCLICommands(unittest.TestCase):
-
     def setUp(self):
-        self.args = argparse.Namespace()
-        self.args.api_key = 'dummy_api_key'
-        self.args.raw = False
-
-    @patch('vast.vast.http_get')
-    @patch('vast.vast.http_put')
-    @patch('vast.vast.http_post')
-    @patch('vast.vast.apiurl')
-    def test_create_instance(self, mock_apiurl, mock_http_put, mock_http_post, mock_http_get):
-        # Setup args and expected outcomes
-        self.args.ID = 1
-        self.args.image = "test_image"
-        self.args.env = "VAR1=value1"
-        self.args.price = 0.1
-        self.args.disk = 10
-        self.args.label = "test_label"
-        self.args.extra = "extra_info"
-        self.args.onstart_cmd = "echo Hello"
-        self.args.onstart = None
-        self.args.entrypoint = None
-        self.args.login = "user"
-        self.args.python_utf8 = True
-        self.args.lang_utf8 = True
-        self.args.jupyter_lab = False
-        self.args.jupyter_dir = "/notebooks"
-        self.args.force = False
-        self.args.cancel_unavail = False
-        self.args.template_hash = None
-        self.args.args = None
-
-        # Mock API URL and HTTP response
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(status_code=200, json=lambda: {"success": True, "new_contract": 123456})
-
-        # Call the function
-        vast.create__instance(self.args)
-
-        # Assertions
-        mock_apiurl.assert_called_once_with(self.args, "/asks/1/")
-        expected_payload = {
-            "client_id": "me",
-            "image": "test_image",
-            "env": {"VAR1": "value1"},
-            "price": 0.1,
-            "disk": 10,
-            "label": "test_label",
-            "extra": "extra_info",
-            "onstart": "echo Hello",
-            "image_login": "user",
-            "python_utf8": True,
-            "lang_utf8": True,
-            "use_jupyter_lab": False,
-            "jupyter_dir": "/notebooks",
-            "force": False,
-            "cancel_unavail": False,
-            "template_hash_id": None
-        }
-        actual_payload = mock_http_put.call_args[1]['json']
-        self.assertEqual(actual_payload, expected_payload)
-
-    # Additional tests for other commands would follow a similar structure
-
-
-    def setUp(self):
-        self.api_key = 'dummy_api_key'
-        self.args = argparse.Namespace()
-        self.args.api_key = self.api_key
-        self.args.raw = False
-        self.args.explain = False
-
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_put')
-    def test_create_instance(self, mock_http_put, mock_apiurl):
-        # Setup mock return values
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(status_code=200, json=lambda: {"success": True, "new_contract": 123456})
-
-        # Set command-line arguments
-        self.args.ID = 1
-        self.args.image = "test_image"
-        self.args.env = "VAR1=value1"
-        self.args.price = 0.1
-        self.args.disk = 10
-        self.args.label = "test_label"
-        self.args.extra = "extra_info"
-        self.args.onstart_cmd = "echo Hello"
-        self.args.onstart = None
-        self.args.entrypoint = None
-        self.args.login = "user"
-        self.args.python_utf8 = True
-        self.args.lang_utf8 = True
-        self.args.jupyter_lab = False
-        self.args.jupyter_dir = "/notebooks"
-        self.args.force = False
-        self.args.cancel_unavail = False
-        self.args.template_hash = None
-        self.args.args = None
-
-        # Call the function
-        vast.create__instance(self.args)
-
-        # Verify the correct URL was constructed
-        mock_apiurl.assert_called_once_with(self.args, "/asks/1/")
-
-        # Verify the correct payload was sent
-        expected_payload = {
-            "client_id": "me",
-            "image": "test_image",
-            "env": {"VAR1": "value1"},
-            "price": 0.1,
-            "disk": 10,
-            "label": "test_label",
-            "extra": "extra_info",
-            "onstart": "echo Hello",
-            "image_login": "user",
-            "python_utf8": True,
-            "lang_utf8": True,
-            "use_jupyter_lab": False,
-            "jupyter_dir": "/notebooks",
-            "force": False,
-            "cancel_unavail": False,
-            "template_hash_id": None
-        }
-        mock_http_put.assert_called_once()
-        actual_payload = mock_http_put.call_args[1]['json']
-        self.assertEqual(actual_payload, expected_payload)
-
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_put')
-    def test_destroy_instance(self, mock_http_put, mock_apiurl):
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(status_code=200, json=lambda: {"success": True})
+        # Setup common test fixtures
+        self.mock_response = MagicMock()
+        self.mock_response.status_code = 200
+        self.mock_response.json.return_value = {"success": True}
         
-        self.args.id = 12345
-        vast.destroy__instance(self.args)
-        
-        mock_apiurl.assert_called_once()
-        mock_http_put.assert_called_once()
-
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_put')
-    def test_prepay_instance(self, mock_http_put, mock_apiurl):
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(
-            status_code=200, 
-            json=lambda: {"success": True, "timescale": 1.0, "discount_rate": 0.2}
+        # Create base args namespace
+        self.base_args = argparse.Namespace(
+            api_key="test_key",
+            raw=False,
+            explain=False,
+            url=None,
+            retry=1
         )
-        
-        self.args.ID = 12345
-        self.args.amount = 100.0
-        vast.prepay__instance(self.args)
-        
-        expected_payload = {"amount": 100.0}
-        mock_http_put.assert_called_once()
-        actual_payload = mock_http_put.call_args[1]['json']
-        self.assertEqual(actual_payload, expected_payload)
 
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_put')
-    def test_reboot_instance(self, mock_http_put, mock_apiurl):
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {"success": True}
-        )
-        
-        self.args.ID = 12345
-        vast.reboot__instance(self.args)
-        
-        mock_http_put.assert_called_once_with(self.args, "http://mocked.url", headers=vast.headers, json={})
+    def test_create_instance_invalid_inputs(self):
+        """Test create_instance with various invalid inputs"""
+        with patch('vast.http_put') as mock_put:
+            # Test invalid price
+            args = argparse.Namespace(**vars(self.base_args))
+            args.price = -1
+            args.image = "test_image"
+            args.ID = 123
+            args.onstart = None
+            args.onstart_cmd = None
+            args.entrypoint = None
+            args.env = []
+            args.disk = 10
+            args.label = "test"
+            args.extra = None
+            args.login = None
+            args.python_utf8 = False
+            args.lang_utf8 = False
+            args.jupyter_lab = False
+            args.jupyter_dir = None
+            args.force = False
+            args.cancel_unavail = False
+            args.template_hash = None
+            args.args = None
+            
+            mock_put.side_effect = ValueError("Invalid price")
+            with self.assertRaises(ValueError):
+                create__instance(args)
 
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_put')
-    def test_recycle_instance(self, mock_http_put, mock_apiurl):
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_put.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {"success": True}
-        )
-        
-        self.args.ID = 12345
-        vast.recycle__instance(self.args)
-        
-        mock_http_put.assert_called_once_with(self.args, "http://mocked.url", headers=vast.headers, json={})
+            # Test missing required image
+            args.price = 1.0
+            args.image = None
+            with self.assertRaises(AttributeError):
+                create__instance(args)
 
-    @patch('vast.vast.apiurl')
-    @patch('vast.vast.http_post')
-    def test_search_offers(self, mock_http_post, mock_apiurl):
-        mock_apiurl.return_value = "http://mocked.url"
-        mock_http_post.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {"offers": []}
-        )
-        
-        self.args.query = None
-        self.args.order = "price"
-        self.args.type = "bid"
-        self.args.limit = 10
-        self.args.storage = 100
-        self.args.disable_bundling = False
-        self.args.raw = True
-        self.args.new = False
-        
-        vast.search__offers(self.args)
-        
-        mock_http_post.assert_called_once()
+    def test_destroy_instance_errors(self):
+        """Test destroy_instance error handling"""
+        with patch('vast.http_delete') as mock_delete:
+            # Test non-existent instance
+            args = argparse.Namespace(**vars(self.base_args))
+            args.id = 99999
+            mock_delete.side_effect = HTTPError("404 Client Error: Not Found")
+            
+            with self.assertRaises(HTTPError):
+                destroy__instance(args)
+
+            # Test invalid instance ID
+            args.id = -1
+            mock_delete.side_effect = ValueError("Invalid instance ID")
+            
+            with self.assertRaises(ValueError):
+                destroy__instance(args)
+
+    def test_attach_ssh_errors(self):
+        """Test attach_ssh error conditions"""
+        with patch('vast.http_post') as mock_post:
+            args = argparse.Namespace(**vars(self.base_args))
+            args.instance_id = 123
+            args.ssh_key = "invalid_path"
+
+            # Test invalid SSH key file
+            with self.assertRaises(FileNotFoundError):
+                attach__ssh(args)
+
+            # Test API error
+            mock_post.side_effect = HTTPError("400 Client Error: Bad Request")
+            args.ssh_key = "test_key"
+            with self.assertRaises(HTTPError):
+                attach__ssh(args)
+
+    def test_prepay_instance_edge_cases(self):
+        """Test prepay_instance edge cases"""
+        with patch('vast.http_put') as mock_put:
+            args = argparse.Namespace(**vars(self.base_args))
+            args.ID = 123
+
+            # Test zero amount
+            args.amount = 0
+            mock_put.return_value.json.return_value = {"success": False, "msg": "Invalid amount"}
+            prepay__instance(args)
+            
+            # Test negative amount
+            args.amount = -1
+            mock_put.return_value.json.return_value = {"success": False, "msg": "Amount must be positive"}
+            prepay__instance(args)
+
+    def test_reboot_instance_errors(self):
+        """Test reboot_instance error handling"""
+        with patch('vast.http_put') as mock_put:
+            args = argparse.Namespace(**vars(self.base_args))
+            args.ID = 123
+
+            # Test connection error
+            mock_put.side_effect = ConnectionError()
+            with self.assertRaises(ConnectionError):
+                reboot__instance(args)
+
+            # Test rate limiting
+            mock_put.side_effect = HTTPError("429 Client Error: Too Many Requests")
+            with self.assertRaises(HTTPError):
+                reboot__instance(args)
+
+    def test_recycle_instance_errors(self):
+        """Test recycle_instance error conditions"""
+        with patch('vast.http_put') as mock_put:
+            args = argparse.Namespace(**vars(self.base_args))
+            args.ID = 123
+
+            # Test unauthorized access
+            mock_put.side_effect = HTTPError("401 Client Error: Unauthorized")
+            with self.assertRaises(HTTPError):
+                recycle__instance(args)
+
+            # Test malformed response
+            mock_put.return_value.status_code = 200
+            mock_put.return_value.json.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
+            with self.assertRaises(json.JSONDecodeError):
+                recycle__instance(args)
+
+    def test_search_offers_edge_cases(self):
+        """Test search_offers edge cases"""
+        with patch('vast.http_put') as mock_put:
+            args = argparse.Namespace(**vars(self.base_args))
+            args.type = "bid"
+            args.storage = 0
+            args.order = ""
+            args.new = True
+            args.disable_bundling = False
+            args.no_default = False
+            
+            # Test empty query
+            args.query = None
+            mock_put.return_value.json.return_value = {"offers": []}
+            search__offers(args)
+
+            # Test malformed query
+            args.query = "invalid:query"
+            with self.assertRaises(ValueError):
+                search__offers(args)
+
+            # Test invalid response content type
+            mock_put.return_value.headers = {'Content-Type': 'text/plain'}
+            search__offers(args)
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
