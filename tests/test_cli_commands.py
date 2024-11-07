@@ -7,6 +7,9 @@ from unittest.mock import patch, MagicMock
 import argparse
 import unittest
 
+import sys
+from vast import reboot__instance
+from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from io import StringIO
 import sys
@@ -564,3 +567,78 @@ class TestPrepayInstance(unittest.TestCase):
             prepay__instance(self.args)
         
         self.assertEqual(str(context.exception), "HTTP Error")
+ 
+
+class TestRebootInstance(unittest.TestCase):
+    def setUp(self):
+        # Create args mock with required ID
+        self.args = MagicMock()
+        self.args.ID = 12345
+        self.args.api_key = "fake_key"
+        self.args.url = "https://vast.ai/api/v0"
+        
+        # Setup stdout capture
+        self.held_output = StringIO()
+        self.old_stdout = sys.stdout
+        sys.stdout = self.held_output
+
+    def tearDown(self):
+        sys.stdout = self.old_stdout
+
+    @patch('vast.http_put')
+    def test_reboot_instance_success(self, mock_put):
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True}
+        mock_put.return_value = mock_response
+
+        # Call function
+        reboot__instance(self.args)
+
+        # Verify correct URL and payload
+        expected_url = f"{self.args.url}/instances/reboot/{self.args.ID}/"
+        mock_put.assert_called_once_with(self.args, expected_url, headers=unittest.mock.ANY, json={})
+
+        # Verify output
+        self.assertIn(f"Rebooting instance {self.args.ID}", self.held_output.getvalue())
+
+    @patch('vast.http_put')
+    def test_reboot_instance_api_error(self, mock_put):
+        # Setup mock response with API error
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": False, "msg": "Instance not found"}
+        mock_put.return_value = mock_response
+
+        # Call function
+        reboot__instance(self.args)
+
+        # Verify output contains error message
+        self.assertIn("Instance not found", self.held_output.getvalue())
+
+    @patch('vast.http_put')
+    def test_reboot_instance_http_error(self, mock_put):
+        # Setup mock response with HTTP error
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.text = "Not Found"
+        mock_put.return_value = mock_response
+
+        # Call function
+        reboot__instance(self.args)
+
+        # Verify output contains error status
+        self.assertIn("failed with error 404", self.held_output.getvalue())
+        self.assertIn("Not Found", self.held_output.getvalue())
+
+    @patch('vast.http_put')
+    def test_reboot_instance_raises_for_status(self, mock_put):
+        # Setup mock to raise HTTPError
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("HTTP Error")
+        mock_put.return_value = mock_response
+
+        # Verify exception is raised
+        with self.assertRaises(Exception):
+            reboot__instance(self.args)
