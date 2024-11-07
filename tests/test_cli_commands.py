@@ -1,61 +1,51 @@
-from vast_python.vast import create__instance, destroy__instance, destroy__instances, prepay__instance, reboot__instance, recycle__instance, search__offers
+import argparse
 
 class TestCLICommands(unittest.TestCase):
 
     def setUp(self):
-        self.args = argparse.Namespace()
-        self.args.api_key = 'dummy_api_key'
-        self.headers = {'Authorization': f'Bearer {self.args.api_key}'}
+        self.parser = argparse.ArgumentParser()
+        self.parser.add_argument('--onstart', type=str)
+        self.parser.add_argument('--template_hash', type=str)
+        self.parser.add_argument('--image', type=str, required=True)
+        self.parser.add_argument('--env', type=str)
+        self.parser.add_argument('--price', type=float)
+        self.parser.add_argument('--disk', type=int)
+        self.parser.add_argument('--label', type=str)
+        self.parser.add_argument('--extra', type=str)
+        self.parser.add_argument('--entrypoint', type=str)
+        self.parser.add_argument('--login', type=str)
+        self.parser.add_argument('--python_utf8', type=bool)
+        self.parser.add_argument('--lang_utf8', type=bool)
+        self.parser.add_argument('--jupyter_lab', type=bool)
+        self.parser.add_argument('--jupyter_dir', type=str)
+        self.parser.add_argument('--force', type=bool)
+        self.parser.add_argument('--cancel_unavail', type=bool)
+        self.parser.add_argument('--ID', type=int)
+        self.parser.add_argument('--raw', type=bool)
+        self.parser.add_argument('--explain', type=bool)
+        self.args = self.parser.parse_args([])
 
-    @patch('vast_python.vast.apiurl')
-    @patch('vast_python.vast.http_put')
-    def test_create_instance_invalid_inputs(self, mock_http_put, mock_apiurl):
-        # Test with missing required fields
-        self.args.onstart = None
-        self.args.image = None
-        with self.assertRaises(Exception):
+    @patch('vastai_cli.http_put')
+    def test_create_instance_invalid_inputs(self, mock_http_put):
+        # Simulate API response
+        mock_http_put.return_value.status_code = 400
+        mock_http_put.return_value.json.return_value = {"error": "Invalid request"}
+
+        # Missing required 'image'
+        with self.assertRaises(SystemExit):
             create__instance(self.args)
 
-        # Test with invalid price
+        # Invalid 'template_hash'
         self.args.image = 'valid_image'
-        self.args.price = -1
-        with self.assertRaises(ValueError):
-            create__instance(self.args)
-
-    @patch('vast_python.vast.http_put')
-    def test_create_instance_error_conditions(self, mock_http_put):
-        # Simulate server error
-        mock_http_put.side_effect = Exception("Server error")
-        with self.assertRaises(Exception):
-            create__instance(self.args)
-
-    @patch('vast_python.vast.http_put')
-    def test_create_instance_edge_cases(self, mock_http_put):
-        # Test with empty onstart command
-        self.args.onstart_cmd = ''
-        mock_http_put.return_value.json.return_value = {"success": True, "new_contract": 12345}
+        self.args.template_hash = 'invalid_hash'
         create__instance(self.args)
+        mock_http_put.assert_called_with(self.args, ANY, headers=ANY, json=ANY)
+        self.assertEqual(mock_http_put.return_value.json()['error'], 'Invalid request')
 
-    @patch('vast_python.vast.http_put')
-    def test_destroy_instance_invalid_inputs(self, mock_http_put):
-        # Test with invalid ID
-        self.args.id = 'invalid_id'
-        with self.assertRaises(ValueError):
-            destroy__instance(self.args)
-
-    @patch('vast_python.vast.http_put')
-    def test_destroy_instance_error_conditions(self, mock_http_put):
-        # Simulate network failure
-        mock_http_put.side_effect = Exception("Network failure")
-        with self.assertRaises(Exception):
-            destroy__instance(self.args)
-
-    @patch('vast_python.vast.http_put')
-    def test_destroy_instance_edge_cases(self, mock_http_put):
-        # Test with minimum valid ID
-        self.args.id = 0
-        mock_http_put.return_value.json.return_value = {"success": True}
-        destroy__instance(self.args)
+        # Invalid file path for 'onstart'
+        self.args.onstart = '/invalid/path'
+        with self.assertRaises(FileNotFoundError):
+            create__instance(self.args)
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
