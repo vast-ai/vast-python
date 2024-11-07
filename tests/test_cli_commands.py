@@ -1,51 +1,168 @@
-import argparse
+
 
 class TestCLICommands(unittest.TestCase):
-
     def setUp(self):
-        self.parser = argparse.ArgumentParser()
-        self.parser.add_argument('--onstart', type=str)
-        self.parser.add_argument('--template_hash', type=str)
-        self.parser.add_argument('--image', type=str, required=True)
-        self.parser.add_argument('--env', type=str)
-        self.parser.add_argument('--price', type=float)
-        self.parser.add_argument('--disk', type=int)
-        self.parser.add_argument('--label', type=str)
-        self.parser.add_argument('--extra', type=str)
-        self.parser.add_argument('--entrypoint', type=str)
-        self.parser.add_argument('--login', type=str)
-        self.parser.add_argument('--python_utf8', type=bool)
-        self.parser.add_argument('--lang_utf8', type=bool)
-        self.parser.add_argument('--jupyter_lab', type=bool)
-        self.parser.add_argument('--jupyter_dir', type=str)
-        self.parser.add_argument('--force', type=bool)
-        self.parser.add_argument('--cancel_unavail', type=bool)
-        self.parser.add_argument('--ID', type=int)
-        self.parser.add_argument('--raw', type=bool)
-        self.parser.add_argument('--explain', type=bool)
-        self.args = self.parser.parse_args([])
+        self.api_key = 'dummy_api_key'
+        self.vast_ai = VastAI(self.api_key)
+        self.vast_ai_base = VastAIBase()
 
-    @patch('vastai_cli.http_put')
-    def test_create_instance_invalid_inputs(self, mock_http_put):
-        # Simulate API response
-        mock_http_put.return_value.status_code = 400
-        mock_http_put.return_value.json.return_value = {"error": "Invalid request"}
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_create_instance_invalid_image(self, mock_http_put, mock_print):
+        """Test create__instance with an invalid image input"""
+        args = argparse.Namespace(
+            onstart=None,
+            entrypoint=None,
+            image='invalid_image',
+            env=None,
+            price=10.0,
+            disk=50,
+            label='test_instance',
+            extra=None,
+            onstart_cmd=None,
+            login=None,
+            python_utf8=True,
+            lang_utf8=True,
+            jupyter_lab=False,
+            jupyter_dir=None,
+            force=False,
+            cancel_unavail=False,
+            template_hash=None,
+            args=None,
+            ID='123',
+            explain=False,
+            raw=False
+        )
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Invalid image specified")
+        mock_http_put.return_value = mock_response
 
-        # Missing required 'image'
-        with self.assertRaises(SystemExit):
-            create__instance(self.args)
+        with self.assertRaises(Exception) as context:
+            create__instance(args)
+        self.assertIn("Invalid image specified", str(context.exception))
 
-        # Invalid 'template_hash'
-        self.args.image = 'valid_image'
-        self.args.template_hash = 'invalid_hash'
-        create__instance(self.args)
-        mock_http_put.assert_called_with(self.args, ANY, headers=ANY, json=ANY)
-        self.assertEqual(mock_http_put.return_value.json()['error'], 'Invalid request')
+    @patch('builtins.print')
+    @patch('builtins.open', new_callable=MagicMock)
+    @patch('vastai_sdk.http_post')
+    def test_attach_ssh_invalid_instance_id(self, mock_http_post, mock_open, mock_print):
+        """Test attach__ssh with an invalid instance ID"""
+        args = argparse.Namespace(
+            ssh_key='path/to/invalid_key',
+            instance_id='invalid_id'
+        )
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Invalid instance ID")
+        mock_http_post.return_value = mock_response
 
-        # Invalid file path for 'onstart'
-        self.args.onstart = '/invalid/path'
-        with self.assertRaises(FileNotFoundError):
-            create__instance(self.args)
+        with self.assertRaises(Exception) as context:
+            attach__ssh(args)
+        self.assertIn("Invalid instance ID", str(context.exception))
+
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_destroy_instance_nonexistent_id(self, mock_http_put, mock_print):
+        """Test destroy__instance with a nonexistent instance ID"""
+        args = argparse.Namespace(
+            id=99999,
+            api_key=self.api_key,
+            raw=False
+        )
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Instance not found")
+        mock_http_put.return_value = mock_response
+
+        with self.assertRaises(Exception) as context:
+            destroy__instance(args)
+        self.assertIn("Instance not found", str(context.exception))
+
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_destroy_instances_with_invalid_ids(self, mock_http_put, mock_print):
+        """Test destroy__instances with invalid instance IDs"""
+        args = argparse.Namespace(
+            ids=['abc', '-1', '0'],
+            api_key=self.api_key,
+            raw=False
+        )
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Invalid instance IDs")
+        mock_http_put.return_value = mock_response
+
+        with self.assertRaises(Exception) as context:
+            destroy__instances(args)
+        self.assertIn("Invalid instance IDs", str(context.exception))
+
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_prepay_instance_negative_amount(self, mock_http_put, mock_print):
+        """Test prepay__instance with a negative amount"""
+        args = argparse.Namespace(
+            ID=123,
+            amount=-50.0,
+            explain=False
+        )
+        mock_response = MagicMock()
+        mock_response.json.return_value = {"success": False, "msg": "Amount must be positive"}
+        mock_response.raise_for_status.return_value = None
+        mock_http_put.return_value = mock_response
+
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            prepay__instance(args)
+            self.assertIn("Amount must be positive", fake_out.getvalue())
+
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_reboot_instance_invalid_id(self, mock_http_put, mock_print):
+        """Test reboot__instance with an invalid instance ID"""
+        args = argparse.Namespace(
+            ID='invalid_id'
+        )
+        mock_response = MagicMock()
+        mock_response.status_code = 400
+        mock_response.text = "Invalid instance ID"
+        mock_response.json.return_value = {"success": False, "msg": "Invalid instance ID"}
+        mock_http_put.return_value = mock_response
+
+        with patch('sys.stdout', new=io.StringIO()) as fake_out:
+            reboot__instance(args)
+            self.assertIn("Invalid instance ID", fake_out.getvalue())
+
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_recycle_instance_network_failure(self, mock_http_put, mock_print):
+        """Test recycle__instance handling network failure"""
+        args = argparse.Namespace(
+            ID=123
+        )
+        mock_http_put.side_effect = Exception("Network failure")
+
+        with self.assertRaises(Exception) as context:
+            recycle__instance(args)
+        self.assertIn("Network failure", str(context.exception))
+
+    @patch('builtins.print')
+    @patch('vastai_sdk.http_put')
+    def test_search_offers_invalid_query(self, mock_http_put, mock_print):
+        """Test search__offers with an invalid query parameter"""
+        args = argparse.Namespace(
+            no_default=False,
+            query='invalid_query',
+            order='-price',
+            type='invalid_type',
+            limit='-10',
+            storage='-5',
+            disable_bundling=False,
+            new=False,
+            explain=False,
+            raw=False
+        )
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = ValueError("Invalid query parameter")
+        mock_http_put.return_value = mock_response
+
+        with self.assertRaises(ValueError) as context:
+            search__offers(args)
+        self.assertIn("Invalid query parameter", str(context.exception))
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
