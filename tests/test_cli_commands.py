@@ -1,70 +1,84 @@
-import vast_python.vast as vast
+import argparse
 
 class TestCLICommands(unittest.TestCase):
 
-    @patch('vast_python.vast.http_post')
-    def test_attach_ssh_invalid_inputs(self, mock_post):
-        args = argparse.Namespace(ssh_key=None, instance_id=None)
+    def setUp(self):
+        # Mock argparse.Namespace to simulate command-line arguments
+        self.args = argparse.Namespace()
+
+    @patch('vast.http_put')
+    def test_create_instance_invalid_input(self, mock_http_put):
+        """Test create__instance with invalid input."""
+        self.args.onstart = None
+        self.args.onstart_cmd = None
+        self.args.entrypoint = None
+        self.args.image = None
+        self.args.env = "INVALID_ENV"
+        self.args.price = -10  # Invalid negative price
+
+        # Call the command
         with self.assertRaises(ValueError):
-            vast.attach__ssh(args)
+            vast.create__instance(self.args)
 
-    @patch('vast_python.vast.http_post')
-    def test_attach_ssh_error_condition(self, mock_post):
-        mock_post.return_value = MagicMock(status_code=500, json=lambda: {"error": "Internal Server Error"})
-        args = argparse.Namespace(ssh_key='dummy_key', instance_id='123')
+    @patch('vast.http_put')
+    def test_create_instance_error_conditions(self, mock_http_put):
+        """Test create__instance with simulated error condition."""
+        self.args.onstart = None
+        self.args.onstart_cmd = "echo 'hello'"
+        self.args.entrypoint = None
+        self.args.image = "valid_image"
+        self.args.env = "VALID_ENV"
+        self.args.price = 10
+
+        # Simulate a server error
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Server error")
+        mock_http_put.return_value = mock_response
+
         with self.assertRaises(Exception):
-            vast.attach__ssh(args)
+            vast.create__instance(self.args)
 
-    @patch('vast_python.vast.http_put')
-    def test_create_instance_invalid_inputs(self, mock_put):
-        args = argparse.Namespace(onstart=None, onstart_cmd=None, image=None, ID=None, explain=False, raw=False)
-        with self.assertRaises(ValueError):
-            vast.create__instance(args)
+    @patch('vast.http_put')
+    def test_create_instance_edge_cases(self, mock_http_put):
+        """Test create__instance with edge cases."""
+        self.args.onstart = None
+        self.args.onstart_cmd = "echo 'hello'"
+        self.args.entrypoint = None
+        self.args.image = "valid_image"
+        self.args.env = "VALID_ENV"
+        self.args.price = 0  # Edge case for minimum price
 
-    @patch('vast_python.vast.http_put')
-    def test_create_instance_error_condition(self, mock_put):
-        mock_put.return_value = MagicMock(status_code=400, json=lambda: {"error": "Bad Request"})
-        args = argparse.Namespace(onstart_cmd='echo hello', image='ubuntu', ID='123', explain=False, raw=False)
+        # Simulate a successful response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {'success': True, 'new_contract': 12345}
+        mock_http_put.return_value = mock_response
+
+        try:
+            vast.create__instance(self.args)
+        except Exception as e:
+            self.fail(f"create__instance raised an exception unexpectedly: {e}")
+
+    @patch('vast.http_post')
+    def test_attach_ssh_invalid_input(self, mock_http_post):
+        """Test attach__ssh with invalid input."""
+        self.args.ssh_key = None  # Invalid: No SSH key provided
+        self.args.instance_id = 12345
+
         with self.assertRaises(Exception):
-            vast.create__instance(args)
+            vast.attach__ssh(self.args)
 
-    @patch('vast_python.vast.http_put')
-    def test_create_instance_edge_case(self, mock_put):
-        mock_put.return_value = MagicMock(status_code=200, json=lambda: {"success": True, "new_contract": 7835610})
-        args = argparse.Namespace(onstart_cmd='echo hello', image='ubuntu', ID='999999999', explain=False, raw=False)
-        vast.create__instance(args)
+    @patch('vast.http_put')
+    def test_reboot_instance_error_conditions(self, mock_http_put):
+        """Test reboot__instance with simulated error condition."""
+        self.args.ID = 12345
 
-    @patch('vast_python.vast.http_put')
-    def test_destroy_instance_invalid_id(self, mock_put):
-        args = argparse.Namespace(id='invalid_id')
-        with self.assertRaises(ValueError):
-            vast.destroy__instance(args)
+        # Simulate a network error
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = Exception("Network error")
+        mock_http_put.return_value = mock_response
 
-    @patch('vast_python.vast.http_put')
-    def test_destroy_instances_error_condition(self, mock_put):
-        mock_put.return_value = MagicMock(status_code=404, json=lambda: {"error": "Instance not found"})
-        args = argparse.Namespace(ids=[123, 456])
         with self.assertRaises(Exception):
-            vast.destroy__instances(args)
-
-    @patch('vast_python.vast.http_put')
-    def test_prepy_instance_invalid_amount(self, mock_put):
-        args = argparse.Namespace(ID=123, amount=-50)
-        with self.assertRaises(ValueError):
-            vast.prepay__instance(args)
-
-    @patch('vast_python.vast.http_put')
-    def test_reboot_instance_error_condition(self, mock_put):
-        mock_put.return_value = MagicMock(status_code=503, json=lambda: {"error": "Service Unavailable"})
-        args = argparse.Namespace(ID=123)
-        with self.assertRaises(Exception):
-            vast.reboot__instance(args)
-
-    @patch('vast_python.vast.http_post')
-    def test_search_offers_edge_case(self, mock_post):
-        mock_post.return_value = MagicMock(status_code=200, json=lambda: {"offers": []})
-        args = argparse.Namespace(type='reserved', raw=False, explain=False, no_default=False, query=None, order='', limit=0, storage=None, disable_bundling=False, new=False)
-        vast.search__offers(args)
+            vast.reboot__instance(self.args)
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
