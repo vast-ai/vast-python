@@ -1,6 +1,73 @@
 import vast
+from unittest.mock import patch, MagicMock
+import argparse
+import unittest
 
 class TestCLICommands(unittest.TestCase):
+
+    def setUp(self):
+        self.args = argparse.Namespace()
+        self.args.api_key = 'dummy_api_key'
+        self.args.raw = False
+
+    @patch('vast.vast.http_get')
+    @patch('vast.vast.http_put')
+    @patch('vast.vast.http_post')
+    @patch('vast.vast.apiurl')
+    def test_create_instance(self, mock_apiurl, mock_http_put, mock_http_post, mock_http_get):
+        # Setup args and expected outcomes
+        self.args.ID = 1
+        self.args.image = "test_image"
+        self.args.env = "VAR1=value1"
+        self.args.price = 0.1
+        self.args.disk = 10
+        self.args.label = "test_label"
+        self.args.extra = "extra_info"
+        self.args.onstart_cmd = "echo Hello"
+        self.args.onstart = None
+        self.args.entrypoint = None
+        self.args.login = "user"
+        self.args.python_utf8 = True
+        self.args.lang_utf8 = True
+        self.args.jupyter_lab = False
+        self.args.jupyter_dir = "/notebooks"
+        self.args.force = False
+        self.args.cancel_unavail = False
+        self.args.template_hash = None
+        self.args.args = None
+
+        # Mock API URL and HTTP response
+        mock_apiurl.return_value = "http://mocked.url"
+        mock_http_put.return_value = MagicMock(status_code=200, json=lambda: {"success": True, "new_contract": 123456})
+
+        # Call the function
+        vast.create__instance(self.args)
+
+        # Assertions
+        mock_apiurl.assert_called_once_with(self.args, "/asks/1/")
+        expected_payload = {
+            "client_id": "me",
+            "image": "test_image",
+            "env": {"VAR1": "value1"},
+            "price": 0.1,
+            "disk": 10,
+            "label": "test_label",
+            "extra": "extra_info",
+            "onstart": "echo Hello",
+            "image_login": "user",
+            "python_utf8": True,
+            "lang_utf8": True,
+            "use_jupyter_lab": False,
+            "jupyter_dir": "/notebooks",
+            "force": False,
+            "cancel_unavail": False,
+            "template_hash_id": None
+        }
+        actual_payload = mock_http_put.call_args[1]['json']
+        self.assertEqual(actual_payload, expected_payload)
+
+    # Additional tests for other commands would follow a similar structure
+
 
     def setUp(self):
         self.api_key = 'dummy_api_key'
