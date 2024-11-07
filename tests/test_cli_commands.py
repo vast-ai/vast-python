@@ -4,9 +4,12 @@ from unittest.mock import patch, MagicMock
 from unittest.mock import patch, mock_open, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 import argparse
 import unittest
 
+import json
+from vast import recycle__instance
 import sys
 from vast import reboot__instance
 from unittest.mock import patch, MagicMock
@@ -642,3 +645,77 @@ class TestRebootInstance(unittest.TestCase):
         # Verify exception is raised
         with self.assertRaises(Exception):
             reboot__instance(self.args)
+ 
+
+class TestRecycleInstance(unittest.TestCase):
+    def setUp(self):
+        self.args = argparse.Namespace()
+        self.args.api_key = "fake_key"
+        self.args.raw = False
+        self.args.explain = False
+        self.args.ID = 12345
+        self.args.url = "https://console.vast.ai/api/v0"
+
+    @patch('vast.http_put')
+    def test_recycle_instance_success(self, mock_http_put):
+        # Setup mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True}
+        mock_http_put.return_value = mock_response
+
+        # Capture stdout to verify output
+        with patch('builtins.print') as mock_print:
+            recycle__instance(self.args)
+
+        # Verify correct URL construction and API call
+        expected_url = f"{self.args.url}/instances/recycle/{self.args.ID}/"
+        mock_http_put.assert_called_once()
+        actual_url = mock_http_put.call_args[0][1]
+        self.assertEqual(actual_url, expected_url)
+
+        # Verify success message
+        mock_print.assert_called_with(f"Recycling instance {self.args.ID}.")
+
+    @patch('vast.http_put')
+    def test_recycle_instance_failure_response(self, mock_http_put):
+        # Setup mock response with error
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": False, "msg": "Error recycling instance"}
+        mock_http_put.return_value = mock_response
+
+        # Capture stdout to verify output
+        with patch('builtins.print') as mock_print:
+            recycle__instance(self.args)
+
+        # Verify error message
+        mock_print.assert_called_with("Error recycling instance")
+
+    @patch('vast.http_put')
+    def test_recycle_instance_http_error(self, mock_http_put):
+        # Setup mock response with HTTP error
+        mock_response = MagicMock()
+        mock_response.status_code = 404
+        mock_response.text = "Not Found"
+        mock_http_put.return_value = mock_response
+
+        # Capture stdout to verify output
+        with patch('builtins.print') as mock_print:
+            recycle__instance(self.args)
+
+        # Verify error message format
+        mock_print.assert_any_call("Not Found")
+        mock_print.assert_called_with("failed with error 404")
+
+    @patch('vast.http_put')
+    def test_recycle_instance_explain_mode(self, mock_http_put):
+        self.args.explain = True
+        
+        # Capture stdout to verify output
+        with patch('builtins.print') as mock_print:
+            recycle__instance(self.args)
+
+        # Verify explain output
+        mock_print.assert_any_call("request json: ")
+        mock_print.assert_any_call({})  # Empty payload for recycle
