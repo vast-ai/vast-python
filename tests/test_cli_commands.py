@@ -1,9 +1,14 @@
 import vast
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
+from unittest.mock import patch, mock_open, MagicMock
 import argparse
 import unittest
 
+import pytest
+from unittest.mock import patch, mock_open, MagicMock
+import json
+from vast import create__instance, http_put
 import json
 import json
 from vast import attach__ssh
@@ -285,3 +290,119 @@ class TestAttachSSH(unittest.TestCase):
             attach__ssh(self.args)
         
         mock_http_put.assert_not_called()
+ 
+
+@pytest.fixture
+def base_args():
+    args = argparse.Namespace()
+    args.ID = "12345"
+    args.image = "nvidia/cuda:11.0"
+    args.env = []
+    args.price = 0.4
+    args.disk = 10
+    args.label = "test-instance"
+    args.extra = ""
+    args.onstart = None
+    args.onstart_cmd = None
+    args.entrypoint = "/bin/bash"
+    args.login = "root"
+    args.python_utf8 = True
+    args.lang_utf8 = True
+    args.jupyter_lab = False
+    args.jupyter_dir = "/workspace"
+    args.force = False
+    args.cancel_unavail = True
+    args.template_hash = None
+    args.args = None
+    args.raw = False
+    args.retry = 3
+    args.explain = False
+    return args
+ 
+
+@pytest.mark.parametrize("raw_output", [True, False])
+def test_create_instance_basic(base_args, raw_output, capsys):
+    base_args.raw = raw_output
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"success": True, "new_contract": 7835610}
+    
+    with patch('vast.http_put', return_value=mock_response) as mock_put:
+        create__instance(base_args)
+        
+        # Verify API call
+        mock_put.assert_called_once()
+        url = mock_put.call_args[0][1]
+        payload = mock_put.call_args[1]['json']
+        
+        # Check URL construction
+        assert f"/asks/{base_args.ID}/" in url
+        
+        # Verify payload
+        assert payload['client_id'] == "me"
+        assert payload['image'] == base_args.image
+        assert payload['price'] == base_args.price
+        assert payload['onstart'] == base_args.entrypoint
+        
+        # Check output format
+        captured = capsys.readouterr()
+        if raw_output:
+            assert json.dumps(mock_response.json(), indent=1) in captured.out
+        else:
+            assert "Started." in captured.out
+ 
+
+def test_create_instance_with_onstart_file(base_args):
+    onstart_content = "#!/bin/bash\necho hello"
+    base_args.onstart = "startup.sh"
+    
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"success": True}
+    
+    with patch('builtins.open', mock_open(read_data=onstart_content)) as mock_file:
+        with patch('vast.http_put', return_value=mock_response) as mock_put:
+            create__instance(base_args)
+            
+            mock_file.assert_called_once_with("startup.sh", "r")
+            payload = mock_put.call_args[1]['json']
+            assert payload['onstart'] == onstart_content
+ 
+
+def test_create_instance_with_env_vars(base_args):
+    base_args.env = ["KEY1=value1", "KEY2=value2"]
+    
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"success": True}
+    
+    with patch('vast.http_put', return_value=mock_response) as mock_put:
+        create__instance(base_args)
+        
+        payload = mock_put.call_args[1]['json']
+        assert payload['env']['KEY1'] == "value1"
+        assert payload['env']['KEY2'] == "value2"
+ 
+
+def test_create_instance_with_template_hash(base_args):
+    base_args.template_hash = "abc123"
+    
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"success": True}
+    
+    with patch('vast.http_put', return_value=mock_response) as mock_put:
+        create__instance(base_args)
+        
+        payload = mock_put.call_args[1]['json']
+        assert payload['template_hash_id'] == "abc123"
+        assert 'runtype' not in payload
+ 
+
+def test_create_instance_explain_mode(base_args, capsys):
+    base_args.explain = True
+    
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"success": True}
+    
+    with patch('vast.http_put', return_value=mock_response):
+        create__instance(base_args)
+        
+        captured = capsys.readouterr()
+        assert "request json:" in captured.out
