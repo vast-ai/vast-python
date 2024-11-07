@@ -1,42 +1,57 @@
 
 class TestCLICommands(unittest.TestCase):
 
-    def test_attach_ssh_invalid_inputs(self):
-        """Test attach__ssh command with invalid inputs."""
+    @patch('vastai.commands.http_put')
+    def test_create_instance_invalid_inputs(self, mock_put):
         args = MagicMock()
-        args.ssh_key = None  # Missing ssh_key
-        args.instance_id = "abc"  # Invalid instance_id type
+        args.onstart = "/invalid/path"
+        args.image = None  # Missing required argument
         with self.assertRaises(ValueError):
-            parser.parse_args(['attach__ssh', '--ssh-key', args.ssh_key, '--instance-id', args.instance_id])
+            create__instance(args)
+        mock_put.assert_not_called()
 
-    def test_attach_ssh_error_conditions(self):
-        """Test attach__ssh command handling API errors."""
+    @patch('vastai.commands.http_delete')
+    def test_destroy_instance_error_handling(self, mock_delete):
         args = MagicMock()
-        args.ssh_key = "path/to/key"
-        args.instance_id = 123
-        with patch('vastai_cli.http_post') as mock_post:
-            mock_post.side_effect = Exception("Network error")
-            with self.assertRaises(Exception):
-                parser.parse_args(['attach__ssh', '--ssh-key', args.ssh_key, '--instance-id', args.instance_id])
+        args.id = 9999  # Non-existent ID
+        mock_delete.return_value.raise_for_status.side_effect = Exception("API Error")
+        with self.assertRaises(Exception):
+            destroy__instance(args)
 
-    def test_create_instance_edge_cases(self):
-        """Test create__instance command with edge cases."""
+    @patch('vastai.commands.http_put')
+    def test_prepay_instance_edge_cases(self, mock_put):
         args = MagicMock()
-        args.onstart = ""
-        args.entrypoint = "default_entrypoint"
-        args.image = "test_image"
-        args.env = {}
-        args.price = 0  # Boundary value for price
-        with patch('vastai_cli.http_put') as mock_put:
-            mock_put.return_value.json.return_value = {'success': True}
-            parser.parse_args(['create__instance', '--image', args.image, '--price', str(args.price)])
+        args.ID = 123
+        args.amount = -100  # Negative amount
+        prepay__instance(args)
+        args.amount = 1e9  # Very large number
+        prepay__instance(args)
+        self.assertEqual(mock_put.call_count, 2)
 
-    def test_destroy_instance_invalid_input(self):
-        """Test destroy__instance command with invalid instance id."""
+    @patch('vastai.commands.http_put')
+    def test_reboot_instance_missing_id(self, mock_put):
         args = MagicMock()
-        args.id = "not_an_integer"
-        with self.assertRaises(ValueError):
-            parser.parse_args(['destroy__instance', '--id', args.id])
+        args.ID = None
+        with self.assertRaises(TypeError):
+            reboot__instance(args)
+        mock_put.assert_not_called()
+
+    @patch('vastai.commands.http_put')
+    def test_recycle_instance_api_error(self, mock_put):
+        args = MagicMock()
+        args.ID = 123
+        mock_put.return_value.status_code = 500
+        mock_put.return_value.raise_for_status.side_effect = Exception("Server Error")
+        with self.assertRaises(Exception):
+            recycle__instance(args)
+
+    @patch('vastai.commands.http_post')
+    def test_search_offers_invalid_query(self, mock_post):
+        args = MagicMock()
+        args.query = "invalid_query"
+        args.no_default = True
+        search__offers(args)
+        mock_post.assert_called_once()
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
 from unittest.mock import patch, MagicMock
