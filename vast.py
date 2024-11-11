@@ -4809,12 +4809,12 @@ def main():
         headers["Authorization"] = "Bearer " + args.api_key
 
     if TABCOMPLETE:
-      myautocc = MyAutocomplete()
-      myautocc(parser.parser)
+        myautocc = MyAutocomplete()
+        myautocc(parser.parser)
 
     try:
         res = args.func(args)
-        if res:
+        if args.raw:
             # There's two types of responses right now
             try:
                 print(json.dumps(res, indent=1, sort_keys=True))
