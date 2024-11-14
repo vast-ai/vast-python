@@ -3115,12 +3115,18 @@ def search__templates(args):
         return 1  
     url = apiurl(args, "/template/", {"select_cols" : ['*'], "select_filters" : query})
     r = requests.get(url, headers=headers)
-    r.raise_for_status()
-    rows = r.json()
-    if True: # args.raw:
-        return rows
+    if r.status_code != 200:
+        print(r.text)
+        r.raise_for_status()
+    elif 'json' in r.headers.get("Content-Type"):
+        rows = r.json().get('templates', [])
+        if True: #args.raw:
+            print(json.dumps(rows, indent=1, sort_keys=True))
+        else:
+            display_table(rows, displayable_fields)
     else:
-        display_table(rows, displayable_fields)
+        print(r.text)
+        print("failed with error {r.status_code}".format(**locals()))
 
 
 @parser.command(
