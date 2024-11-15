@@ -4051,7 +4051,7 @@ def update__template(args):
     
     extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
     template = {
-        "hash_id": args.HASH_id,
+        "hash_id": args.HASH_ID,
         "image" : args.image,
         "tag" : args.image_tag,
         "env" : args.env, #str format
