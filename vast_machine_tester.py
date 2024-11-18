@@ -112,7 +112,8 @@
 # Example:
 #     To search for verified offers with host_id 12345:
 #         python3 vast_offer_tester.py --verified true --host_id 12345
-#
+# 
+# Results saved to 'passed_machines.txt' and 'failed_machines.txt'.
 # =============================================================================
 
 import subprocess
@@ -400,6 +401,8 @@ Example Usage:
 
     To search for unverified offers regardless of host ID:
         python3 vast_offer_tester.py --verified false
+
+    Results saved to 'passed_machines.txt' and 'failed_machines.txt'.
         """
     )
     parser.add_argument(
