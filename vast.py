@@ -21,13 +21,14 @@ import subprocess
 from subprocess import PIPE
 import urllib3
 import atexit
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 from io import StringIO
 from typing import Optional
 import shutil
 import logging
 import textwrap
 from pathlib import Path
+import warnings
 
 ARGS = None
 TABCOMPLETE = False
@@ -4787,57 +4788,46 @@ def suppress_stdout():
 
 def destroy_instance_silent(id, args):
     """
-    Destroys a specified instance while optionally suppressing its output.
+    Silently destroys a specified instance, retrying up to three times if it fails.
 
     This function calls the `destroy_instance` function to terminate an instance.
     If the `args.raw` flag is set to True, the output of the destruction process
     is suppressed to keep the console output clean.
 
     Args:
-        instance_id (str): The ID of the instance to be destroyed.
-        args (argparse.Namespace): Parsed command-line arguments containing flags
-                                  and options such as `raw`.
-
-    Behavior:
-        - If `instance_id` is not provided and `args.raw` is False, a debug message
-          is printed indicating that no instance ID was provided and destruction is
-          skipped.
-        - If `args.raw` is True, the output of `destroy_instance` is suppressed.
-        - Otherwise, `destroy_instance` is called normally with the provided `instance_id`.
+        id (str): The ID of the instance to destroy.
+        args (argparse.Namespace): Command-line arguments containing necessary flags.
 
     Returns:
-        None
+        dict: A dictionary with a success status and error message, if any.
     """
-def destroy_instance(id, args):
-    url = apiurl(args, f"/instances/{id}/")
-    headers = {}  # Set headers if required
-
-    max_retries = 3
+    max_retries = 10
     for attempt in range(1, max_retries + 1):
         try:
-            r = http_del(args, url, headers=headers, json={})
-            r.raise_for_status()  # Raise an exception for HTTP errors
-
-            if r.status_code == 200:
-                rj = r.json()
-                if rj.get("success", False):
-                    print(f"Destroying instance {id}.")
-                    return rj
-                else:
-                    print(f"Failed: {rj.get('msg', 'Unknown error')}")
+            # Suppress output if args.raw is True
+            if args.raw:
+                with open(os.devnull, 'w') as devnull, redirect_stdout(devnull), redirect_stderr(devnull):
+                    destroy_instance(id, args)
             else:
-                print(f"Unexpected response code {r.status_code}: {r.text}")
+                destroy_instance(id, args)
 
-        except requests.exceptions.HTTPError as e:
-            print(f"HTTP error occurred: {e}")
+            # If successful, exit the loop and return success
+            if not args.raw:
+                print(f"Instance {id} destroyed successfully on attempt {attempt}.")
+            return {"success": True}
+
         except Exception as e:
-            print(f"Unexpected error occurred: {e}")
+            if not args.raw:
+                print(f"Error destroying instance {id}: {e}")
 
+        # Wait before retrying if the attempt failed
         if attempt < max_retries:
-            print(f"Retrying in 10 seconds... (Attempt {attempt}/{max_retries})")
+            if not args.raw:
+                print(f"Retrying in 10 seconds... (Attempt {attempt}/{max_retries})")
             time.sleep(10)
         else:
-            print(f"Failed to destroy instance {id} after {max_retries} attempts.")
+            if not args.raw:
+                print(f"Failed to destroy instance {id} after {max_retries} attempts.")
             return {"success": False, "error": "Max retries exceeded"}
 
 
@@ -4880,7 +4870,6 @@ def debug_print(args, *args_to_print):
     if args.debugging and not args.raw:
         print(*args_to_print)
 
-
 def instance_exist(instance_id, api_key, args):
     """
     Checks whether a specific instance exists and is active.
@@ -4901,30 +4890,38 @@ def instance_exist(instance_id, api_key, args):
             - `True` if the instance exists and is active.
             - `False` if the instance does not exist or is in a non-active state.
     """
+    # Ensure debugging is set in args
+    if not hasattr(args, 'debugging'):
+        args.debugging = False
+
+
     if not instance_id:
         return False  # Immediately return False if instance_id is None or empty
 
-    show_args = argparse.Namespace(id=instance_id, api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=True,debugging=args.debugging,)
+    show_args = argparse.Namespace(
+        id=instance_id, api_key=api_key, url=args.url, retry=args.retry, explain=False, raw=True, debugging=args.debugging
+    )
     try:
+        # Call show__instance and assume it returns a dictionary
+        instance_info = show__instance(show_args)
 
-        buffer = show__instance(show_args)
-        instance_info = json.loads(buffer.getvalue().strip())
+        # Ensure the response is a dictionary
+        if not instance_info or not isinstance(instance_info, dict):
+            return False
 
         # Check if `intended_status` or `actual_status` indicates the instance is destroyed
-        if instance_info:
-            status = instance_info.get('intended_status') or instance_info.get('actual_status')
-            # Treat statuses indicating deletion or shutdown as non-existence
-            if status in ['destroyed', 'terminated', 'offline']:
-                return False
+        status = instance_info.get('intended_status') or instance_info.get('actual_status')
+        if status in ['destroyed', 'terminated', 'offline']:
+            return False
 
-        # Return True if any instance info is retrieved and no indication of deletion is found
-        return bool(instance_info)
-        
-    except (json.JSONDecodeError, KeyError, TypeError):
-        # Return False if there's a decoding error or the expected fields are missing
+        # If we get here, the instance exists and is active
+        return True
+
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        if args.debugging:
+            debug_print(args, f"Error decoding instance info: {e}")
         return False
     except requests.exceptions.HTTPError as e:
-        # Return False specifically for 404 errors (instance not found)
         if e.response.status_code == 404:
             return False
         raise  # Reraise other HTTP errors for handling elsewhere
@@ -4997,7 +4994,7 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
     no_response_seconds = 0
     printed_lines = set()
     first_connection_established = False  # Flag to track first successful connection
-
+    instance_destroyed = False  # Track whether the instance has been destroyed
     try:
         while time.time() - start_time < 300:
             # Check instance status with high priority for offline status
@@ -5009,6 +5006,7 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
                 reason = "Instance offline during testing"
                 progress_print(args, f"Instance {instance_id} went offline. {reason}")
                 destroy_instance_silent(instance_id, destroy_args)
+                instance_destroyed = True
                 with open("Error_testresults.log", "a") as f:
                     f.write(f"{machine_id}:{instance_id} {reason}\n")
                 return False, reason
@@ -5042,6 +5040,7 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
                             f.write(f"{machine_id}\n")
                         progress_print(args, f"Test passed.")
                         destroy_instance_silent(instance_id, destroy_args)
+                        instance_destroyed = True
                         return True, ""
                     elif line.startswith('ERROR'):
                         progress_print(args, line)
@@ -5049,6 +5048,7 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
                             f.write(f"{machine_id}:{instance_id} {line}\n")
                         progress_print(args, f"Test failed with error: {line}.")
                         destroy_instance_silent(instance_id, destroy_args)
+                        instance_destroyed = True
                         return False, line
                     else:
                         progress_print(args, line)
@@ -5064,6 +5064,7 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
                     f.write(f"{machine_id}:{instance_id} No response from port {port} for 60s with running instance\n")
                 progress_print(args, f"No response for 60s with running instance. This may indicate a misconfiguration of ports on the machine.")
                 destroy_instance_silent(instance_id, destroy_args)
+                instance_destroyed = True
                 return False, "No response for 60 seconds with running instance"
 
             if args.debugging:
@@ -5075,11 +5076,10 @@ def run_machinetester(ip_address, port, instance_id, machine_id, delay, args, ap
         return False, "Test did not complete within the time limit"
     finally:
         # Ensure instance cleanup
-        if instance_id and instance_exist(instance_id, api_key, destroy_args):
+        if not instance_destroyed and instance_id and instance_exist(instance_id, api_key, destroy_args):
            destroy_instance_silent(instance_id, destroy_args)
-
-    progress_print(args, f"Machine: {machine_id} Done with testing remote.py results {message}")
-    urllib3.enable_warnings()
+        progress_print(args, f"Machine: {machine_id} Done with testing remote.py results {message}")
+        warnings.simplefilter('default')
 
 
 def check_requirements(machine_id, api_key, args):
