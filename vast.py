@@ -4808,30 +4808,37 @@ def destroy_instance_silent(id, args):
     Returns:
         None
     """
-def destroy_instance_silent(id, args):
-    if not hasattr(args, 'debugging'):
-        args.debugging = False
-    if not id:
-        debug_print(args, "No instance_id provided. Skipping destruction.")
-        return
+def destroy_instance(id, args):
+    url = apiurl(args, f"/instances/{id}/")
+    headers = {}  # Set headers if required
 
-    try:
-        if args.raw:
-            with open(os.devnull, 'w') as devnull, redirect_stdout(devnull):
-                result = destroy_instance(id, args)
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            r = http_del(args, url, headers=headers, json={})
+            r.raise_for_status()  # Raise an exception for HTTP errors
+
+            if r.status_code == 200:
+                rj = r.json()
+                if rj.get("success", False):
+                    print(f"Destroying instance {id}.")
+                    return rj
+                else:
+                    print(f"Failed: {rj.get('msg', 'Unknown error')}")
+            else:
+                print(f"Unexpected response code {r.status_code}: {r.text}")
+
+        except requests.exceptions.HTTPError as e:
+            print(f"HTTP error occurred: {e}")
+        except Exception as e:
+            print(f"Unexpected error occurred: {e}")
+
+        if attempt < max_retries:
+            print(f"Retrying in 10 seconds... (Attempt {attempt}/{max_retries})")
+            time.sleep(10)
         else:
-            result = destroy_instance(id, args)
-
-        # Validate the result
-        if isinstance(result, str):
-            debug_print(args, f"Destroy instance returned: {result}")
-        elif isinstance(result, dict):  # Example of structured output
-            debug_print(args, f"Destroy instance details: {result}")
-        else:
-            debug_print(args, "Unexpected return type from destroy_instance.")
-
-    except Exception as e:
-        debug_print(args, f"Error destroying instance {id}: {e}")
+            print(f"Failed to destroy instance {id} after {max_retries} attempts.")
+            return {"success": False, "error": "Max retries exceeded"}
 
 
 def progress_print(args, *args_to_print):
