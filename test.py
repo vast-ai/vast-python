@@ -108,7 +108,7 @@ def main():
     # Create the instance
     create_cmd = [
         './vast.py', 'create', 'instance', str(ask_contract_id),
-        '--image', 'jjziets/vasttest:latest',
+        '--image', 'vastai/test:selftest',
         '--ssh',
         '--direct',
         '--env', '-e TZ=PDT -e XNAME=XX4 -p 5000:5000',

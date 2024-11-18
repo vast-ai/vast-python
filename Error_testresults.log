@@ -228,3 +228,23 @@
 28853:13529200 No response from port 52333 for 60s with running instance
 28924:13529208 No response from port 53717 for 60s with running instance
 27073:13529272 No response from port 63250 for 60s with running instance
+27768:13562499 ERROR 2: Test All GPU ResNet50 failed. Failed to execute the model with any batch size
+28168:13614204 No response from port 60772 for 60s with running instance
+24836:13614245 No response from port 40388 for 60s with running instance
+18599:13614282 No response from port 40155 for 60s with running instance
+28417:13614313 No response from port 40362 for 60s with running instance
+29540:13614306 No response from port 23261 for 60s with running instance
+28332:13614347 No response from port 11677 for 60s with running instance
+29823:13614417 Instance offline during testing
+29404:13614648 No response from port 40387 for 60s with running instance
+29188:13614672 No response from port 38208 for 60s with running instance
+29838:13614712 ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
+29391:13614778 No response from port 41229 for 60s with running instance
+27437:13614766 No response from port 43272 for 60s with running instance
+29121:13615022 ERROR 3: ECC test failed. Allocating memory on cuda:0...
+28266:13614936 No response from port 48308 for 60s with running instance
+29500:13615056 ERROR 3: ECC test failed. Allocating memory on cuda:0...
+28270:13615228 No response from port 47468 for 60s with running instance
+27073:13615384 No response from port 63771 for 60s with running instance
+29260:13615380 No response from port 40668 for 60s with running instance
+24836:13737251 No response from port 40389 for 60s with running instance
