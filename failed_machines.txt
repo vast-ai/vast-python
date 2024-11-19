@@ -1,564 +1,297 @@
-2024-11-18 19:06:09
-20752: CUDA version < 12.4
-28106: CUDA version < 12.4
-25320: CUDA version < 12.4
+2024-11-19 00:46:30
 19901: CUDA version < 12.4
-24134: CUDA version < 12.4
-25686: CUDA version < 12.4
+20752: CUDA version < 12.4
+27819: CUDA version < 12.4
+25678: CUDA version < 12.4
+22309: CUDA version < 12.4
+24315: CUDA version < 12.4
+21669: CUDA version < 12.4
+14213: CUDA version < 12.4
+28542: CUDA version < 12.4
+24629: CUDA version < 12.4
 27506: CUDA version < 12.4
-19597: CUDA version < 12.4
 24351: CUDA version < 12.4
 20410: CUDA version < 12.4
-14213: CUDA version < 12.4
-10955: CUDA version < 12.4; System RAM is less than total VRAM.
-23454: CUDA version < 12.4
-29085: PCIe bandwidth <= 2.85
-23397: Unexpected error: 429 Client Error: Too Many Requests for url: https://console.vast.ai/api/v0/bundles/?api_key=4c23e849253ecc3303dcc719604917907e18ddd6b3a3e57902e0460db873a6f8
-24629: CUDA version < 12.4
 21268: CUDA version < 12.4; PCIe bandwidth <= 2.85
-27507: CUDA version < 12.4
+23454: CUDA version < 12.4
+17422: CUDA version < 12.4
+16319: CUDA version < 12.4
+23291: CUDA version < 12.4
+28914: CUDA version < 12.4
 24077: CUDA version < 12.4
 17699: CUDA version < 12.4
-19064: CUDA version < 12.4; Direct port count <= 3
-22204: CUDA version < 12.4; System RAM is less than total VRAM.
-16637: CUDA version < 12.4; System RAM is less than total VRAM.
-29995: CUDA version < 12.4
-26867: CUDA version < 12.4; System RAM is less than total VRAM.
 29841: Direct port count <= 3
-14335: Failed to create instance.
-28766: CUDA version < 12.4
-15362: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+26867: CUDA version < 12.4; System RAM is less than total VRAM.
+24836: Test did not complete within the time limit
+23627: CUDA version < 12.4
 16754: CUDA version < 12.4; System RAM is less than total VRAM.
+16676: CUDA version < 12.4; System RAM is less than total VRAM.
+24832: CUDA version < 12.4
 28458: CUDA version < 12.4
-22719: CUDA version < 12.4
-25182: CUDA version < 12.4
-14500: CUDA version < 12.4
-22646: CUDA version < 12.4
-26056: CUDA version < 12.4
-22776: CUDA version < 12.4
-19076: CUDA version < 12.4
-24836: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-17310: CUDA version < 12.4
-16823: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-13903: CUDA version < 12.4; System RAM is less than total VRAM.
-18599: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
+15362: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+21331: CUDA version < 12.4
 13970: CUDA version < 12.4
-22767: CUDA version < 12.4
-28098: CUDA version < 12.4; System RAM is less than total VRAM.
+16686: CUDA version < 12.4; System RAM is less than total VRAM.
+16765: CUDA version < 12.4; System RAM is less than total VRAM.
+21433: CUDA version < 12.4
+15765: CUDA version < 12.4
+22776: CUDA version < 12.4
+24134: CUDA version < 12.4
+26056: CUDA version < 12.4
+14500: CUDA version < 12.4
+20511: CUDA version < 12.4
 26604: CUDA version < 12.4
-25420: System RAM is less than total VRAM.
-26275: CUDA version < 12.4
-28229: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-21899: CUDA version < 12.4
-24367: CUDA version < 12.4
-28346: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-26639: CUDA version < 12.4
-27713: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-17579: CUDA version < 12.4
-23870: CUDA version < 12.4; System RAM is less than total VRAM.
+17867: CUDA version < 12.4
+25182: CUDA version < 12.4
+29083: CUDA version < 12.4; PCIe bandwidth <= 2.85
+22767: Machine ID 22767 not found or not rentable.
+28229: Test did not complete within the time limit
+21436: CUDA version < 12.4
+29514: Upload speed <= 10 Mb/s
+16823: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+18599: Test did not complete within the time limit
+29878: PCIe bandwidth <= 2.85
 23149: CUDA version < 12.4; PCIe bandwidth <= 2.85
-26573: CUDA version < 12.4
-17662: CUDA version < 12.4
-29860: ERROR 3: ECC test failed. Allocating memory on cuda:0...
-29327: CUDA version < 12.4
-16607: CUDA version < 12.4; System RAM is less than total VRAM.
-23787: CUDA version < 12.4
-27908: Machine ID 27908 not found or not rentable.
 26572: CUDA version < 12.4
-26633: CUDA version < 12.4
-24206: CUDA version < 12.4
-21486: PCIe bandwidth <= 2.85
-23335: CUDA version < 12.4
-16271: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-29869: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-27715: CUDA version < 12.4
-16953: Machine ID 16953 not found or not rentable.
-27693: CUDA version < 12.4
+28098: CUDA version < 12.4; System RAM is less than total VRAM.
+17310: CUDA version < 12.4
+29192: Instance 13746503 did not become running within 900 seconds.
+29860: ERROR 3: ECC test failed. Allocating memory on cuda:0...
+16597: CUDA version < 12.4
+28879: Test did not complete within the time limit
+13903: CUDA version < 12.4; System RAM is less than total VRAM.
+23870: CUDA version < 12.4; System RAM is less than total VRAM.
+24630: CUDA version < 12.4
+26639: CUDA version < 12.4
+17579: CUDA version < 12.4
 10830: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-24235: CUDA version < 12.4
-24292: CUDA version < 12.4; System RAM is less than total VRAM.
-26654: CUDA version < 12.4
-29227: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-28330: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-26605: CUDA version < 12.4
-29926: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
-27570: CUDA version < 12.4
-15512: CUDA version < 12.4
-29078: CUDA version < 12.4
-23093: CUDA version < 12.4; System RAM is less than total VRAM.
-26352: CUDA version < 12.4; System RAM is less than total VRAM.
-29846: Failed to create instance.
-26371: CUDA version < 12.4; Reliability <= 0.90
-21172: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-30017: CUDA version < 12.4
-17767: CUDA version < 12.4
+29369: CUDA version < 12.4
+20318: CUDA version < 12.4
+23787: CUDA version < 12.4
+16271: Instance 13746547 did not become running within 900 seconds.
+24206: CUDA version < 12.4
+26633: CUDA version < 12.4
 29146: CUDA version < 12.4
-21099: PCIe bandwidth <= 2.85
-16772: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-16639: CUDA version < 12.4
-29816: Failed to create instance.
-28292: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-30047: CUDA version < 12.4
-27930: CUDA version < 12.4
-17064: CUDA version < 12.4
-13024: CUDA version < 12.4; System RAM is less than total VRAM.
-27422: CUDA version < 12.4
-8376: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-17219: CUDA version < 12.4
-16634: CUDA version < 12.4
-28943: CUDA version < 12.4
-28148: CUDA version < 12.4
-19480: CUDA version < 12.4
-29674: CUDA version < 12.4
-29153: CUDA version < 12.4
-29391: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-23026: CUDA version < 12.4
-25491: CUDA version < 12.4
-17399: CUDA version < 12.4
-23768: CUDA version < 12.4
-29488: Machine ID 29488 not found or not rentable.
-29124: PCIe bandwidth <= 2.85
-15650: CUDA version < 12.4
-29404: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-30027: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
+28331: Test did not complete within the time limit
+24292: CUDA version < 12.4; System RAM is less than total VRAM.
+16953: CUDA version < 12.4
+27715: CUDA version < 12.4
+29227: Test did not complete within the time limit
+28417: Test did not complete within the time limit
+18126: PCIe bandwidth <= 2.85
+26573: CUDA version < 12.4
+26371: CUDA version < 12.4; Reliability <= 0.90
+27713: Test did not complete within the time limit
+26605: CUDA version < 12.4
+28330: Test did not complete within the time limit
 29620: CUDA version < 12.4
-29522: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-27437: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-24548: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-15444: CUDA version < 12.4
-27412: CUDA version < 12.4
-20835: CUDA version < 12.4
-27243: Machine ID 27243 not found or not rentable.
-19058: CUDA version < 12.4; System RAM is less than total VRAM.
-28139: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-25046: Machine ID 25046 not found or not rentable.
-25139: CUDA version < 12.4
-30111: Machine ID 30111 not found or not rentable.
-24500: CUDA version < 12.4
-30151: Machine ID 30151 not found or not rentable.
-29678: Machine ID 29678 not found or not rentable.
-23810: Machine ID 23810 not found or not rentable.
-16227: CUDA version < 12.4
-30001: System RAM is less than total VRAM.
-25629: CUDA version < 12.4
-16222: CUDA version < 12.4
-29639: Machine ID 29639 not found or not rentable.
 29183: CUDA version < 12.4
-29692: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-22904: CUDA version < 12.4
+22219: CUDA version < 12.4
+23093: CUDA version < 12.4; System RAM is less than total VRAM.
+21289: CUDA version < 12.4
+29926: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
+15512: CUDA version < 12.4
+30017: CUDA version < 12.4
+21385: CUDA version < 12.4; PCIe bandwidth <= 2.85
+23148: CUDA version < 12.4; PCIe bandwidth <= 2.85
+27570: CUDA version < 12.4
+12597: Instance 13746873 encountered an error: Error response from daemon: unknown or invalid runtime name: nvidia
+29078: CUDA version < 12.4
+21858: CUDA version < 12.4
+27930: CUDA version < 12.4
+16772: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+16771: CUDA version < 12.4
+29931: Instance 13746898 encountered an error: Error: failed to start containers: C.13746898
+26352: CUDA version < 12.4; System RAM is less than total VRAM.
+18343: CUDA version < 12.4
+26081: CUDA version < 12.4
+28148: CUDA version < 12.4
+19052: CUDA version < 12.4; System RAM is less than total VRAM.
+10270: CUDA version < 12.4; System RAM is less than total VRAM.
+22736: CUDA version < 12.4; System RAM is less than total VRAM.
+17064: CUDA version < 12.4
+17219: CUDA version < 12.4
+29488: CUDA version < 12.4
+29576: System RAM is less than total VRAM.
+13024: CUDA version < 12.4; System RAM is less than total VRAM.
+28943: CUDA version < 12.4
+28445: Instance 13747011 encountered an error: Error response from daemon: --storage-opt is supported only for overlay over xfs with 'pquota' mount option
+29086: PCIe bandwidth <= 2.85
+27422: CUDA version < 12.4
+25491: CUDA version < 12.4
+23026: CUDA version < 12.4
+23979: CUDA version < 12.4
+29927: Instance offline during testing
+17399: CUDA version < 12.4
+19480: CUDA version < 12.4
+30109: ERROR 1: System requirements test failed. There are less than 2 CPU cores per GPU.
+15650: CUDA version < 12.4
+24787: CUDA version < 12.4; System RAM is less than total VRAM.
+30048: Test did not complete within the time limit
+15445: CUDA version < 12.4
+29014: Instance 13747195 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+23017: CUDA version < 12.4
+29391: Test did not complete within the time limit
+29404: Test did not complete within the time limit
+15444: CUDA version < 12.4
+28346: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+29755: Machine ID 29755 not found or not rentable.
+21945: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29561: CUDA version < 12.4
+29323: CUDA version < 12.4
+27243: CUDA version < 12.4
+26809: CUDA version < 12.4
+25629: CUDA version < 12.4
+23810: CUDA version < 12.4
+24548: Test did not complete within the time limit
+20835: CUDA version < 12.4
+29196: CUDA version < 12.4
+24500: CUDA version < 12.4
+19058: CUDA version < 12.4; System RAM is less than total VRAM.
+29555: CUDA version < 12.4
+30111: System RAM is less than total VRAM.
+16222: CUDA version < 12.4
 22973: CUDA version < 12.4
-19545: CUDA version < 12.4; PCIe bandwidth <= 2.85
-16798: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-27381: PCIe bandwidth <= 2.85
-21381: PCIe bandwidth <= 2.85
-24360: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-19748: CUDA version < 12.4
-29948: Machine ID 29948 not found or not rentable.
-29556: CUDA version < 12.4
-19990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29099: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-29967: CUDA version < 12.4
+29522: Instance 13746954 did not become running within 900 seconds.
+16227: CUDA version < 12.4
+29692: Test did not complete within the time limit
+26285: CUDA version < 12.4
 29544: ERROR 5: gpu-burn test failed.  ./gpu_burn: error while loading shared libraries: /usr/local/cuda/lib64/libcublas.so.12: file too short
-28736: CUDA version < 12.4
-29175: CUDA version < 12.4
-29863: CUDA version < 12.4
+27381: PCIe bandwidth <= 2.85
+25829: CUDA version < 12.4
+25729: CUDA version < 12.4
+27925: CUDA version < 12.4
+16798: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
 29102: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+29967: CUDA version < 12.4
+21424: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+29664: CUDA version < 12.4
+29175: CUDA version < 12.4
+21135: CUDA version < 12.4; PCIe bandwidth <= 2.85
+28736: CUDA version < 12.4
+30001: System RAM is less than total VRAM.
 26284: CUDA version < 12.4
-16316: CUDA version < 12.4
-28445: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-29156: CUDA version < 12.4; Direct port count <= 3
+19748: CUDA version < 12.4
 30172: Reliability <= 0.90
+28384: Test did not complete within the time limit
+30164: Test did not complete within the time limit
+29099: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+27633: CUDA version < 12.4
+29156: CUDA version < 12.4; Direct port count <= 3
 27665: CUDA version < 12.4
-28384: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-22798: CUDA version < 12.4; Reliability <= 0.90
+16316: CUDA version < 12.4
+27662: CUDA version < 12.4
+23923: CUDA version < 12.4; Direct port count <= 3
 29818: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
 29108: Upload speed <= 10 Mb/s
-27633: CUDA version < 12.4
-27662: CUDA version < 12.4
-24186: CUDA version < 12.4; System RAM is less than total VRAM.
-28741: CUDA version < 12.4
-29593: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
+27437: Test did not complete within the time limit
 28648: PCIe bandwidth <= 2.85
-30036: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-27325: CUDA version < 12.4
-29152: CUDA version < 12.4
-28678: Reliability <= 0.90
-22710: CUDA version < 12.4
-30154: Reliability <= 0.90; System RAM is less than total VRAM.
 23016: CUDA version < 12.4; System RAM is less than total VRAM.
-19743: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+28741: CUDA version < 12.4
 29952: CUDA version < 12.4; System RAM is less than total VRAM.
-29315: System RAM is less than total VRAM.
-28309: CUDA version < 12.4
-28924: System RAM is less than total VRAM.
-23979: CUDA version < 12.4
-19987: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-27309: CUDA version < 12.4; PCIe bandwidth <= 2.85; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-24673: CUDA version < 12.4; System RAM is less than total VRAM.
+24184: CUDA version < 12.4; System RAM is less than total VRAM.
 28685: ERROR 1: System requirements test failed. There are less than 2 CPU cores per GPU.
-28392: CUDA version < 12.4
-25985: CUDA version < 12.4
+30036: Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+28309: CUDA version < 12.4
+30154: Reliability <= 0.90; System RAM is less than total VRAM.
+19990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+19743: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+27325: CUDA version < 12.4
 28724: CUDA version < 12.4
-29161: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29980: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
 17147: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29813: Machine ID 29813 not found or not rentable.
-30066: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-28705: CUDA version < 12.4
-28722: CUDA version < 12.4
-29263: Upload speed <= 10 Mb/s
-29877: System RAM is less than total VRAM.
-25411: CUDA version < 12.4; System RAM is less than total VRAM.
-29439: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-12486: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-17154: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29125: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-30046: Machine ID 30046 not found or not rentable.
-28268: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-30020: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29500: ERROR 3: ECC test failed. Allocating memory on cuda:0...
-20836: CUDA version < 12.4
-20293: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29669: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-21113: CUDA version < 12.4; Reliability <= 0.90; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-29342: Machine ID 29342 not found or not rentable.
-29371: System RAM is less than total VRAM.
-29248: Machine ID 29248 not found or not rentable.
-29400: CUDA version < 12.4
-29572: Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29600: Machine ID 29600 not found or not rentable.
-30095: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
-16501: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29999: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29609: Machine ID 29609 not found or not rentable.
-30096: CUDA version < 12.4
-30005: System RAM is less than total VRAM.
-30164: Reliability <= 0.90
-30098: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
+28924: System RAM is less than total VRAM.
+27309: CUDA version < 12.4; PCIe bandwidth <= 2.85; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+28708: CUDA version < 12.4
 17112: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28248: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-27028: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-30104: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-30062: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-20285: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29591: Machine ID 29591 not found or not rentable.
-16494: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-12549: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-26177: CUDA version < 12.4
-29623: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29812: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-29266: System RAM is less than total VRAM.
-23849: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29807: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29617: Machine ID 29617 not found or not rentable.
+28392: CUDA version < 12.4
+29161: Machine ID 29161 not found or not rentable.
+29125: Test did not complete within the time limit
+30020: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+28726: CUDA version < 12.4
+25985: CUDA version < 12.4
+29813: Machine ID 29813 not found or not rentable.
+29877: Machine ID 29877 not found or not rentable.
+29198: Machine ID 29198 not found or not rentable.
+28722: CUDA version < 12.4
+29558: Machine ID 29558 not found or not rentable.
+25411: CUDA version < 12.4; System RAM is less than total VRAM.
+12486: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+29315: System RAM is less than total VRAM.
+28252: Instance 13747683 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+28079: PCIe bandwidth <= 2.85
+29500: ERROR 3: ECC test failed. Allocating memory on cuda:0...
+21113: CUDA version < 12.4; Reliability <= 0.90; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+20836: CUDA version < 12.4
+28302: Instance 13747714 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+28355: Instance 13747442 did not become running within 900 seconds.
+13310: Test did not complete within the time limit
+29572: Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 16499: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-25565: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29248: PCIe bandwidth <= 2.85
+30095: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
+29999: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+19987: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29344: CUDA version < 12.4
+30005: System RAM is less than total VRAM.
+28682: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+30053: CUDA version < 12.4
+30098: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
+28248: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+28270: Instance 13747761 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+17114: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+30104: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+27028: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+30120: Reliability <= 0.90
+16494: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29591: Machine ID 29591 not found or not rentable.
+20293: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+30062: Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29623: PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+12549: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+16501: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+23849: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29266: System RAM is less than total VRAM.
+29807: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
+29800: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
 27815: CUDA version < 12.4
+17439: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 30124: Unexpected error: float() argument must be a string or a real number, not 'NoneType'
 28980: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-17439: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-16523: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-24985: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-30025: CUDA version < 12.4; Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-28682: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
 27213: CUDA version < 12.4; PCIe bandwidth <= 2.85
-27236: System RAM is less than total VRAM.
-24780: CUDA version < 12.4
-23451: CUDA version < 12.4; System RAM is less than total VRAM.
-29795: Machine ID 29795 not found or not rentable.
-23990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-24061: CUDA version < 12.4; PCIe bandwidth <= 2.85; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
-30030: PCIe bandwidth <= 2.85
-23567: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-20301: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29434: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-24699: CUDA version < 12.4; Reliability <= 0.90; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-29193: Direct port count <= 3; PCIe bandwidth <= 2.85; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+16523: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+25565: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+30025: CUDA version < 12.4; Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
 16496: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-27237: Reliability <= 0.90; System RAM is less than total VRAM.
+27236: System RAM is less than total VRAM.
+24985: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+28707: Machine ID 28707 not found or not rentable.
+24780: CUDA version < 12.4
+23567: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+17125: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+29795: CUDA version < 12.4; PCIe bandwidth <= 2.85
+23451: CUDA version < 12.4; System RAM is less than total VRAM.
+23990: CUDA version < 12.4; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+30030: PCIe bandwidth <= 2.85
+29193: Direct port count <= 3; PCIe bandwidth <= 2.85; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+24699: Machine ID 24699 not found or not rentable.
 27235: Reliability <= 0.90
+27237: Reliability <= 0.90; System RAM is less than total VRAM.
+17119: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+20285: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
+28999: Machine ID 28999 not found or not rentable.
 29533: Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-17133: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28999: CUDA version < 12.4; Reliability <= 0.90; PCIe bandwidth <= 2.85; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 23263: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
-28733: Machine ID 28733 not found or not rentable.
-15680: CUDA version < 12.4; Reliability <= 0.90; Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
-28721: CUDA version < 12.4
+29434: Test did not complete within the time limit
+28721: CUDA version < 12.4; PCIe bandwidth <= 2.85
+28260: Instance 13747838 encountered an error: Error response from daemon: Get "https://registry-1.docker.io/v2/": net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
 24657: CUDA version < 12.4
 20287: CUDA version < 12.4; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.; Number of CPU cores is less than twice the number of GPUs.
 29238: CUDA version < 12.4
-27019: Machine ID 27019 not found or not rentable.
-30174: CUDA version < 12.4; Reliability <= 0.90; Direct port count <= 3; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s; System RAM is less than total VRAM.
+15680: CUDA version < 12.4; Reliability <= 0.90; Direct port count <= 3; PCIe bandwidth <= 2.85; System RAM is less than total VRAM.
+27019: Reliability <= 0.90
+30174: CUDA version < 12.4; Reliability <= 0.90; Direct port count <= 3; System RAM is less than total VRAM.
 30173: CUDA version < 12.4; Reliability <= 0.90; Download speed <= 10 Mb/s; Upload speed <= 10 Mb/s
-28270: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-29260: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
-28260: Invalid JSON output or error message: Traceback (most recent call last):
-  File "/home/vast/vast-python/./vast.py", line 5578, in <module>
-    main()
-  File "/home/vast/vast-python/./vast.py", line 5554, in main
-    res = args.func(args)
-  File "/home/vast/vast-python/./vast.py", line 5480, in self_test__machine
-    if instance_id and instance_exist(instance_id, api_key, destroy_args):
-  File "/home/vast/vast-python/./vast.py", line 4904, in instance_exist
-    instance_info = json.loads(buffer.getvalue().strip())
-AttributeError: 'dict' object has no attribute 'getvalue'
+28078: Instance 13747733 did not become running within 900 seconds.
+29260: Test did not complete within the time limit
+29808: Instance 13747779 did not become running within 900 seconds.
