@@ -959,7 +959,7 @@ def cancel__copy(args: argparse.Namespace):
     @param dst: ID of copy instance Target to cancel.
     """
 
-    url = apiurl(args, f"/commands/rsync/")
+    url = apiurl(args, f"/commands/copy_direct/")
     dst_id = args.dst
     if (dst_id is None):
         print("invalid arguments")
@@ -1086,14 +1086,13 @@ def copy(args: argparse.Namespace):
     @param dst: Target to copy object to.
     """
 
-    url = apiurl(args, f"/commands/rsync/")
     (src_id, src_path) = parse_vast_url(args.src)
     (dst_id, dst_path) = parse_vast_url(args.dst)
     if (src_id is None) and (dst_id is None):
         print("invalid arguments")
         return
 
-    print(f"copying {src_id}:{src_path} {dst_id}:{dst_path}")
+    print(f"copying {str(src_id)+':' if src_id else ''}{src_path} {str(dst_id)+':' if dst_id else ''}{dst_path}")
 
     req_json = {
         "client_id": "me",
@@ -1105,6 +1104,10 @@ def copy(args: argparse.Namespace):
     if (args.explain):
         print("request json: ")
         print(req_json)
+    if (src_id is None) or (dst_id is None):
+        url = apiurl(args, f"/commands/rsync/")
+    else:
+        url = apiurl(args, f"/commands/copy_direct/")
     r = http_put(args, url,  headers=headers,json=req_json)
     r.raise_for_status()
     if (r.status_code == 200):
@@ -1135,12 +1138,69 @@ def copy(args: argparse.Namespace):
             if (rj["success"]):
                 print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
             else:
-                print(rj["msg"]);
+                if rj["msg"] == "src_path not supported VMs.":
+                    print("src instance is a VM, use `vm copy` command for VM to VM copies")
+                elif rj["msg"] == "dst_path not supported for VMs.":
+                    print("dst instance is a VM, use `vm copy` command for VM to VM copies")
+                else:
+                    print(rj["msg"]);
     else:
         print(r.text);
         print("failed with error {r.status_code}".format(**locals()));
 
 
+
+@parser.command(
+    argument("src", help="instance_id of source VM.", type=int),
+    argument("dst", help="instance_id of destination VM", type=int),
+    usage="vastai vm copy SRC DST",
+    help=" Copy VM image from one VM instance to another",
+    epilog=deindent("""
+        Copies the entire VM image of from one instance to another.
+
+        Note: destination VM must be stopped during copy. The source VM
+        does not need to be stopped, but it's highly recommended that you keep
+        the source VM stopped for the duration of the copy.
+    """),
+)
+def vm__copy(args: argparse.Namespace):
+    """
+    Transfer VM image from one instance to another.
+
+    @param src: instance_id of source.
+    @param dst: instance_id of destination.
+    """
+    src_id = args.src
+    dst_id = args.dst
+
+    print(f"copying from {src_id} to {dst_id}")
+
+    req_json = {
+        "client_id": "me",
+        "src_id": src_id,
+        "dst_id": dst_id,
+    }
+    url = apiurl(args, f"/commands/copy_direct/")
+    if (args.explain):
+        print("request json: ")
+        print(req_json)
+
+    r = http_put(args, url,  headers=headers,json=req_json)
+    r.raise_for_status()
+    if (r.status_code == 200):
+        rj = r.json();
+        if (rj["success"]):
+            print("Remote to Remote copy initiated - check instance status bar for progress updates (~30 seconds delayed).")
+        else:
+            if rj["msg"] == "Invalid src_path.":
+                print("src instance is not a VM")
+            elif rj["msg"] == "Invalid dst_path.":
+                print("dst instance is not a VM")
+            else:
+                print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
 @parser.command(
