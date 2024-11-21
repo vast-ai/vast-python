@@ -65,10 +65,17 @@ logging.basicConfig(
 APP_NAME = "vastai"
 
 try:
-  import xdg_base_dirs
+  # Although xdg-base-dirs is the newer name, there's 
+  # python compatibility issues with dependencies that
+  # can be unresolvable using things like python 3.9
+  # So we actually use the older name, thus older
+  # version for now. This is as of now (2024/11/15)
+  # the safer option. -cjm
+  import xdg
+
   DIRS = {
-      'config': xdg_base_dirs.xdg_config_home(),
-      'temp': xdg_base_dirs.xdg_cache_home()
+      'config': xdg.xdg_config_home(),
+      'temp': xdg.xdg_cache_home()
   }
 
 except:
@@ -282,12 +289,13 @@ class apwrap(object):
             kwargs["formatter_class"] = argparse.RawDescriptionHelpFormatter
           
             sp = self.subparsers().add_parser(name, aliases=aliases_transformed, help=help_, **kwargs)
-            setattr(func, "signature", sp)
+
             # TODO: Sometimes the parser.command has a help parameter. Ideally
             # I'd extract this during the sdk phase but for the life of me
             # I can't find it.
-            setattr(func, "signature_help", help_)
- 
+            setattr(func, "mysignature", sp)
+            setattr(func, "mysignature_help", help_)
+
             self.subparser_objs.append(sp)
             for arg in arguments:
                 tsp = sp.add_argument(*arg.args, **arg.kwargs)
@@ -1392,7 +1400,7 @@ def get_runtype(args):
 
 
 @parser.command(
-    argument("ID", help="id of instance type to launch (returned from search offers)", type=int),
+    argument("id", help="id of instance type to launch (returned from search offers)", type=int),
     argument("--price", help="per machine bid price in $/hour", type=float),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
@@ -1490,7 +1498,7 @@ def create__instance(args: argparse.Namespace):
         json_blob["args"] = args.args
 
     #print(f"put asks/{args.id}/  runtype:{runtype}")
-    url = apiurl(args, "/asks/{id}/".format(id=args.ID))
+    url = apiurl(args, "/asks/{id}/".format(id=args.id))
 
     if (args.explain):
         print("request json: ")
@@ -1670,29 +1678,29 @@ def create__template(args):
 
 
 @parser.command(
-    argument("ID", help="id of apikey to remove", type=int),
+    argument("id", help="id of apikey to remove", type=int),
     usage="vastai delete api-key ID",
     help="Remove an api-key",
 )
 def delete__api_key(args):
-    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.ID))
+    url = apiurl(args, "/auth/apikeys/{id}/".format(id=args.id))
     r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
 @parser.command(
-    argument("ID", help="id ssh key to delete", type=int),
+    argument("id", help="id ssh key to delete", type=int),
     usage="vastai delete ssh-key ID",
     help="Remove an ssh-key",
 )
 def delete__ssh_key(args):
-    url = apiurl(args, "/ssh/{id}/".format(id=args.ID))
+    url = apiurl(args, "/ssh/{id}/".format(id=args.id))
     r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
 
 @parser.command(
-    argument("ID", help="id of group to delete", type=int),
+    argument("id", help="id of group to delete", type=int),
     usage="vastai delete autogroup ID ",
     help="Delete an autogroup group",
     epilog=deindent("""
@@ -1701,9 +1709,9 @@ def delete__ssh_key(args):
     """),
 )
 def delete__autogroup(args):
-    id  = args.ID
+    id  = args.id
     url = apiurl(args, f"/autojobs/{id}/" )
-    json_blob = {"client_id": "me", "autojob_id": args.ID}
+    json_blob = {"client_id": "me", "autojob_id": args.id}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -1721,7 +1729,7 @@ def delete__autogroup(args):
         print(r.text)
 
 @parser.command(
-    argument("ID", help="id of endpoint group to delete", type=int),
+    argument("id", help="id of endpoint group to delete", type=int),
     usage="vastai delete endpoint ID ",
     help="Delete an endpoint group",
     epilog=deindent("""
@@ -1730,9 +1738,9 @@ def delete__autogroup(args):
     """),
 )
 def delete__endpoint(args):
-    id  = args.ID
+    id  = args.id
     url = apiurl(args, f"/endptjobs/{id}/" )
-    json_blob = {"client_id": "me", "endptjob_id": args.ID}
+    json_blob = {"client_id": "me", "endptjob_id": args.id}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -1878,9 +1886,9 @@ def detach__ssh(args):
     print(r.json())
 
 @parser.command(
-    argument("ID", help="id of instance to execute on", type=int),
+    argument("id", help="id of instance to execute on", type=int),
     argument("COMMAND", help="bash command surrounded by single quotes",  type=str),
-    usage="vastai execute ID COMMAND",
+    usage="vastai execute id COMMAND",
     help="Execute a (constrained) remote command on a machine",
     epilog=deindent("""
         Examples:
@@ -1902,7 +1910,7 @@ def execute(args):
     """Execute a (constrained) remote command on a machine.
     :param argparse.Namespace args: should supply all the command-line options
     """
-    url = apiurl(args, "/instances/command/{id}/".format(id=args.ID))
+    url = apiurl(args, "/instances/command/{id}/".format(id=args.id))
     json_blob={"command": args.COMMAND} 
     if (args.explain):
         print("request json: ")
@@ -1917,7 +1925,7 @@ def execute(args):
                 time.sleep(0.3)
                 url = rj.get("result_url",None)
                 if (url is None):
-                    api_key_id_h = hashlib.md5( (args.api_key + str(args.ID)).encode('utf-8') ).hexdigest()
+                    api_key_id_h = hashlib.md5( (args.api_key + str(args.id)).encode('utf-8') ).hexdigest()
                     url = "https://s3.amazonaws.com/vast.ai/instance_logs/" + api_key_id_h + "C.log"
                 # print(f"trying {url}")
                 r = requests.get(url) #headers=headers
@@ -1934,7 +1942,7 @@ def execute(args):
 
 
 @parser.command(
-    argument("ID", help="id of instance to execute on", type=int),
+    argument("id", help="id of instance to execute on", type=int),
     argument("--level", help="log detail level (0 to 3)", type=int, default=1),
     usage="vastai get endpt-logs ID [--api-key API_KEY]",
     help="Fetch logs for a specific serverless endpoint group",
@@ -1945,7 +1953,7 @@ def execute(args):
 def get__endpt_logs(args):
     #url = apiurl(args, "/endptjobs/" )
     url = "https://run.vast.ai/get_endpoint_logs/"
-    json_blob = {"id": args.ID, "api_key": args.api_key}
+    json_blob = {"id": args.id, "api_key": args.api_key}
     if (args.explain):
         print(f"{url} with request json: ")
         print(json_blob)
@@ -2284,7 +2292,7 @@ def logs(args):
 
 
 @parser.command(
-    argument("ID", help="id of instance to prepay for", type=int),
+    argument("id", help="id of instance to prepay for", type=int),
     argument("amount", help="amount of instance credit prepayment (default discount func of 0.2 for 1 month, 0.3 for 3 months)", type=float),
     usage="vastai prepay instance ID AMOUNT",
     help="Deposit credits into reserved instance",
@@ -2294,7 +2302,7 @@ def prepay__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url       = apiurl(args, "/instances/prepay/{id}/".format(id=args.ID))
+    url       = apiurl(args, "/instances/prepay/{id}/".format(id=args.id))
     json_blob = { "amount": args.amount }
     if (args.explain):
         print("request json: ")
@@ -2306,7 +2314,7 @@ def prepay__instance(args):
     if rj["success"]:
         timescale = round( rj["timescale"], 3)
         discount_rate = 100.0*round( rj["discount_rate"], 3)
-        print("prepaid for {timescale} months of instance {args.ID} applying ${args.amount} credits for a discount of {discount_rate}%".format(**(locals())));
+        print("prepaid for {timescale} months of instance {args.id} applying ${args.amount} credits for a discount of {discount_rate}%".format(**(locals())));
     else:
         print(rj["msg"]);
 
@@ -2315,7 +2323,7 @@ def prepay__instance(args):
 
 
 @parser.command(
-    argument("ID", help="id of instance to reboot", type=int),
+    argument("id", help="id of instance to reboot", type=int),
     usage="vastai reboot instance ID [OPTIONS]",
     help="Reboot (stop/start) an instance",
     epilog=deindent("""
@@ -2327,14 +2335,14 @@ def reboot__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.ID))
+    url = apiurl(args, "/instances/reboot/{id}/".format(id=args.id))
     r = http_put(args, url,  headers=headers,json={})
     r.raise_for_status()
 
     if (r.status_code == 200):
         rj = r.json();
         if (rj["success"]):
-            print("Rebooting instance {args.ID}.".format(**(locals())));
+            print("Rebooting instance {args.id}.".format(**(locals())));
         else:
             print(rj["msg"]);
     else:
@@ -2343,7 +2351,7 @@ def reboot__instance(args):
 
 
 @parser.command(
-    argument("ID", help="id of instance to reboot", type=int),
+    argument("id", help="id of instance to reboot", type=int),
     usage="vastai recycle instance ID [OPTIONS]",
     help="Recycle (destroy/create) an instance",
     epilog=deindent("""
@@ -2355,14 +2363,14 @@ def recycle__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/instances/recycle/{id}/".format(id=args.ID))
+    url = apiurl(args, "/instances/recycle/{id}/".format(id=args.id))
     r = http_put(args, url,  headers=headers,json={})
     r.raise_for_status()
 
     if (r.status_code == 200):
         rj = r.json()
         if (rj["success"]):
-            print("Recycling instance {args.ID}.".format(**(locals())));
+            print("Recycling instance {args.id}.".format(**(locals())));
         else:
             print(rj["msg"]);
     else:
@@ -2370,12 +2378,12 @@ def recycle__instance(args):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    argument("ID", help="id of user to remove", type=int),
+    argument("id", help="id of user to remove", type=int),
     usage="vastai remove team-member ID",
     help="Remove a team member",
 )
 def remove__team_member(args):
-    url = apiurl(args, "/team/members/{id}/".format(id=args.ID))
+    url = apiurl(args, "/team/members/{id}/".format(id=args.id))
     r = http_del(args, url, headers=headers)
     r.raise_for_status()
     print(r.json())
@@ -2392,7 +2400,7 @@ def remove__team_role(args):
     print(r.json())
 
 @parser.command(
-    argument("ID", help="machine id", type=int),
+    argument("id", help="machine id", type=int),
     usage="vastai reports ID",
     help="Get the user reports for a given machine",
 )
@@ -2401,8 +2409,8 @@ def reports(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, "/machines/{id}/reports/".format(id=args.ID))
-    json_blob = {"machine_id" : args.ID}
+    url = apiurl(args, "/machines/{id}/reports/".format(id=args.id))
+    json_blob = {"machine_id" : args.id}
 
     if (args.explain):
         print("request json: ")
@@ -2508,7 +2516,7 @@ def start_instance(id,args):
     return False
 
 @parser.command(
-    argument("ID", help="ID of instance to start/restart", type=int),
+    argument("id", help="ID of instance to start/restart", type=int),
     usage="vastai start instance ID [OPTIONS]",
     help="Start a stopped instance",
     epilog=deindent("""
@@ -2525,11 +2533,11 @@ def start__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    start_instance(args.ID,args)
+    start_instance(args.id,args)
 
 
 @parser.command(
-    argument("IDs", help="ids of instance to start", type=int, nargs='+'),
+    argument("ids", help="ids of instance to start", type=int, nargs='+'),
     usage="vastai start instances [OPTIONS] ID0 ID1 ID2...",
     help="Start a list of instances",
 )
@@ -2542,7 +2550,7 @@ def start__instances(args):
     #start_instance(args.IDs, args)
     #exec_with_threads(lambda id : start_instance(id, args), args.IDs)
 
-    idlist = split_list(args.IDs, 64)
+    idlist = split_list(args.ids, 64)
     exec_with_threads(lambda ids : start_instance(ids, args), idlist, nt=8)
 
 
@@ -2576,7 +2584,7 @@ def stop_instance(id,args):
 
 
 @parser.command(
-    argument("ID", help="id of instance to stop", type=int),
+    argument("id", help="id of instance to stop", type=int),
     usage="vastai stop instance ID [OPTIONS]",
     help="Stop a running instance",
     epilog=deindent("""
@@ -2591,10 +2599,10 @@ def stop__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    stop_instance(args.ID,args)
+    stop_instance(args.id,args)
 
 @parser.command(
-    argument("IDs", help="ids of instance to stop", type=int, nargs='+'),
+    argument("ids", help="ids of instance to stop", type=int, nargs='+'),
     usage="vastai stop instances [OPTIONS] ID0 ID1 ID2...",
     help="Stop a list of instances",
     epilog=deindent("""
@@ -2609,7 +2617,7 @@ def stop__instances(args):
         stop_instance(id, args)
     """
 
-    idlist = split_list(args.IDs, 64)
+    idlist = split_list(args.ids, 64)
     #stop_instance(args.IDs, args)
     exec_with_threads(lambda ids : stop_instance(ids, args), idlist, nt=8)
 
@@ -3414,7 +3422,7 @@ def show__connections(args):
 
 
 @parser.command(
-    argument("ID", help="id of instance to get info for", type=int),
+    argument("id", help="id of instance to get info for", type=int),
     usage="vastai show deposit ID [options]",
     help="Display reserve deposit info for an instance"
 )
@@ -3425,7 +3433,7 @@ def show__deposit(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    req_url = apiurl(args, "/instances/balance/{id}/".format(id=args.ID) , {"owner": "me"} )
+    req_url = apiurl(args, "/instances/balance/{id}/".format(id=args.id) , {"owner": "me"} )
     r = http_get(args, req_url)
     r.raise_for_status()
     print(json.dumps(r.json(), indent=1, sort_keys=True))
@@ -3835,7 +3843,7 @@ def transfer__credit(args: argparse.Namespace):
         print("failed with error {r.status_code}".format(**locals()));
 
 @parser.command(
-    argument("ID", help="id of autoscale group to update", type=int),
+    argument("id", help="id of autoscale group to update", type=int),
     argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
     argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
@@ -3855,13 +3863,13 @@ def transfer__credit(args: argparse.Namespace):
     """),
 )
 def update__autogroup(args):
-    id  = args.ID
+    id  = args.id
     url = apiurl(args, f"/autojobs/{id}/" )
     if args.no_default:
         query = ""
     else:
         query = " verified=True rentable=True rented=False"
-    json_blob = {"client_id": "me", "autojob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params + query, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
+    json_blob = {"client_id": "me", "autojob_id": args.id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "test_workers" : args.test_workers, "template_hash": args.template_hash, "template_id": args.template_id, "search_params": args.search_params + query, "launch_args": args.launch_args, "gpu_ram": args.gpu_ram, "endpoint_name": args.endpoint_name, "endpoint_id": args.endpoint_id}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -3879,7 +3887,7 @@ def update__autogroup(args):
         print(r.text)
 
 @parser.command(
-    argument("ID", help="id of endpoint group to update", type=int),
+    argument("id", help="id of endpoint group to update", type=int),
     argument("--min_load", help="minimum floor load in perf units/s  (token/s for LLms)", type=float),
     argument("--target_util",      help="target capacity utilization (fraction, max 1.0, default 0.9)", type=float),
     argument("--cold_mult",   help="cold/stopped instance capacity target as multiple of hot capacity target (default 2.5)", type=float),
@@ -3893,9 +3901,9 @@ def update__autogroup(args):
     """),
 )
 def update__endpoint(args):
-    id  = args.ID
+    id  = args.id
     url = apiurl(args, f"/endptjobs/{id}/" )
-    json_blob = {"client_id": "me", "endptjob_id": args.ID, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "cold_workers": args.cold_workers, "max_workers" : args.max_workers, "endpoint_name": args.endpoint_name}
+    json_blob = {"client_id": "me", "endptjob_id": args.id, "min_load": args.min_load, "target_util": args.target_util, "cold_mult": args.cold_mult, "cold_workers": args.cold_workers, "max_workers" : args.max_workers, "endpoint_name": args.endpoint_name}
     if (args.explain):
         print("request json: ")
         print(json_blob)
@@ -3932,7 +3940,7 @@ def update__env_var(args):
         print(f"Failed to update environment variable: {result.get('msg', 'Unknown error')}")
 
 @parser.command(
-    argument("ID", help="id of instance to update", type=int),
+    argument("id", help="id of instance to update", type=int),
     argument("--template_id", help="new template ID to associate with the instance", type=int),
     argument("--template_hash_id", help="new template hash ID to associate with the instance", type=str),
     argument("--image", help="new image UUID for the instance", type=str),
@@ -3950,8 +3958,8 @@ def update__instance(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    url = apiurl(args, f"/instances/update_template/{args.ID}/")
-    json_blob = {"id": args.ID}
+    url = apiurl(args, f"/instances/update_template/{args.id}/")
+    json_blob = {"id": args.id}
     
     if args.template_id:
         json_blob["template_id"] = args.template_id
@@ -3975,24 +3983,24 @@ def update__instance(args):
     if r.status_code == 200:
         response_data = r.json()
         if response_data.get("success"):
-            print(f"Instance {args.ID} updated successfully.")
+            print(f"Instance {args.id} updated successfully.")
             print("Updated instance details:")
             print(response_data.get("updated_instance"))
         else:
-            print(f"Failed to update instance {args.ID}: {response_data.get('msg')}")
+            print(f"Failed to update instance {args.id}: {response_data.get('msg')}")
     else:
-        print(f"Failed to update instance {args.ID} with error {r.status_code}: {r.text}")
+        print(f"Failed to update instance {args.id} with error {r.status_code}: {r.text}")
 
 
 @parser.command(
-    argument("ID", help="id of the role", type=int),
+    argument("id", help="id of the role", type=int),
     argument("--name", help="name of the template", type=str),
     argument("--permissions", help="file path for json encoded permissions, look in the docs for more information", type=str),
     usage="vastai update team-role ID --name NAME --permissions PERMISSIONS",
     help="Update an existing team role",
 )
 def update__team_role(args):
-    url = apiurl(args, "/team/roles/{id}/".format(id=args.ID))
+    url = apiurl(args, "/team/roles/{id}/".format(id=args.id))
     permissions = load_permissions_from_file(args.permissions)
     r = http_put(args, url,  headers=headers, json={"name": args.name, "permissions": permissions})
     r.raise_for_status()
@@ -4095,7 +4103,7 @@ def update__template(args):
 )
 def update__ssh_key(args):
     ssh_key = get_ssh_key(args.ssh_key)
-    url = apiurl(args, "/ssh/{id}/".format(id=args.ID))
+    url = apiurl(args, "/ssh/{id}/".format(id=args.id))
     r = http_put(args, url,  headers=headers, json={"ssh_key": ssh_key})
     r.raise_for_status()
     print(r.json())
@@ -4336,7 +4344,7 @@ def cleanup_machine(args, machine_id):
         print("failed with error {r.status_code}".format(**locals()))
 
 @parser.command(
-    argument("ID", help="id of machine to cleanup", type=int),
+    argument("id", help="id of machine to cleanup", type=int),
     usage="vastai cleanup machine ID [options]",
     help="[Host] Remove all expired storage instances from the machine, freeing up space",
     epilog=deindent("""
@@ -4351,7 +4359,7 @@ def cleanup__machine(args):
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    cleanup_machine(args, args.ID)
+    cleanup_machine(args, args.id)
 
 
 @parser.command(
@@ -4416,7 +4424,7 @@ def list_machine(args, id):
 
 
 @parser.command(
-    argument("ID", help="id of machine to list", type=int),
+    argument("id", help="id of machine to list", type=int),
     argument("-g", "--price_gpu", help="per gpu rental price in $/hour  (price for active instances)", type=float),
     argument("-s", "--price_disk",
              help="storage price in $/GB/month (price for inactive instances), default: $0.15/GB/month", type=float),
@@ -4438,11 +4446,10 @@ def list_machine(args, id):
 )
 def list__machine(args):
     """
-
     :param argparse.Namespace args: should supply all the command-line options
     :rtype:
     """
-    return list_machine(args, args.ID)
+    return list_machine(args, args.id)
 
 
 @parser.command(
