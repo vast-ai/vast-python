@@ -4284,7 +4284,6 @@ def filter_invoice_items(args: argparse.Namespace, rows: List) -> Dict:
 #
 
 
-
 @parser.command(
     argument("id", help="id of machine to cancel maintenance(s) for", type=int),
     usage="vastai cancel maint id",
@@ -4314,30 +4313,6 @@ def cancel__maint(args):
     r.raise_for_status()
     print(r.text)
     print(f"Cancel maintenance window(s) scheduled for machine {args.id} success".format(r.json()))
-
-
-
-@parser.command(
-   argument("id", help="id of machine to delete", type=int),
-    usage="vastai force delete a machine <id>",
-    help="[Host] Force Delete a machine",
-) 
-def force__delete_machine(args):
-    """
-    Deletes machine if the machine is not being used by clients. host jobs on their own machines are disregarded and machine is force deleted.
-    """
-    req_url = apiurl(args, "/machines/{machine_id}/force_delete/".format(machine_id=args.id));
-    r = http_post(args, req_url, headers=headers)
-    if (r.status_code == 200):
-        rj = r.json()
-        if (rj["success"]):
-            print("deleted machine_id ({machine_id}) and all related contracts.".format(machine_id=args.id));
-        else:
-            print(rj["msg"]);
-    else:
-        print(r.text);
-        print("failed with error {r.status_code}".format(**locals()));
-
 
 
 def cleanup_machine(args, machine_id):
@@ -4377,6 +4352,28 @@ def cleanup__machine(args):
     :rtype:
     """
     cleanup_machine(args, args.ID)
+
+
+@parser.command(
+   argument("id", help="id of machine to delete", type=int),
+    usage="vastai delete machine <id>",
+    help="[Host] Delete machine if the machine is not being used by clients. host jobs on their own machines are disregarded and machine is force deleted.",
+) 
+def delete__machine(args):
+    """
+    Deletes machine if the machine is not in use by clients. Disregards host jobs on their own machines and force deletes a machine.
+    """
+    req_url = apiurl(args, "/machines/{machine_id}/force_delete/".format(machine_id=args.id));
+    r = http_post(args, req_url, headers=headers)
+    if (r.status_code == 200):
+        rj = r.json()
+        if (rj["success"]):
+            print("deleted machine_id ({machine_id}) and all related contracts.".format(machine_id=args.id));
+        else:
+            print(rj["msg"]);
+    else:
+        print(r.text);
+        print("failed with error {r.status_code}".format(**locals()));
 
 
 def list_machine(args, id):

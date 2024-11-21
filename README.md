@@ -201,6 +201,7 @@ positional arguments:
     update ssh-key      Update an existing ssh key
     generate pdf-invoices
     cleanup machine     [Host] Remove all expired storage instances from the machine, freeing up space.
+    delete machine      [Host] Delete machine if the machine is not being used by clients
     list machine        [Host] list a machine for rent
     list machines       [Host] list machines for rent
     remove defjob       [Host] Delete default jobs
