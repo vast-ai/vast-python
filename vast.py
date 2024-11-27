@@ -5468,7 +5468,7 @@ def self_test__machine(args):
 
                 # Prepare arguments for instance creation
                 create_args = argparse.Namespace(
-                    ID=ask_contract_id,
+                    id=ask_contract_id,
                     price=None,
                     disk=20,
                     image="vastai/test:selftest",
