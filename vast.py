@@ -6,7 +6,7 @@ from __future__ import unicode_literals, print_function
 import re
 import json
 import sys
-import argcomplete, argparse
+import argparse
 import os
 import time
 from typing import Dict, List, Tuple, Optional
