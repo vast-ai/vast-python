@@ -1,1 +1,5 @@
 gpu_names_cache.json
+Error_testresults.log
+Pass_testresults.log
+failed_machines.txt
+passed_machines.txt
