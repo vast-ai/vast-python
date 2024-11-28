@@ -1519,7 +1519,7 @@ def get_runtype(args):
 )
 @parser.command(
     argument("id", help="id of instance", type=str),
-    argument("--template-hash", type=str, help="Template hash ID for instance creation"),
+    argument("--template-hash", "--template-hash-id", dest="template_hash", type=str, help="Template hash ID for instance creation"),
     argument("--raw", action="store_true", help="Output raw response")
 )
 def create__instance(args: argparse.Namespace):
