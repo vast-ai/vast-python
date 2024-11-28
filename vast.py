@@ -1517,6 +1517,11 @@ def get_runtype(args):
         {'success': True, 'new_contract': 7835610} 
     """),
 )
+@parser.command(
+    argument("id", help="id of instance", type=str),
+    argument("--template-hash", type=str, help="Template hash ID for instance creation"),
+    argument("--raw", action="store_true", help="Output raw response")
+)
 def create__instance(args: argparse.Namespace):
     """Performs the same action as pressing the "RENT" button on the website at https://console.vast.ai/create/.
 
