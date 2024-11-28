@@ -2904,8 +2904,9 @@ def search__invoices(args):
     argument("--template-hash-id", type=str, help="Search for offers matching a specific template hash"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
-    usage="vastai search offers [--help] [--api-key API_KEY] [--raw] <query>",
-    help="Search for instance types using custom query",
+    usage="vastai search offers [--help] [--api-key API_KEY] [--raw] [--template-hash-id TEMPLATE_HASH_ID] <query>",
+    help="Search for instance types using custom query or saved template filters",
+
     epilog=deindent("""
         Query syntax:
 
@@ -2929,6 +2930,11 @@ def search__invoices(args):
 
             # search for reliable 4 gpu offers in Taiwan or Sweden
             vastai search offers 'reliability>0.99 num_gpus=4 geolocation in [TW,SE]'
+
+            # search using a saved template filter
+            vastai search offers --template-hash-id abc123
+
+
 
             # search for reliable RTX 3090 or 4090 gpus NOT in China or Vietnam
             vastai search offers 'reliability>0.99 gpu_name in ["RTX 4090", "RTX 3090"] geolocation notin [CN,VN]'
