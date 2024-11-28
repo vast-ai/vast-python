@@ -1461,7 +1461,8 @@ def get_runtype(args):
 
 @parser.command(
     argument("id", help="id of instance type to launch (returned from search offers)", type=int),
-    argument("--template_hash", help="Create instance from template info", type=str),
+    argument("--template_hash", help="Create instance from template hash ID", type=str),
+    argument("--template_hash_id", help="[DEPRECATED] Use --template_hash instead", type=str),
     argument("--disk", help="size of local disk partition in GB", type=float, default=10),
     argument("--image", help="docker container image to launch", type=str),
     argument("--login", help="docker login arguments for private repo authentication, surround with '' ", type=str),
@@ -1547,7 +1548,7 @@ def create__instance(args: argparse.Namespace):
         #"create_from": args.create_from,
         "force": args.force,
         "cancel_unavail": args.cancel_unavail,
-        "template_hash_id" : args.template_hash
+        "template_hash_id": args.template_hash or args.template_hash_id
     }
 
 
