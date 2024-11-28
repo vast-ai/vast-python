@@ -2900,6 +2900,7 @@ def search__invoices(args):
     argument("--limit", type=int, help=""),
     argument("--disable-bundling", action="store_true", help="Deprecated"),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
+    argument("--template-hash-id", type=str, help="Search for offers matching a specific template hash"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="vastai search offers [--help] [--api-key API_KEY] [--raw] <query>",
@@ -3007,6 +3008,9 @@ def search__offers(args):
             query = {}
         else:
             query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+            
+        if args.template_hash_id:
+            query["template_hash"] = {"eq": args.template_hash_id}
             #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True} }
 
         if args.query is not None:
