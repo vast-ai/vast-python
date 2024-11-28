@@ -2905,7 +2905,7 @@ def search__invoices(args):
     argument("--limit", type=int, help=""),
     argument("--disable-bundling", action="store_true", help="Deprecated"),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
-    argument("--template-hash", type=str, help="Template hash ID to filter offers"),
+argument("--template-hash", type=str, help="Template hash ID to filter offers by a specific instance template"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="vastai search offers [--help] [--api-key API_KEY] [--raw] <query>",
@@ -2927,6 +2927,9 @@ def search__invoices(args):
 
             # search for somewhat reliable single RTX 3090 instances, filter out any duplicates or offers that conflict with our existing stopped instances
             vastai search offers 'reliability > 0.98 num_gpus=1 gpu_name=RTX_3090 rented=False'
+
+            # search for offers matching a specific template hash
+            vastai search offers --template-hash abc123def456
 
             # search for datacenter gpus with minimal compute_cap and total_flops
             vastai search offers 'compute_cap > 610 total_flops > 5 datacenter=True'
