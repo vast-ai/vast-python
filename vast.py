@@ -2995,6 +2995,11 @@ def search__invoices(args):
     """),
     aliases=hidden_aliases(["search instances"]),
 )
+@parser.command(
+    # ... existing arguments ...
+    argument("--template-hash", type=str, help="Template hash ID to filter offers"),
+    # ... rest of existing arguments ...
+)
 def search__offers(args):
     """Creates a query based on search parameters as in the examples above.
 
@@ -3051,7 +3056,11 @@ def search__offers(args):
     if new_search_ept:
         #geolocation = query.pop("geolocation", None)
         #query = {'reliability2': {'gt': '0.1'}}
-        json_blob = {"select_cols" : ['*'], "q" : query}
+        json_blob = {
+            "select_cols": ['*'], 
+            "q": query,
+            "template_hash_id": args.template_hash
+        }
         url = apiurl(args, "/search/asks/")
         stime = time.time()
 
