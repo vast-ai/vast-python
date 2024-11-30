@@ -2749,6 +2749,12 @@ benchmarks_fields = {
 
         note: to pass '>' and '<' on the command line, make sure to use quotes
         note: to encode a string query value (ie for gpu_name), replace any spaces ' ' with underscore '_'
+        note: use --template-hash-id to filter results based on a template's compatibility requirements
+
+        The --template-hash-id option allows filtering search results to only show machines 
+        that are compatible with a specific template's requirements. This helps avoid selecting
+        machines that would fail to run the template due to incompatible CUDA versions or
+        other constraints.
 
         Examples:
 
@@ -2906,6 +2912,7 @@ def search__invoices(args):
     argument("-i", "--interruptible", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-b", "--bid", dest="type", const="bid", action="store_const", help="Alias for --type=bid"),
     argument("-r", "--reserved", dest="type", const="reserved", action="store_const", help="Alias for --type=reserved"),
+    argument("--template-hash-id", help="Filter results to only show machines compatible with the specified template"),
     argument("-d", "--on-demand", dest="type", const="on-demand", action="store_const", help="Alias for --type=on-demand"),
     argument("-n", "--no-default", action="store_true", help="Disable default query"),
     argument("--new", action="store_true", help="New search exp"),
