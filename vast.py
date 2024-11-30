@@ -2910,6 +2910,7 @@ def search__invoices(args):
     argument("--disable-bundling", action="store_true", help="Deprecated"),
     argument("--storage", type=float, default=5.0, help="Amount of storage to use for pricing, in GiB. default=5.0GiB"),
     argument("-o", "--order", type=str, help="Comma-separated list of fields to sort on. postfix field with - to sort desc. ex: -o 'num_gpus,total_flops-'.  default='score-'", default='score-'),
+    argument("--template", type=str, help="Template hash ID to filter compatible offers"),
     argument("query", help="Query to search for. default: 'external=false rentable=true verified=true', pass -n to ignore default", nargs="*", default=None),
     usage="vastai search offers [--help] [--api-key API_KEY] [--raw] <query>",
     help="Search for instance types using custom query",
@@ -3019,7 +3020,7 @@ def search__offers(args):
             #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True} }
 
         if args.query is not None:
-            query = parse_query(args.query, query, offers_fields, offers_alias, offers_mult)
+            query = parse_query(args.query, query, offers_fields, offers_alias, offers_mult, args.template)
 
         order = []
         for name in args.order.split(","):
