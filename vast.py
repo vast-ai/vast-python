@@ -2155,6 +2155,7 @@ def _parse_region(region):
     argument("-g", "--gpu-name", type=str, required=True, choices=_get_gpu_names(), help="Name of the GPU model, replace spaces with underscores"),
     argument("-n", "--num-gpus", type=str, required=True, choices=["1", "2", "4", "8", "12", "14"], help="Number of GPUs required"),
     argument("-r", "--region", type=str, help="Geographical location of the instance"),
+    argument("--template", type=str, help="Template hash ID to filter compatible offers"),
     argument("-i", "--image", required=True, help="Name of the image to use for instance"),
     argument("-d", "--disk", type=float, default=16.0, help="Disk space required in GB"),
     argument("--limit", default=3, type=int, help=""),
@@ -2228,7 +2229,7 @@ def launch__instance(args):
         args_query += f" disk_space>={args.disk}"
 
     base_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
-    query = parse_query(args_query, base_query, offers_fields, offers_alias, offers_mult)
+    query = parse_query(args_query, base_query, offers_fields, offers_alias, offers_mult, args.template)
 
     order = []
     for name in args.order.split(","):
