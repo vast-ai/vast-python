@@ -2206,6 +2206,16 @@ def launch__instance(args):
 
     :param argparse.Namespace args: Namespace with many fields relevant to the endpoint.
     """
+    # First get template filters if template specified
+    template_filters = {}
+    if args.template_hash:
+        url = apiurl(args, f"/templates/{args.template_hash}")
+        r = http_get(args, url, headers=headers)
+        if r.status_code == 200:
+            template = r.json()
+            if 'extra_filters' in template:
+                template_filters = template['extra_filters']
+
     args_query = f"num_gpus={args.num_gpus} gpu_name={args.gpu_name}"
 
     if args.region:
@@ -2219,6 +2229,8 @@ def launch__instance(args):
         args_query += f" disk_space>={args.disk}"
 
     base_query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+    if template_filters:
+        base_query.update(template_filters)
     query = parse_query(args_query, base_query, offers_fields, offers_alias, offers_mult)
 
     order = []
