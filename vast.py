@@ -689,19 +689,28 @@ offers_mult = {
 }
 
 
-def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {}, field_multiplier = {}) -> Dict:
+def parse_query(query_str: str, res: Dict = None, fields = {}, field_alias = {}, field_multiplier = {}, template: str = None) -> Dict:
     """
     Basically takes a query string (like the ones in the examples of commands for the search__offers function) and
     processes it into a dict of URL parameters to be sent to the server.
 
-    :param str query_str:
-    :param Dict res:
-    :return Dict:
+    :param str query_str: Query string to parse
+    :param Dict res: Optional existing result dictionary to update
+    :param dict fields: Field definitions
+    :param dict field_alias: Field name aliases
+    :param dict field_multiplier: Field value multipliers
+    :param str template: Optional template hash ID to include in query
+    :return Dict: Parsed query parameters
     """
+    if res is None: 
+        res = {}
+    
+    # Add template_hash_id if template argument provided
+    if template is not None:
+        res['template_hash_id'] = template
+
     if query_str is None:
         return res
-
-    if res is None: res = {}
     if type(query_str) == list:
         query_str = " ".join(query_str)
     query_str = query_str.strip()
