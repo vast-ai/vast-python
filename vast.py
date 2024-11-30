@@ -3002,11 +3002,24 @@ def search__offers(args):
     """
 
     try:
+        # First get template filters if template specified
+        template_filters = {}
+        if hasattr(args, 'template_hash') and args.template_hash:
+            # Fetch template extra_filters
+            url = apiurl(args, f"/templates/{args.template_hash}")
+            r = http_get(args, url, headers=headers)
+            if r.status_code == 200:
+                template = r.json()
+                if 'extra_filters' in template:
+                    template_filters = template['extra_filters']
 
         if args.no_default:
-            query = {}
+            query = template_filters.copy() if template_filters else {}
         else:
             query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True}, "rented": {"eq": False}}
+            # Merge template filters with default query
+            if template_filters:
+                query.update(template_filters)
             #query = {"verified": {"eq": True}, "external": {"eq": False}, "rentable": {"eq": True} }
 
         if args.query is not None:
