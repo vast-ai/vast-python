@@ -1667,17 +1667,18 @@ def create__team_role(args):
     argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
-    
     argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
     argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance", action="store_true"),
     argument("--direct",  help="Use (faster) direct connections for jupyter & ssh", action="store_true"),
     argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory", type=str),
     argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab", action="store_true"),
-
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--search_params", help="search offers filters", type=str),
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--disk_space", help="disk storage space, in GB", type=str),
+    argument("--readme", help="readme string", type=str),
+    argument("--desc", help="description string", type=str),
+
     usage="vastai create template",
     help="Create a new template",
     epilog=deindent("""
@@ -1722,7 +1723,9 @@ def create__template(args):
         "jupyter_dir" : args.jupyter_dir,
         "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
         "extra_filters" : extra_filters,
-        "recommended_disk_space" : args.disk_space
+        "recommended_disk_space" : args.disk_space,
+        "readme": args.readme,
+        "desc": args.desc,
     }
 
     if (args.explain):
