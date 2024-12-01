@@ -1709,6 +1709,7 @@ def create__template(args):
     
     extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
     template = {
+        "name" : args.name,
         "image" : args.image,
         "tag" : args.image_tag,
         "env" : args.env, #str format
