@@ -1678,6 +1678,7 @@ def create__team_role(args):
     argument("--disk_space", help="disk storage space, in GB", type=str),
     argument("--readme", help="readme string", type=str),
     argument("--desc", help="description string", type=str),
+    argument("--public", help="make template available to public", action="store_true"),
 
     usage="vastai create template",
     help="Create a new template",
@@ -1726,6 +1727,7 @@ def create__template(args):
         "recommended_disk_space" : args.disk_space,
         "readme": args.readme,
         "desc": args.desc,
+        "private": not args.public,
     }
 
     if (args.explain):
