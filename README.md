@@ -210,6 +210,7 @@ positional arguments:
     schedule maint      [Host] Schedule upcoming maint window
     cancel maint        [Host] Cancel maint window
     show machines       [Host] Show hosted machines
+    show maints         [Host] Show maintenance information for host machines
     unlist machine      [Host] Unlist a listed machine
     launch instance     Launch the top instance from the search offers based on the given parameters
 
