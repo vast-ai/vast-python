@@ -176,7 +176,7 @@ def run_vast_search(verified='any', host_id='any'):
     # Construct the host_id filter
     host_id_filter = f"host_id={host_id}" if host_id != 'any' else "host_id=any"
 
-    cmd = [get_vast_command(), 'search', 'offers', '--limit', '65535', verified_filter, host_id_filter, '--raw']
+    cmd = [get_vast_command(), 'search', 'offers', '--limit', '65535', '--disable-bundling' ,verified_filter, host_id_filter, '--raw']
     try:
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
         output = result.stdout
