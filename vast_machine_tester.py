@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 # =============================================================================
-# Script Name: vast_offer_tester.py
+# Script Name: vast_machine_tester.py
 # Description:
 #     This Python script automates the process of searching for offers using the
 #     VAST tool, filtering unverified offers (when specified), selecting the best
@@ -8,111 +10,35 @@
 #     output files, and a summary of failures is presented.
 #
 # Dependencies:
-#     - subprocess: To execute external commands.
-#     - json: To parse JSON data.
-#     - concurrent.futures (ThreadPoolExecutor, as_completed): To handle concurrent
-#       execution of machine tests.
-#     - threading: To manage thread-safe operations.
-#     - datetime: To timestamp the results.
-#     - tqdm: For progress bars (though not used in the current script).
-#     - time & random: To implement retry logic with random backoff.
-#     - collections (Counter): To count failure reasons.
-#     - tabulate: To format the failure summary table.
-#     - argparse: To parse command-line arguments.
-#
-# Functions:
-#
-#     run_vast_search(verified, host_id):
-#         Executes the VAST search command to retrieve offers based on the provided
-#         verification status and host ID. It limits the results to 65,535 offers and
-#         includes both verified and unverified offers in raw JSON format. If the
-#         command fails, it returns an empty list.
-#
-#     get_unverified_offers(offers):
-#         Filters the list of offers to identify unverified offers whose
-#         machine IDs are not present in any verified offers. This ensures that
-#         only truly unverified offers are processed.
-#
-#     get_best_offers(offers):
-#         From the list of offers, selects the best offer for each
-#         machine based on the highest deep learning performance (dlperf). This
-#         results in a dictionary mapping machine IDs to their best offer.
-#
-#     test_machine(machine_id):
-#         Performs a self-test on a given machine by executing the
-#         './vast.py self-test machine <machine_id> --raw' command. It includes
-#         robust error handling with up to 30 retries in case of rate limiting
-#         (HTTP 429 errors). The function returns a tuple containing the machine
-#         ID, status ('success' or 'failure'), and a reason for failure if any.
-#
-#     process_machine_ids(machine_ids):
-#         Manages the concurrent execution of self-tests on multiple machines
-#         using a ThreadPoolExecutor with a maximum of 10 worker threads. It
-#         tracks the number of processed, passed, and failed tests, and updates
-#         the user on the progress in real-time. The function returns lists of
-#         successful and failed machine IDs.
-#
-#     save_results(successes, failures):
-#         Saves the results of the self-tests to two separate files:
-#             - 'passed_machines.txt': Contains a timestamp and a comma-separated
-#               list of machine IDs that passed the tests.
-#             - 'failed_machines.txt': Contains a timestamp and a list of machine
-#               IDs that failed, along with the reasons for failure.
-#
-#     print_failure_summary(failures):
-#         Generates and prints a summary table of failure reasons using the
-#         'tabulate' library. If 'tabulate' is not installed, it falls back to
-#         basic string formatting. This provides a clear overview of why tests
-#         failed across different machines.
-#
-#     parse_arguments():
-#         Parses command-line arguments using argparse.
-#
-#     main():
-#         The main orchestrator function that ties together all other functions.
-#         It performs the following steps:
-#             1. Parses command-line arguments for verification status and host ID.
-#             2. Runs a VAST search to retrieve offers based on the provided filters.
-#             3. Conditionally filters to get unverified offers if verification is set to false.
-#             4. Selects the best offers based on download performance.
-#             5. Processes the machine IDs by performing self-tests.
-#             6. Saves the results to output files.
-#             7. Prints a summary of the test results.
+#     - subprocess
+#     - json
+#     - concurrent.futures (ThreadPoolExecutor, as_completed)
+#     - threading
+#     - datetime
+#     - time & random
+#     - collections (Counter)
+#     - tabulate
+#     - argparse
+#     - logging
+#     - sys
+#     - os
 #
 # Execution:
-#     When the script is run directly, the 'main()' function is invoked, executing
-#     the entire workflow described above.
-#
-# Error Handling:
-#     - The script includes comprehensive error handling for subprocess commands,
-#       including retries with exponential backoff in case of rate limiting.
-#     - It handles JSON parsing errors and unexpected exceptions gracefully,
-#       ensuring that failures are logged with appropriate reasons.
-#
-# Output:
-#     - 'passed_machines.txt': Lists machine IDs that successfully passed the
-#       self-tests.
-#     - 'failed_machines.txt': Lists machine IDs that failed the self-tests along
-#       with the reasons for failure.
-#     - Console Output: Provides real-time updates on the progress of tests and
-#       a summary of results upon completion.
-#
-# Usage:
 #     Ensure that all dependencies are installed and that the './vast' and
 #     './vast.py' commands are available and executable. Run the script using:
-#         python3 vast_offer_tester.py [--verified {true,false,any}] [--host_id HOST_ID]
+#         python3 vast_machine_tester.py [--verified {true,false,any}] [--host_id HOST_ID]
 #
 #     Options:
 #         --verified {true,false,any}   Set the verification status to filter offers.
 #                                       Default is 'false'.
-#         --host_id HOST_ID            Specify a particular host ID to filter offers.
+#         --host_id HOST_ID             Specify a particular host ID to filter offers.
 #                                       Use 'any' for no filtering. Default is 'any'.
-#         -h, --help                   Show this help message and exit.
+#         -h, --help                    Show this help message and exit.
 #
 # Example:
 #     To search for verified offers with host_id 12345:
-#         python3 vast_offer_tester.py --verified true --host_id 12345
-# 
+#         python3 vast_machine_tester.py --verified true --host_id 12345
+#
 # Results saved to 'passed_machines.txt' and 'failed_machines.txt'.
 # =============================================================================
 
@@ -121,14 +47,31 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 from datetime import datetime
-from tqdm import tqdm
 import time
 import random
 from collections import Counter
-from tabulate import tabulate
 import argparse
 import sys
 import os
+import logging
+
+try:
+    from tabulate import tabulate
+except ImportError:
+    tabulate = None
+    logging.warning("Tabulate module not found. Table formatting will be basic.")
+
+def setup_logging():
+    """
+    Configures the logging settings.
+    """
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
 
 def get_vast_command():
     """
@@ -138,12 +81,14 @@ def get_vast_command():
         str: The command to use ('./vast.py' or './vast').
     """
     if os.path.isfile('./vast.py') and os.access('./vast.py', os.X_OK):
+        logging.debug("Using './vast.py' as the VAST command.")
         return './vast.py'
     elif os.path.isfile('./vast') and os.access('./vast', os.X_OK):
+        logging.debug("Using './vast' as the VAST command.")
         return './vast'
     else:
+        logging.error("Neither './vast.py' nor './vast' is available as an executable.")
         raise FileNotFoundError("Neither './vast.py' nor './vast' is available as an executable.")
-
 
 def run_vast_search(verified='any', host_id='any'):
     """
@@ -159,7 +104,7 @@ def run_vast_search(verified='any', host_id='any'):
     # Validate verified parameter
     valid_verified = {'true', 'false', 'any'}
     if verified.lower() not in valid_verified:
-        print(f"Invalid value for --verified: '{verified}'. Must be one of {valid_verified}.")
+        logging.error(f"Invalid value for --verified: '{verified}'. Must be one of {valid_verified}.")
         sys.exit(1)
     
     # Validate host_id parameter
@@ -167,7 +112,7 @@ def run_vast_search(verified='any', host_id='any'):
         try:
             host_id = int(host_id)
         except ValueError:
-            print(f"Invalid value for --host_id: '{host_id}'. Must be an integer or 'any'.")
+            logging.error(f"Invalid value for --host_id: '{host_id}'. Must be an integer or 'any'.")
             sys.exit(1)
     
     # Construct the verification filter
@@ -176,21 +121,23 @@ def run_vast_search(verified='any', host_id='any'):
     # Construct the host_id filter
     host_id_filter = f"host_id={host_id}" if host_id != 'any' else "host_id=any"
 
-    cmd = [get_vast_command(), 'search', 'offers', '--limit', '65535', '--disable-bundling' ,verified_filter, host_id_filter, '--raw']
+    cmd = [get_vast_command(), 'search', 'offers', '--limit', '65535', '--disable-bundling', verified_filter, host_id_filter, '--raw']
     try:
+        logging.info(f"Running VAST search with command: {' '.join(cmd)}")
         result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
         output = result.stdout
-        return json.loads(output)
+        offers = json.loads(output)
+        logging.info(f"Retrieved {len(offers)} offers from VAST search.")
+        return offers
     except subprocess.CalledProcessError as e:
-        print(f"Error running vast search: {e.stderr.strip()}")
+        logging.error(f"Error running vast search: {e.stderr.strip()}")
         return []
     except json.JSONDecodeError as e:
-        print(f"Error parsing JSON output from vast search: {e}")
+        logging.error(f"Error parsing JSON output from vast search: {e}")
         return []
     except Exception as e:
-        print(f"Unexpected error running vast search: {e}")
+        logging.exception(f"Unexpected error running vast search: {e}")
         return []
-
 
 def get_unverified_offers(offers):
     """
@@ -212,8 +159,8 @@ def get_unverified_offers(offers):
         offer for offer in offers
         if offer.get('verification') == 'unverified' and offer.get('machine_id') not in verified_machine_ids
     ]
+    logging.info(f"Filtered down to {len(unverified_offers)} unverified offers after removing machines that are already verified.")
     return unverified_offers
-
 
 def get_best_offers(offers):
     """
@@ -231,8 +178,8 @@ def get_best_offers(offers):
         dlperf = offer.get('dlperf', 0)
         if machine_id not in best_offers or dlperf > best_offers[machine_id].get('dlperf', 0):
             best_offers[machine_id] = offer
+    logging.info(f"Selected best offers for {len(best_offers)} machines based on dlperf.")
     return best_offers
-
 
 def test_machine(machine_id):
     """
@@ -246,10 +193,10 @@ def test_machine(machine_id):
     """
     cmd = [get_vast_command(), 'self-test', 'machine', str(machine_id), '--raw']
     max_retries = 30  # Increased from 3 to 30
-    backoff_factor = 1  # Base factor for exponential backoff (optional)
 
     for attempt in range(1, max_retries + 1):
         try:
+            logging.debug(f"Testing machine {machine_id}, attempt {attempt}.")
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             output = result.stdout.strip()
             stderr_output = result.stderr.strip()
@@ -258,10 +205,11 @@ def test_machine(machine_id):
             if "429" in stderr_output or "Too Many Requests" in stderr_output:
                 if attempt < max_retries:
                     wait_time = random.randint(1, 10)  # Random wait between 1 and 10 seconds
-                    print(f"429 Too Many Requests for machine {machine_id}. Retrying in {wait_time} seconds... (Attempt {attempt}/{max_retries})")
+                    logging.warning(f"429 Too Many Requests for machine {machine_id}. Retrying in {wait_time} seconds... (Attempt {attempt}/{max_retries})")
                     time.sleep(wait_time)
                     continue
                 else:
+                    logging.error(f"Too Many Requests: 429 error after {max_retries} retries for machine {machine_id}.")
                     return (machine_id, 'failure', "Too Many Requests: 429 error after 30 retries")
             
             # Parse JSON output
@@ -272,28 +220,33 @@ def test_machine(machine_id):
                 if "429" in output or "Too Many Requests" in output:
                     if attempt < max_retries:
                         wait_time = random.randint(1, 10)
-                        print(f"429 Too Many Requests in JSON output for machine {machine_id}. Retrying in {wait_time} seconds... (Attempt {attempt}/{max_retries})")
+                        logging.warning(f"429 Too Many Requests in JSON output for machine {machine_id}. Retrying in {wait_time} seconds... (Attempt {attempt}/{max_retries})")
                         time.sleep(wait_time)
                         continue
                     else:
+                        logging.error(f"Too Many Requests: 429 error after {max_retries} retries (JSON Decode Error) for machine {machine_id}.")
                         return (machine_id, 'failure', "Too Many Requests: 429 error after 30 retries (JSON Decode Error)")
                 else:
                     error_message = stderr_output or output
+                    logging.error(f"Invalid JSON output or error message for machine {machine_id}: {error_message}")
                     return (machine_id, 'failure', f"Invalid JSON output or error message: {error_message}")
 
             if data.get('success'):
+                logging.info(f"Machine {machine_id} passed the self-test.")
                 return (machine_id, 'success', '')
             else:
                 reason = data.get('reason', 'Unknown reason')
+                logging.warning(f"Machine {machine_id} failed the self-test: {reason}")
                 return (machine_id, 'failure', reason)
         
         except Exception as e:
             # Handle unexpected exceptions
+            logging.exception(f"Exception occurred while testing machine {machine_id}: {e}")
             return (machine_id, 'failure', f"Exception occurred: {e}")
     
     # If all retries are exhausted without success
+    logging.error(f"Request failed after {max_retries} retries for machine {machine_id}.")
     return (machine_id, 'failure', "Request failed after 30 retries")
-
 
 def process_machine_ids(machine_ids):
     """
@@ -313,7 +266,7 @@ def process_machine_ids(machine_ids):
     counter = {'processed': 0, 'passed': 0, 'failed': 0}
     lock = threading.Lock()
     
-    print(f"Starting self-tests on {total_machines} machine(s)...")
+    logging.info(f"Starting self-tests on {total_machines} machine(s)...")
     
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = {executor.submit(test_machine, mid): mid for mid in machine_ids}
@@ -328,11 +281,8 @@ def process_machine_ids(machine_ids):
                 else:
                     failures.append((machine_id, reason))
                     counter['failed'] += 1
-                print('\033[2K\033[1G', end='')  # Clear the entire line and move the cursor to the beginning
-                print(f"Processed {counter['processed']}/{total_machines} - Passed: {counter['passed']}, Failed: {counter['failed']}, Remaining: {remaining}", end='\r')
-    print()  # Move to the next line after progress updates
+                logging.info(f"Processed {counter['processed']}/{total_machines} - Passed: {counter['passed']}, Failed: {counter['failed']}, Remaining: {remaining}")
     return successes, failures
-
 
 def save_results(successes, failures):
     """
@@ -349,8 +299,9 @@ def save_results(successes, failures):
         with open('passed_machines.txt', 'w') as f:
             f.write(f"{current_time}\n")  # Add the date and time
             f.write(','.join(str(mid) for mid in successes) + "\n")  # Comma-separated machine IDs
+        logging.info("Saved passed machines to 'passed_machines.txt'.")
     except Exception as e:
-        print(f"Error saving passed_machines.txt: {e}")
+        logging.error(f"Error saving passed_machines.txt: {e}")
     
     # Save failed machines
     try:
@@ -358,9 +309,9 @@ def save_results(successes, failures):
             f.write(f"{current_time}\n")  # Add the date and time
             for mid, reason in failures:
                 f.write(f"{mid}: {reason}\n")  # Machine ID and reason per line
+        logging.info("Saved failed machines to 'failed_machines.txt'.")
     except Exception as e:
-        print(f"Error saving failed_machines.txt: {e}")
-
+        logging.error(f"Error saving failed_machines.txt: {e}")
 
 def print_failure_summary(failures):
     """
@@ -384,17 +335,15 @@ def print_failure_summary(failures):
     table_data.sort(key=lambda x: x[0], reverse=True)
     
     # Print the table using tabulate if available
-    try:
-        print("\nFailed Machines by Error Type:")
+    print("\nFailed Machines by Error Type:")
+    if tabulate:
         print(tabulate(table_data, headers=["COUNT", "REASON"], tablefmt="plain"))
-    except ImportError:
+    else:
         # If tabulate is not installed, use basic string formatting
-        print("\nFailed Machines by Error Type:")
         print(f"{'COUNT':<5} {'REASON'}")
         print("-" * 60)
         for count, reason in table_data:
             print(f"{count:<5} {reason}")
-
 
 def parse_arguments():
     """
@@ -409,13 +358,13 @@ def parse_arguments():
         epilog="""
 Example Usage:
     To search for verified offers with a specific host ID:
-        python3 vast_offer_tester.py --verified true --host_id 12345
+        python3 vast_machine_tester.py --verified true --host_id 12345
 
     To search for any verification status and any host ID (default):
-        python3 vast_offer_tester.py
+        python3 vast_machine_tester.py
 
     To search for unverified offers regardless of host ID:
-        python3 vast_offer_tester.py --verified false
+        python3 vast_machine_tester.py --verified false
 
     Results saved to 'passed_machines.txt' and 'failed_machines.txt'.
         """
@@ -435,16 +384,16 @@ Example Usage:
     )
     return parser.parse_args()
 
-
 def main():
     """
     The main orchestrator function that ties together all other functions.
     """
+    setup_logging()
     args = parse_arguments()
     
     offers = run_vast_search(verified=args.verified, host_id=args.host_id)
     if not offers:
-        print("No offers found or an error occurred during the VAST search.")
+        logging.error("No offers found or an error occurred during the VAST search.")
         return
     
     # Conditional filtering based on the verified status
@@ -452,36 +401,35 @@ def main():
         # When verified is false, clean the list with get_unverified_offers
         unverified_offers = get_unverified_offers(offers)
         offers_to_process = unverified_offers
-        print(f"Filtered to {len(unverified_offers)} unverified offer(s) after cleaning.")
+        logging.info(f"Filtered to {len(unverified_offers)} unverified offer(s) after cleaning.")
     else:
         # When verified is true or any, use all offers without additional filtering
         offers_to_process = offers
-        print(f"Using all {len(offers)} offer(s) without additional filtering.")
+        logging.info(f"Using all {len(offers)} offer(s) without additional filtering.")
     
     best_offers = get_best_offers(offers_to_process)
     machine_ids = list(best_offers.keys())
 
-    print(f"Found {len(machine_ids)} machine ID(s) to test.")
+    logging.info(f"Found {len(machine_ids)} machine ID(s) to test.")
 
     if not machine_ids:
-        print("No machines to test.")
+        logging.warning("No machines to test.")
         return
 
     successes, failures = process_machine_ids(machine_ids)
     save_results(successes, failures)
 
-    print(f"\nSummary:")
-    print(f"Passed: {len(successes)}")
-    print(f"Failed: {len(failures)}")
+    logging.info(f"\nSummary:")
+    logging.info(f"Passed: {len(successes)}")
+    logging.info(f"Failed: {len(failures)}")
     
     # Print the failure summary table
     if failures:
         print_failure_summary(failures)
     else:
-        print("All machines passed the self-tests.")
+        logging.info("All machines passed the self-tests.")
 
-    print(f"\nResults saved to 'passed_machines.txt' and 'failed_machines.txt'.")
-
+    logging.info(f"\nResults saved to 'passed_machines.txt' and 'failed_machines.txt'.")
 
 if __name__ == '__main__':
     main()
