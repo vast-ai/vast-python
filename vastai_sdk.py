@@ -8,8 +8,8 @@ import requests
 import inspect
 import re
 
-from vastai_base import VastAIBase
-from vast import parser
+from .vastai_base import VastAIBase
+from .vast import parser
 from textwrap import dedent
 
 
