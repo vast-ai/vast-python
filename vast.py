@@ -537,6 +537,16 @@ machine_fields = (
     ("gpu_occupancy", "occup", "{}", None, True),
 )
 
+# These fields are displayed when you do 'show maints'
+maintenance_fields = (
+    ("machine_id", "Machine ID", "{}", None, True),
+    ("start_time", "Start (Date/Time)", "{}", lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d/%H:%M'), True),
+    ("end_time", "End (Date/Time)", "{}", lambda x: datetime.fromtimestamp(x).strftime('%Y-%m-%d/%H:%M'), True),
+    ("duration_hours", "Duration (Hrs)", "{}", None, True),
+    ("maintenance_category", "Category", "{}", None, True),
+    ("maintenance_reason", "Reason", "{}", None, True),
+)
+
 
 ipaddr_fields = (
     ("ip", "ip", "{}", None, True),
@@ -4812,6 +4822,36 @@ def show__machines(args):
             print(" ".join(id for id in ids))
         else:
             display_table(rows, machine_fields)
+
+
+@parser.command(
+    argument("-ids", help="comma seperated string of machine_ids for which to get maintenance information", type=str),
+    argument("-q", "--quiet", action="store_true", help="only display numeric ids of the machines in maintenance"),
+    usage="\nvastai show maints -ids 'machine_id_1' [OPTIONS]\nvastai show maints -ids 'machine_id_1, machine_id_2' [OPTIONS]",
+    help="[Host] Show maintenance information for host machines",
+)
+def show__maints(args):
+    """
+    Show the maintenance information for the machines
+
+    :param argparse.Namespace args: should supply all the command-line options
+    :rtype:
+    """
+    machine_ids = args.ids.split(',')
+    machine_ids = list(map(int, machine_ids))
+
+    req_url = apiurl(args, "/machines/maintenances", {"owner": "me", "machine_ids" : machine_ids});
+    r = http_get(args, req_url)
+    r.raise_for_status()
+    rows = r.json()
+    if args.raw:
+        return r
+    else:
+        if args.quiet:   
+            ids = [f"{row['machine_id']}" for row in rows]
+            print(" ".join(id for id in ids))
+        else:
+            display_table(rows, maintenance_fields)
 
 
 @parser.command(
