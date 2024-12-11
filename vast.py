@@ -1668,28 +1668,30 @@ def create__team_role(args):
     argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
-    
     argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
     argument("--jupyter", help="Launch as a jupyter instance instead of an ssh instance", action="store_true"),
     argument("--direct",  help="Use (faster) direct connections for jupyter & ssh", action="store_true"),
     argument("--jupyter-dir", help="For runtype 'jupyter', directory in instance to use to launch jupyter. Defaults to image's working directory", type=str),
     argument("--jupyter-lab", help="For runtype 'jupyter', Launch instance with jupyter lab", action="store_true"),
-
     argument("--onstart-cmd", help="contents of onstart script as single argument", type=str),
     argument("--search_params", help="search offers filters", type=str),
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--disk_space", help="disk storage space, in GB", type=str),
+    argument("--readme", help="readme string", type=str),
+    argument("--desc", help="description string", type=str),
+    argument("--public", help="make template available to public", action="store_true"),
+
     usage="vastai create template",
     help="Create a new template",
     epilog=deindent("""
         Create a template that can be used to create instances with
 
         Example: 
-            vast ai create template --name "tgi-llama2-7B-quantized" --image_path "ghcr.io/huggingface/text-generation-inference:1.0.3" 
+            vastai create template --name "tgi-llama2-7B-quantized" --image "ghcr.io/huggingface/text-generation-inference:1.0.3" 
                                     --env "-p 3000:3000 -e MODEL_ARGS='--model-id TheBloke/Llama-2-7B-chat-GPTQ --quantize gptq'" 
-                                    --onstart_cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' 
+                                    --onstart-cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' 
                                     --search_params "gpu_ram>=23 num_gpus=1 gpu_name=RTX_3090 inet_down>128 direct_port_count>3 disk_space>=192 driver_version>=535086005 rented=False" 
-                                    --disk 8.0 --ssh --direct
+                                    --disk_space 8.0 --ssh --direct
     """)
 )
 def create__template(args):
@@ -1710,6 +1712,7 @@ def create__template(args):
     
     extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
     template = {
+        "name" : args.name,
         "image" : args.image,
         "tag" : args.image_tag,
         "env" : args.env, #str format
@@ -1722,7 +1725,10 @@ def create__template(args):
         "jupyter_dir" : args.jupyter_dir,
         "docker_login_repo" : docker_login_repo, #can't store username/password with template for now
         "extra_filters" : extra_filters,
-        "recommended_disk_space" : args.disk_space
+        "recommended_disk_space" : args.disk_space,
+        "readme": args.readme,
+        "desc": args.desc,
+        "private": not args.public,
     }
 
     if (args.explain):
