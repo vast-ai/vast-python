@@ -669,6 +669,7 @@ offers_fields = {
     "ubuntu_version",
     "verification",
     "verified",
+    "vms_enabled",
     "geolocation"
 }
 
@@ -2992,6 +2993,7 @@ def search__invoices(args):
             total_flops:            float     total TFLOPs from all GPUs
             ubuntu_version          string    host machine ubuntu OS version
             verified:               bool      is the machine verified
+            vms_enabled:            bool      is the machine a VM instance
     """),
     aliases=hidden_aliases(["search instances"]),
 )
