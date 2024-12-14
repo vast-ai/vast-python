@@ -201,6 +201,7 @@ positional arguments:
     update ssh-key      Update an existing ssh key
     generate pdf-invoices
     cleanup machine     [Host] Remove all expired storage instances from the machine, freeing up space.
+    delete machine      [Host] Delete machine if the machine is not being used by clients
     list machine        [Host] list a machine for rent
     list machines       [Host] list machines for rent
     remove defjob       [Host] Delete default jobs
@@ -209,6 +210,7 @@ positional arguments:
     schedule maint      [Host] Schedule upcoming maint window
     cancel maint        [Host] Cancel maint window
     show machines       [Host] Show hosted machines
+    show maints         [Host] Show maintenance information for host machines
     unlist machine      [Host] Unlist a listed machine
     launch instance     Launch the top instance from the search offers based on the given parameters
 
@@ -223,4 +225,7 @@ options:
 Use 'vast COMMAND --help' for more info about a command
 ```
 
-----
+## Tab-Completion
+Vast.py has optional tab completion in both the Bash and Zsh shell if the [argcomplete](https://github.com/kislyuk/argcomplete) package is installed. To enable this first install the `argcomplete` pip then either run `activate-global-python-argcomplete` to install global handlers or, for a local shell instance, `eval "$(register-python-argcomplete vast.py)"`. If necessary, change `vast.py` to whatever name you've assigned to invoke the tool as you are instrumenting the shell to autocomplete upon a certain command.
+
+As a caveat, although we haven't seen it in the wild, as api calls may be executed with the tab complete, invoking it too rapidly could trigger a rate limit. Please report it in the github issues tab if you encounter it or other unexpected behavior.
