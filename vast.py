@@ -1695,6 +1695,7 @@ def create__team_role(args):
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--disk_space", help="disk storage space, in GB", type=str),
     argument("--readme", help="readme string", type=str),
+    argument("--hide-readme", help="hide the readme from users", action="store_true"),
     argument("--desc", help="description string", type=str),
     argument("--public", help="make template available to public", action="store_true"),
 
@@ -1746,6 +1747,7 @@ def create__template(args):
         "extra_filters" : extra_filters,
         "recommended_disk_space" : args.disk_space,
         "readme": args.readme,
+        "readme_visible": not args.hide_readme,
         "desc": args.desc,
         "private": not args.public,
     }
