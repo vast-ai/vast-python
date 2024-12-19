@@ -1747,7 +1747,7 @@ def create__template(args):
         "extra_filters" : extra_filters,
         "recommended_disk_space" : args.disk_space,
         "readme": args.readme,
-        "readme_visible": args.readme is not None,
+        "readme_visible": args.readme_visible,
         "desc": args.desc,
         "private": not args.public,
     }
