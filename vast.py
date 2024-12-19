@@ -1681,6 +1681,8 @@ def create__team_role(args):
     argument("--name", help="name of the template", type=str),
     argument("--image", help="docker container image to launch", type=str),
     argument("--image_tag", help="docker image tag (can also be appended to end of image_path)", type=str),
+    argument("--href", help="link you want to provide", type=str),
+    argument("--repo", help="link to repository", type=str),
     argument("--login", help="docker login arguments for private repo authentication, surround with ''", type=str),
     argument("--env", help="Contents of the 'Docker options' field", type=str),
     argument("--ssh",     help="Launch as an ssh instance type", action="store_true"),
@@ -1693,6 +1695,7 @@ def create__team_role(args):
     argument("-n", "--no-default", action="store_true", help="Disable default search param query args"),
     argument("--disk_space", help="disk storage space, in GB", type=str),
     argument("--readme", help="readme string", type=str),
+    argument("--hide-readme", help="hide the readme from users", action="store_true"),
     argument("--desc", help="description string", type=str),
     argument("--public", help="make template available to public", action="store_true"),
 
@@ -1730,6 +1733,8 @@ def create__template(args):
         "name" : args.name,
         "image" : args.image,
         "tag" : args.image_tag,
+        "href": args.href,
+        "repo" : args.repo,
         "env" : args.env, #str format
         "onstart" : args.onstart_cmd, #don't accept file name for now
         "jup_direct" : jup_direct,
@@ -1742,6 +1747,7 @@ def create__template(args):
         "extra_filters" : extra_filters,
         "recommended_disk_space" : args.disk_space,
         "readme": args.readme,
+        "readme_visible": not args.hide_readme,
         "desc": args.desc,
         "private": not args.public,
     }
