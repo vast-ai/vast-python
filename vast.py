@@ -1038,6 +1038,50 @@ def install_docker_compose(ssh_host, ssh_port):
     
     return True
 
+def format_ports_env(ports):
+    """
+    Convert a list of ports into the vast.ai env format for port mappings.
+    
+    Args:
+        ports (list): List of port numbers, e.g. [3000, 4000]
+        
+    Returns:
+        str: Formatted port mappings string, e.g. "-p 3000:3000 -p 4000:4000"
+    """
+    if not ports:
+        return ""
+    
+    # Format each port as "-p port:port"
+    port_mappings = [f"-p {port}:{port}" for port in ports]
+    
+    # Join all port mappings with spaces
+    return " ".join(port_mappings)
+
+def parse_env_magic(env_str, ports):
+    """
+    Combine environment variables and port mappings into the correct format.
+    
+    Args:
+        env_str (str): Raw environment variables string (can be None)
+        ports (list): List of ports to expose
+        
+    Returns:
+        str: Combined environment and ports string
+    """
+    parts = []
+    
+    # Add any existing environment variables
+    if env_str:
+        parts.append(env_str.strip())
+    
+    # Add port mappings
+    port_str = format_ports_env(ports)
+    if port_str:
+        parts.append(port_str)
+    
+    # Join all parts with spaces
+    return " ".join(parts)
+
 @parser.command(
     argument("src_directory", help="Source directory containing Dockerfile or docker-compose.yml", type=str),
     argument("--image", help="Base docker image to use (default: pytorch/pytorch:latest)", type=str, default="pytorch/pytorch:latest"),
@@ -1128,8 +1172,6 @@ def magic_build(args):
         "dph": {"lte": args.price}
     }
 
-    import pdb; pdb.set_trace()
-
     # Search for instances
     print(f"Searching for instances matching requirements...")
     url = apiurl(args, "/bundles/")
@@ -1150,7 +1192,7 @@ def magic_build(args):
     create_args = {
         "client_id": "me",
         "image": "docker.io/vastai/kvm:ubuntu_terminal",  # Using the known working image
-        "env": parse_env(args.env) if args.env else {},
+        "env": parse_env_magic(args.env, ports) if args.env else {},
         "disk": args.disk,
         "image_login": None,
         "python_utf8": False,
