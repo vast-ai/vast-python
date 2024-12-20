@@ -1148,14 +1148,23 @@ def magic_build(args):
     print(f"Creating instance {instance_id}...")
     
     create_args = {
-        "id": instance_id,
-        "image": args.image,
+        "client_id": "me",
+        "image": "docker.io/vastai/kvm:ubuntu_terminal",  # Using the known working image
+        "env": parse_env(args.env) if args.env else {},
         "disk": args.disk,
-        "env": args.env,
+        "image_login": None,
+        "python_utf8": False,
+        "lang_utf8": False,
+        "use_jupyter_lab": False,
+        "jupyter_dir": None,
+        "jupyter_token": None,
+        "create_from": None,
+        "force": False,
+        "bid_price": args.bid_price,
         "label": args.label,
-        "ssh": True,
-        "direct": args.direct,
-        "bid_price": args.bid_price
+        "onstart": None,
+        "runtype": "ssh_direc ssh_proxy" if args.direct else "ssh",
+        "template_hash_id": None
     }
 
     url = apiurl(args, f"/asks/{instance_id}/")
@@ -1174,7 +1183,10 @@ def magic_build(args):
     print("Waiting for instance to be ready...")
     ssh_host = None
     ssh_port = None
-    
+
+    # instance_id = 14477533
+
+
     while True:
         url = apiurl(args, "/instances", {"owner": "me"})
         r = http_get(args, url)
@@ -1192,25 +1204,34 @@ def magic_build(args):
         time.sleep(5)
 
     print(f"Instance ready at {ssh_host}:{ssh_port}")
-
-
+    time.sleep(5)
+    # Transfer files using scp
     print(f"Copying files to instance...")
-    scp_cmd = f"scp -r -P {ssh_port} {src_directory} root@{ssh_host}:{args.copy_dest}"
+    scp_cmd = f"scp -o StrictHostKeyChecking=no -r -P {ssh_port} {src_directory} root@{ssh_host}:{args.copy_dest}"
     returncode, stdout, stderr = run_command(scp_cmd)
     if returncode != 0:
         print(f"Error copying files: {stderr}")
         return 1
 
-    # If using docker-compose, ensure it's installed
+    # Check for docker compose and install if needed
     if os.path.exists(compose_path):
-        if not install_docker_compose(ssh_host, ssh_port):
-            print("Failed to install Docker Compose")
-            return 1
+        print("Checking for docker compose...")
+        check_compose_cmd = f"ssh -o StrictHostKeyChecking=no -p {ssh_port} root@{ssh_host} 'docker compose version || (apt-get update && apt-get install -y docker-compose-v2)'"
+        returncode, stdout, stderr = run_command(check_compose_cmd)
+        if returncode != 0:
+            print("Installing docker compose...")
+            if stderr:
+                print(stderr)
+            if stdout:
+                print(stdout)
+            
+    # Build and run using ssh
+    if os.path.exists(compose_path):
         cmd = f"cd {args.copy_dest} && docker-compose up -d"
     else:
         cmd = f"cd {args.copy_dest} && docker build -t app . && docker run -d app"
 
-    ssh_cmd = f"ssh -p {ssh_port} root@{ssh_host} '{cmd}'"
+    ssh_cmd = f"ssh -o StrictHostKeyChecking=no -p {ssh_port} root@{ssh_host} '{cmd}'"
     returncode, stdout, stderr = run_command(ssh_cmd)
     
     if stderr:
