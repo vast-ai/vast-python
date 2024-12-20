@@ -1192,8 +1192,8 @@ def magic_build(args):
     create_args = {
         "client_id": "me",
         "image": "docker.io/vastai/kvm:ubuntu_terminal",  # Using the known working image
-        "env": parse_env_magic(args.env, ports) 
-        "disk": args.disk,
+        "env": parse_env_magic(args.env, ports),
+        "disk": args.disk if args.disk else 0,
         "image_login": None,
         "python_utf8": False,
         "lang_utf8": False,
