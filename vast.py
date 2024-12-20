@@ -29,8 +29,6 @@ import logging
 import textwrap
 from pathlib import Path
 import warnings
-import paramiko
-from scp import SCPClient
 ARGS = None
 TABCOMPLETE = False
 try:
@@ -931,48 +929,252 @@ def get_ssh_key(argstr):
 
     return ssh_key
 
+import os
+import json
+import subprocess
+import time
+from typing import Dict, List, Optional
+import yaml
+
+def parse_docker_ports(dockerfile_path: str) -> List[int]:
+    """Parse EXPOSE directives from a Dockerfile."""
+    ports = []
+    if os.path.exists(dockerfile_path):
+        with open(dockerfile_path, 'r') as f:
+            for line in f:
+                if line.strip().startswith('EXPOSE'):
+                    parts = line.strip().split()[1:]
+                    for part in parts:
+                        try:
+                            port = int(part.split('/')[0])
+                            ports.append(port)
+                        except ValueError:
+                            continue
+    return ports
+
+def parse_compose_ports(compose_path: str) -> List[int]:
+    """Parse port mappings from docker-compose.yml."""
+    ports = []
+    if os.path.exists(compose_path):
+        with open(compose_path, 'r') as f:
+            try:
+                compose_config = yaml.safe_load(f)
+                services = compose_config.get('services', {})
+                for service in services.values():
+                    port_configs = service.get('ports', [])
+                    for port_config in port_configs:
+                        if isinstance(port_config, str):
+                            container_port = port_config.split(':')[1].split('/')[0]
+                        elif isinstance(port_config, dict):
+                            container_port = str(port_config.get('target', ''))
+                        try:
+                            ports.append(int(container_port))
+                        except ValueError:
+                            continue
+            except yaml.YAMLError:
+                pass
+    return ports
+
+def run_command(cmd: str) -> tuple[int, str, str]:
+    """Run a shell command and return returncode, stdout, stderr."""
+    process = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True,
+        text=True
+    )
+    stdout, stderr = process.communicate()
+    return process.returncode, stdout, stderr
+
 @parser.command(
-    argument("src_directory"),
-    argument("dest_directory"),
+    argument("src_directory", help="Source directory containing Dockerfile or docker-compose.yml", type=str),
+    argument("--image", help="Base docker image to use (default: pytorch/pytorch:latest)", type=str, default="pytorch/pytorch:latest"),
+    argument("--disk", help="Size of disk in GB (default: 32)", type=float, default=32),
+    argument("--price", help="Maximum price per GPU in $/hour (default: 0.2)", type=float, default=0.2),
+    argument("--gpus", help="Number of GPUs (default: 1)", type=int, default=1),
+    argument("--copy-dest", help="Destination path on instance (default: /root/build)", type=str, default="/root/build"),
+    argument("--bid-price", help="(OPTIONAL) Create an interruptible instance with per machine bid price in $/hour", type=float),
+    argument("--label", help="Label to set on the instance", type=str),
+    argument("--env", help="Additional environment variables and port mappings, surround with quotes", type=str),
+    argument("--direct", help="Use (faster) direct connections for ssh", action="store_true"),
+    usage="vastai magic-build src_directory [OPTIONS]",
+    help="Build and deploy Docker projects on vast.ai instances automatically",
+    epilog=deindent("""
+        Automatically creates a vast.ai instance and deploys Docker containers based on your
+        Dockerfile or docker-compose.yml. Detects required ports and configuration from your
+        Docker files.
+
+        Examples:
+
+        # Build a simple project with defaults
+        vastai magic-build ./my-project
+
+        # Build with custom image and more resources
+        vastai magic-build ./my-project --image nvidia/cuda:11.8.0-devel-ubuntu22.04 --disk 64 --gpus 2
+
+        # Build as an interruptible instance with custom bid price
+        vastai magic-build ./my-project --bid-price 0.15 --label "my-training-job"
+
+        # Build with custom environment variables and port mappings
+        vastai magic-build ./my-project --env '-e WANDB_API_KEY=xyz123 -p 8080:8080 -p 6006:6006'
+
+        Search fields for instance selection:
+          - Reliability and stability factors:
+            reliability > 0.98
+            duration > 24
+            gpu_max_temp < 80
+            direct_port_count >= 2
+
+          - Hardware requirements:
+            gpu_name = RTX_3090
+            gpu_ram > 20
+            disk_space > 100
+            cpu_ram > 32
+            
+          - Location and pricing:
+            dph < 0.5
+            geolocation in [US,CA]
+            cuda_vers >= 12.1
+    """),
 )
-def magic__build(args):
-    src_directory = args.src_directory
-    dest_directory = args.dest_directory
+def magic_build(args):
+    """Build and deploy Docker projects on vast.ai instances automatically.
     
-    print("Attempting to connect...")
-    ssh = paramiko.SSHClient()
-    ssh.load_system_host_keys()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    :param argparse.Namespace args: should supply all the command-line options
+    """
+    # Validate paths
     
-    try:
-        ssh.connect(
-            hostname="IP_GOES_HERE", 
-            username="root",
-            port=50910,
-            timeout=10
-        )
-        
-        print("Connected! Starting file transfer...")
-        with SCPClient(ssh.get_transport()) as scp:
-            scp.put(src_directory, dest_directory, recursive=True)
-        print("Transfer complete!")
-        
-        # Build Docker image
-        print("Building Docker image...")
-        docker_build_cmd = f"docker build -t my_container {dest_directory}"
-        stdin, stdout, stderr = ssh.exec_command(docker_build_cmd)
-        print(stdout.read().decode())
-        
-        # Run Docker container
-        print("Running Docker container...")
-        docker_run_cmd = "docker run -d my_container"
-        stdin, stdout, stderr = ssh.exec_command(docker_run_cmd)
-        print(stdout.read().decode())
-        
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
-    finally:
-        ssh.close()
+    src_directory = os.path.abspath(args.src_directory)
+    if not os.path.isdir(src_directory):
+        print(f"Error: Directory not found: {src_directory}")
+        return 1
+
+    # Detect Dockerfile and docker-compose.yml
+    dockerfile_path = os.path.join(src_directory, 'Dockerfile')
+    compose_path = os.path.join(src_directory, 'docker-compose.yml')
+
+    if not os.path.exists(dockerfile_path) and not os.path.exists(compose_path):
+        print("Error: Neither Dockerfile nor docker-compose.yml found in source directory")
+        return 1
+
+    # Parse ports from Docker files
+    ports = []
+    ports.extend(parse_docker_ports(dockerfile_path))
+    ports.extend(parse_compose_ports(compose_path))
+    ports = list(set(ports))  # Remove duplicates
+
+    # Create search query
+    query = {
+        "verified": {"eq": True},
+        "external": {"eq": False},
+        "rentable": {"eq": True},
+        "vms_enabled": {"eq": True},
+        "num_gpus": {"eq": args.gpus},
+        "reliability": {"gt": 0.98},
+        "direct_port_count": {"gte": len(ports) if ports else 2},
+        "disk_space": {"gte": args.disk},
+        "dph": {"lte": args.price}
+    }
+
+    import pdb; pdb.set_trace()
+
+    # Search for instances
+    print(f"Searching for instances matching requirements...")
+    url = apiurl(args, "/bundles/")
+    r = http_post(args, url, headers=headers, json=query)
+    r.raise_for_status()
+    
+    if not r.json()["offers"]:
+        print("Error: No matching instances found")
+        return 1
+
+    # Select best instance
+    instance = r.json()["offers"][0]
+    instance_id = instance["id"]
+    
+    # Create instance
+    print(f"Creating instance {instance_id}...")
+    
+    create_args = {
+        "id": instance_id,
+        "image": args.image,
+        "disk": args.disk,
+        "env": args.env,
+        "label": args.label,
+        "ssh": True,
+        "direct": args.direct,
+        "bid_price": args.bid_price
+    }
+
+    url = apiurl(args, f"/asks/{instance_id}/")
+    r = http_put(args, url, headers=headers, json=create_args)
+    r.raise_for_status()
+    
+    new_instance = r.json()
+    if not new_instance.get("success"):
+        print("Error creating instance:", new_instance.get("msg", "Unknown error"))
+        return 1
+
+    instance_id = new_instance["new_contract"]
+    print(f"Instance {instance_id} created successfully")
+
+    # Wait for instance to be ready and get connection details
+    print("Waiting for instance to be ready...")
+    ssh_host = None
+    ssh_port = None
+    
+    while True:
+        url = apiurl(args, "/instances", {"owner": "me"})
+        r = http_get(args, url)
+        r.raise_for_status()
+        instances = r.json()["instances"]
+        instance = next((i for i in instances if i["id"] == instance_id), None)
+        if instance and instance.get("actual_status") == "running":
+            ssh_host = instance.get("public_ipaddr")
+            for port_mapping in instance.get("ports", {}).get("22/tcp", []):
+                if port_mapping.get("HostIp") == "0.0.0.0":
+                    ssh_port = port_mapping.get("HostPort")
+                    break
+            if ssh_host and ssh_port:
+                break
+        time.sleep(5)
+
+    print(f"Instance ready at {ssh_host}:{ssh_port}")
+
+    # Transfer files using scp
+    print(f"Copying files to instance...")
+    scp_cmd = f"scp -r -P {ssh_port} {src_directory} root@{ssh_host}:{args.copy_dest}"
+    returncode, stdout, stderr = run_command(scp_cmd)
+    if returncode != 0:
+        print(f"Error copying files: {stderr}")
+        return 1
+
+    # Build and run using ssh
+    if os.path.exists(compose_path):
+        cmd = f"cd {args.copy_dest} && docker-compose up -d"
+    else:
+        cmd = f"cd {args.copy_dest} && docker build -t app . && docker run -d app"
+
+    ssh_cmd = f"ssh -p {ssh_port} root@{ssh_host} '{cmd}'"
+    returncode, stdout, stderr = run_command(ssh_cmd)
+    
+    if stderr:
+        print("Errors during build/run:")
+        print(stderr)
+    if stdout:
+        print("Build/run output:")
+        print(stdout)
+    
+    if returncode != 0:
+        print("Error during build/run")
+        return 1
+
+    print("\nDeployment complete!")
+    print(f"Instance ID: {instance_id}")
+    print(f"SSH access: ssh -p {ssh_port} root@{ssh_host}")
+
+    return 0
 
 @parser.command(
     argument("instance_id", help="id of instance to attach to", type=int),
