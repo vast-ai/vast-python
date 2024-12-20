@@ -29,7 +29,8 @@ import logging
 import textwrap
 from pathlib import Path
 import warnings
-
+import paramiko
+from scp import SCPClient
 ARGS = None
 TABCOMPLETE = False
 try:
@@ -930,12 +931,55 @@ def get_ssh_key(argstr):
 
     return ssh_key
 
+@parser.command(
+    argument("src_directory"),
+    argument("dest_directory"),
+)
+def magic__build(args):
+    src_directory = args.src_directory
+    dest_directory = args.dest_directory
+    
+    print("Attempting to connect...")
+    ssh = paramiko.SSHClient()
+    ssh.load_system_host_keys()
+    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
+    try:
+        ssh.connect(
+            hostname="193.69.10.19", 
+            username="root",
+            port=50910,
+            timeout=10
+        )
+        
+        print("Connected! Starting file transfer...")
+        with SCPClient(ssh.get_transport()) as scp:
+            scp.put(src_directory, dest_directory, recursive=True)
+        print("Transfer complete!")
+        
+        # Build Docker image
+        print("Building Docker image...")
+        docker_build_cmd = f"docker build -t my_container {dest_directory}"
+        stdin, stdout, stderr = ssh.exec_command(docker_build_cmd)
+        print(stdout.read().decode())
+        
+        # Run Docker container
+        print("Running Docker container...")
+        docker_run_cmd = "docker run -d my_container"
+        stdin, stdout, stderr = ssh.exec_command(docker_run_cmd)
+        print(stdout.read().decode())
+        
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+    finally:
+        ssh.close()
 
 @parser.command(
     argument("instance_id", help="id of instance to attach to", type=int),
     argument("ssh_key", help="ssh key to attach to instance", type=str),
     usage="vastai attach instance_id ssh_key",
     help="Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key",
+
     epilog=deindent("""
         Attach an ssh key to an instance. This will allow you to connect to the instance with the ssh key.
 
