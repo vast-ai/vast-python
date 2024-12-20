@@ -1181,8 +1181,17 @@ def magic_build(args):
         return 1
 
     # Select best instance
-    instance = r.json()["offers"][0]
-    instance_id = instance["id"]
+    import random
+
+    offers = r.json()["offers"]
+    num_offers = len(offers)
+
+    if num_offers > 0:
+        random_index = random.randint(0, num_offers - 1)
+        instance = offers[random_index]
+        instance_id = instance["id"]
+    else:
+        raise ValueError("No offers available to select from")
     
     # Create instance
     print(f"Creating instance {instance_id}...")
@@ -1228,6 +1237,38 @@ def magic_build(args):
     ssh_host = None
     ssh_port = None
 
+    while True:
+        url = apiurl(args, "/instances", {"owner": "me"})
+        r = http_get(args, url)
+        r.raise_for_status()
+        instances = r.json()["instances"]
+        instance = next((i for i in instances if i["id"] == instance_id), None)
+        if instance and instance.get("actual_status") == "running":
+            ssh_host = instance.get("public_ipaddr")
+            for port_mapping in instance.get("ports", {}).get("22/tcp", []):
+                if port_mapping.get("HostIp") == "0.0.0.0":
+                    ssh_port = port_mapping.get("HostPort")
+                    break
+            if ssh_host and ssh_port:
+                break
+        time.sleep(5)
+
+    print(f"Instance ready at {ssh_host}:{ssh_port}")
+    print("Attempting to copy files...")
+    
+    # Debug: Print the exact scp command we're going to run
+    scp_cmd = f"scp -o StrictHostKeyChecking=no -r -P {ssh_port} {src_directory} root@{ssh_host}:{args.copy_dest}"
+    print(f"Running command: {scp_cmd}")
+    
+    returncode, stdout, stderr = run_command(scp_cmd)
+    if stdout:
+        print("stdout:", stdout)
+    if stderr:
+        print("stderr:", stderr)
+    
+    if returncode != 0:
+        print(f"Error copying files (return code: {returncode})")
+        return 1
     # instance_id = 14477533
 
 
