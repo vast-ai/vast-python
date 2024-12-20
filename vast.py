@@ -987,6 +987,57 @@ def run_command(cmd: str) -> tuple[int, str, str]:
     stdout, stderr = process.communicate()
     return process.returncode, stdout, stderr
 
+def install_docker_compose(ssh_host, ssh_port):
+    """Install Docker Compose on the remote instance if not already installed.
+    
+    Args:
+        ssh_host (str): Remote host address
+        ssh_port (int): SSH port number
+        
+    Returns:
+        bool: True if successful, False if failed
+    """
+    # Check if docker-compose is installed
+    check_cmd = f"ssh -p {ssh_port} root@{ssh_host} 'which docker-compose || echo not_found'"
+    returncode, stdout, stderr = run_command(check_cmd)
+    
+    if "not_found" in stdout:
+        print("Installing Docker Compose...")
+        
+        # Commands to install Docker Compose
+        install_commands = [
+            # Install Docker Compose using apt
+            'apt-get update',
+            'apt-get install -y docker-compose-plugin',
+            # Create symlink for compatibility with older docker-compose command
+            'ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose',
+            # Make it executable
+            'chmod +x /usr/local/bin/docker-compose'
+        ]
+        
+        # Run installation commands
+        install_cmd = " && ".join(install_commands)
+        ssh_cmd = f"ssh -p {ssh_port} root@{ssh_host} '{install_cmd}'"
+        returncode, stdout, stderr = run_command(ssh_cmd)
+        
+        if returncode != 0:
+            print(f"Error installing Docker Compose: {stderr}")
+            return False
+            
+        # Verify installation
+        verify_cmd = f"ssh -p {ssh_port} root@{ssh_host} 'docker-compose --version'"
+        returncode, stdout, stderr = run_command(verify_cmd)
+        
+        if returncode != 0:
+            print(f"Error verifying Docker Compose installation: {stderr}")
+            return False
+            
+        print("Docker Compose installed successfully")
+    else:
+        print("Docker Compose is already installed")
+    
+    return True
+
 @parser.command(
     argument("src_directory", help="Source directory containing Dockerfile or docker-compose.yml", type=str),
     argument("--image", help="Base docker image to use (default: pytorch/pytorch:latest)", type=str, default="pytorch/pytorch:latest"),
@@ -1142,7 +1193,7 @@ def magic_build(args):
 
     print(f"Instance ready at {ssh_host}:{ssh_port}")
 
-    # Transfer files using scp
+
     print(f"Copying files to instance...")
     scp_cmd = f"scp -r -P {ssh_port} {src_directory} root@{ssh_host}:{args.copy_dest}"
     returncode, stdout, stderr = run_command(scp_cmd)
@@ -1150,8 +1201,11 @@ def magic_build(args):
         print(f"Error copying files: {stderr}")
         return 1
 
-    # Build and run using ssh
+    # If using docker-compose, ensure it's installed
     if os.path.exists(compose_path):
+        if not install_docker_compose(ssh_host, ssh_port):
+            print("Failed to install Docker Compose")
+            return 1
         cmd = f"cd {args.copy_dest} && docker-compose up -d"
     else:
         cmd = f"cd {args.copy_dest} && docker build -t app . && docker run -d app"
