@@ -1167,7 +1167,6 @@ def magic_build(args):
         "num_gpus": {"eq": args.gpus},
         "reliability": {"gt": 0.98},
         "direct_port_count": {"gte": len(ports) if ports else 2},
-        "disk_space": {"gte": args.disk},
         "dph": {"lte": args.price}
     }
 
