@@ -946,7 +946,7 @@ def magic__build(args):
     
     try:
         ssh.connect(
-            hostname="193.69.10.19", 
+            hostname="IP_GOES_HERE", 
             username="root",
             port=50910,
             timeout=10
