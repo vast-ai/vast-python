@@ -1085,7 +1085,6 @@ def parse_env_magic(env_str, ports):
 @parser.command(
     argument("src_directory", help="Source directory containing Dockerfile or docker-compose.yml", type=str),
     argument("--image", help="Base docker image to use (default: pytorch/pytorch:latest)", type=str, default="pytorch/pytorch:latest"),
-    argument("--disk", help="Size of disk in GB (default: 32)", type=float, default=32),
     argument("--price", help="Maximum price per GPU in $/hour (default: 0.2)", type=float, default=0.2),
     argument("--gpus", help="Number of GPUs (default: 1)", type=int, default=1),
     argument("--copy-dest", help="Destination path on instance (default: /root/build)", type=str, default="/root/build"),
@@ -1198,7 +1197,6 @@ def magic_build(args):
         "client_id": "me",
         "image": "docker.io/vastai/kvm:ubuntu_terminal",  # Using the known working image
         "env": env,
-        "disk": args.disk if args.disk else 0,
         "image_login": None,
         "python_utf8": False,
         "lang_utf8": False,
