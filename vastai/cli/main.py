@@ -3,7 +3,9 @@ import sys
 import os
 import json
 import requests
+from datetime import datetime, timezone
 
+from vastai.api.client import is_search_quota_exceeded
 from vastai.cli.parser import apwrap, argument, MyWideHelpFormatter, set_completers
 from vastai.cli.util import (
     APIKEY_FILE, TFAKEY_FILE, VERSION, server_url_default, api_key_guard,
@@ -27,6 +29,17 @@ def _is_tfa_session_expired(status_code, errmsg):
         (status_code == 401 and errmsg == "Invalid user key")
         or (status_code == 404 and errmsg == "Session expired. Please log in again.")
     )
+
+
+def with_quota_reset(response, errmsg):
+    """Append the reset time from ``X-RateLimit-Reset`` to a search quota denial's message."""
+    if not is_search_quota_exceeded(response):
+        return errmsg
+    try:
+        reset = datetime.fromtimestamp(int(response.headers["X-RateLimit-Reset"]), timezone.utc)
+    except (KeyError, ValueError):
+        return errmsg
+    return f"{errmsg}. Resets at {reset:%Y-%m-%d %H:%M} UTC."
 
 
 def read_key(path):
@@ -234,7 +247,7 @@ def run_command(args):
                     print("Run `vastai tfa login` to start a new 2FA session and try again.")
                     break
 
-            _emit_error(args, e.response.status_code, errmsg)
+            _emit_error(args, e.response.status_code, with_quota_reset(e.response, errmsg))
             break
 
         except ValueError as e:

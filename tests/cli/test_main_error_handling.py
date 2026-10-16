@@ -128,3 +128,19 @@ class TestRunCommandSessionExpiredRetry:
         assert func.call_count == 1
         err = capsys.readouterr().err
         assert "Failed with error 404: Session expired. Please log in again." in err
+
+
+class TestSearchQuotaDenial:
+    def test_prints_message_with_reset_time(self, capsys):
+        resp = MagicMock()
+        resp.status_code = 429
+        resp.json.return_value = {"error": "search_quota_exceeded", "msg": "Daily search row quota exhausted"}
+        resp.headers = {"X-RateLimit-Reset": "1792195200"}
+        func = MagicMock(side_effect=[HTTPError(response=resp)])
+
+        run_command(_args(func=func))
+
+        assert func.call_count == 1
+        assert capsys.readouterr().err.strip() == (
+            "Failed with error 429: Daily search row quota exhausted. Resets at 2026-10-17 00:00 UTC."
+        )
