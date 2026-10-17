@@ -335,6 +335,26 @@ class hidden_aliases(object):
     def append(self, x):
         self.l.append(x)
 
+def is_search_quota_exceeded(r):
+    """A daily search quota 429 lasts until UTC midnight, so retrying it just burns requests."""
+    try:
+        return r.json().get("error") == "search_quota_exceeded"
+    except (ValueError, AttributeError):
+        return False
+
+def retry_delay(r, backoff):
+    """Seconds to wait before retrying a 429, honoring Retry-After; None to give up.
+
+    A search quota 429 or a Retry-After over 60s is not retried.
+    """
+    if is_search_quota_exceeded(r):
+        return None
+    try:
+        wait = float(r.headers["Retry-After"])
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return backoff
+    return wait if wait <= 60 else None
+
 def http_request(verb, args, req_url, headers: dict[str, str] | None = None, json_data = None):
     if not headers:
         headers = apiheaders(args)
@@ -362,11 +382,11 @@ def http_request(verb, args, req_url, headers: dict[str, str] | None = None, jso
         else:
             r = session.send(prep)
 
-        if (r.status_code == 429):
-            time.sleep(t)
-            t *= 1.5
-        else:
+        delay = retry_delay(r, t) if r.status_code == 429 else None
+        if delay is None or i == args.retry - 1:
             break
+        time.sleep(delay)
+        t *= 1.5
     return r
 
 def http_get(args, req_url, headers = None, json = None):

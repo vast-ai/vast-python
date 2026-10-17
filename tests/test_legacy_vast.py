@@ -88,3 +88,29 @@ def test_http_request_preserves_explicit_headers(legacy_vast):
 
     prepared_request = send.call_args.args[0]
     assert prepared_request.headers["Authorization"] == "Bearer override"
+
+
+def test_http_request_does_not_retry_search_quota_429(legacy_vast):
+    args = SimpleNamespace(api_key="secret", retry=3, explain=False, curl=False)
+    legacy_vast.ARGS = args
+    response = SimpleNamespace(status_code=429, json=lambda: {"error": "search_quota_exceeded"})
+
+    with patch.object(legacy_vast.requests.Session, "send", return_value=response) as send:
+        result = legacy_vast.http_post(args, "https://example.test/api/v0/bundles/")
+
+    assert result is response
+    assert send.call_count == 1
+
+
+def test_http_request_waits_retry_after_on_429(legacy_vast):
+    args = SimpleNamespace(api_key="secret", retry=3, explain=False, curl=False)
+    legacy_vast.ARGS = args
+    limited = SimpleNamespace(status_code=429, headers={"Retry-After": "2"}, json=lambda: {})
+    ok = SimpleNamespace(status_code=200)
+
+    with patch.object(legacy_vast.requests.Session, "send", side_effect=[limited, ok]), \
+         patch.object(legacy_vast.time, "sleep") as sleep:
+        result = legacy_vast.http_get(args, "https://example.test/api/v0/instances")
+
+    assert result is ok
+    sleep.assert_called_once_with(2.0)

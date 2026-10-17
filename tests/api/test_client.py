@@ -152,6 +152,53 @@ class TestRetryLogic:
 
     @patch("vastai.api.client.time.sleep")
     @patch("vastai.api.client.VastSession")
+    def test_search_quota_429_is_not_retried(self, mock_session_cls, mock_sleep):
+        mock_session = MagicMock()
+        mock_session_cls.return_value = mock_session
+        resp_429 = MagicMock()
+        resp_429.status_code = 429
+        resp_429.json.return_value = {"error": "search_quota_exceeded"}
+        mock_session.send.return_value = resp_429
+
+        c = VastClient(api_key=None, retry=3)
+        result = c._request("POST", "https://example.com/api/v0/bundles/", {})
+
+        assert result is resp_429
+        assert mock_session.send.call_count == 1
+        mock_sleep.assert_not_called()
+
+    @patch("vastai.api.client.time.sleep")
+    @patch("vastai.api.client.VastSession")
+    def test_429_waits_server_retry_after(self, mock_session_cls, mock_sleep):
+        mock_session = MagicMock()
+        mock_session_cls.return_value = mock_session
+        resp_429 = MagicMock(status_code=429, headers={"Retry-After": "7"})
+        resp_429.json.return_value = {"error": "rate_limited"}
+        resp_200 = MagicMock(status_code=200)
+        mock_session.send.side_effect = [resp_429, resp_200]
+
+        result = VastClient(api_key=None, retry=3)._request("GET", "https://example.com", {})
+
+        assert result is resp_200
+        mock_sleep.assert_called_once_with(7.0)
+
+    @patch("vastai.api.client.time.sleep")
+    @patch("vastai.api.client.VastSession")
+    def test_429_with_long_retry_after_is_returned(self, mock_session_cls, mock_sleep):
+        mock_session = MagicMock()
+        mock_session_cls.return_value = mock_session
+        resp_429 = MagicMock(status_code=429, headers={"Retry-After": "3600"})
+        resp_429.json.return_value = {"error": "rate_limited"}
+        mock_session.send.return_value = resp_429
+
+        result = VastClient(api_key=None, retry=3)._request("GET", "https://example.com", {})
+
+        assert result is resp_429
+        assert mock_session.send.call_count == 1
+        mock_sleep.assert_not_called()
+
+    @patch("vastai.api.client.time.sleep")
+    @patch("vastai.api.client.VastSession")
     def test_stops_on_non_429(self, mock_session_cls, mock_sleep):
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session

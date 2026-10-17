@@ -25,6 +25,9 @@ VAST_DOMAIN = "vast.ai"
 # 429 = rate limited; 502/503/504 = gateway/upstream errors that usually clear.
 _RETRYABLE_STATUS = {429, 502, 503, 504}
 
+# Longest server Retry-After we wait out inline; a longer one is returned to the caller.
+_MAX_RETRY_AFTER_SECONDS = 60
+
 # Transport-level exceptions worth retrying (network hiccups, slow peers).
 # Other requests.RequestException subclasses (e.g. InvalidURL, TooManyRedirects)
 # propagate immediately — retrying them would just burn time.
@@ -78,6 +81,35 @@ class VastSession(requests.Session):
             return False
         a, b = (origin.hostname or "").lower(), (target.hostname or "").lower()
         return bool(a) and (a == b or (in_vast_domain(a) and in_vast_domain(b)))
+
+
+def is_search_quota_exceeded(r) -> bool:
+    """Whether ``r`` is a daily search quota 429.
+
+    The quota only resets at UTC midnight, so retrying it just burns requests.
+    """
+    if r.status_code != 429:
+        return False
+    try:
+        return r.json().get("error") == "search_quota_exceeded"
+    except (ValueError, AttributeError):
+        return False
+
+
+def retry_delay(r, backoff: float) -> Optional[float]:
+    """Seconds to wait before retrying ``r``, or None when it should not be retried.
+
+    Honors the server's ``Retry-After`` (rate limit token refill) and falls back to
+    ``backoff`` when it is absent or not a number. A search quota 429 or a wait over
+    ``_MAX_RETRY_AFTER_SECONDS`` is not retried.
+    """
+    if is_search_quota_exceeded(r):
+        return None
+    try:
+        wait = float(r.headers["Retry-After"])
+    except (KeyError, TypeError, ValueError):
+        return backoff
+    return wait if wait <= _MAX_RETRY_AFTER_SECONDS else None
 
 
 def port_of(parts) -> Optional[int]:
@@ -138,7 +170,7 @@ class VastClient:
         """Execute HTTP request with retry/timeout/exception handling.
 
         Retries are attempted on:
-          - ``_RETRYABLE_STATUS`` codes (429, 502, 503, 504)
+          - ``_RETRYABLE_STATUS`` codes (429, 502, 503, 504), waiting per ``retry_delay``
           - ``_RETRYABLE_EXC`` transport exceptions (ConnectionError, Timeout)
 
         After exhausting retries, the last response is returned (for status-code
@@ -171,8 +203,9 @@ class VastClient:
                 t *= 1.5
                 continue
 
-            if r.status_code in _RETRYABLE_STATUS and i < self.retry - 1:
-                time.sleep(t)
+            delay = retry_delay(r, t) if r.status_code in _RETRYABLE_STATUS else None
+            if delay is not None and i < self.retry - 1:
+                time.sleep(delay)
                 t *= 1.5
                 continue
             break
