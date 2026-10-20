@@ -359,6 +359,32 @@ class TestUpdateTemplate:
         assert payload["hash_id"] == "h"
         assert result == {"success": True, "template": {"id": 8}}
 
+    def test_prefers_the_callers_own_row_when_hashes_collide(self, sdk):
+        listing = MagicMock()
+        listing.json.return_value = {"success": True, "templates": [
+            {"id": 41, "hash_id": "h", "creator_id": 999},
+            {"id": 42, "hash_id": "h", "creator_id": 7},
+        ]}
+        me = MagicMock()
+        me.json.return_value = {"id": 7}
+        sdk.client.get.side_effect = lambda path, **kwargs: {"/template/": listing, "/users/current": me}[path]
+        sdk.client.put.return_value.json.return_value = {"success": True, "template": {"id": 43}}
+        sdk.update_template(hash_id="h", image="img")
+        assert sdk.client.put.call_args.kwargs["json_data"]["id"] == 42
+
+    def test_falls_back_to_the_first_row_when_none_is_the_callers(self, sdk):
+        listing = MagicMock()
+        listing.json.return_value = {"success": True, "templates": [
+            {"id": 41, "hash_id": "h", "creator_id": 999},
+            {"id": 42, "hash_id": "h", "creator_id": 998},
+        ]}
+        me = MagicMock()
+        me.json.return_value = {"id": 7}
+        sdk.client.get.side_effect = lambda path, **kwargs: {"/template/": listing, "/users/current": me}[path]
+        sdk.client.put.return_value.json.return_value = {"success": True, "template": {"id": 43}}
+        sdk.update_template(hash_id="h", image="img")
+        assert sdk.client.put.call_args.kwargs["json_data"]["id"] == 41
+
     def test_unknown_hash_raises_value_error_before_put(self, sdk):
         sdk.client.get.return_value.json.return_value = {"success": False, "msg": "No templates found"}
         with pytest.raises(ValueError, match="No template found with hash_id nope"):

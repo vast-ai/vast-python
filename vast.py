@@ -7742,6 +7742,11 @@ def update__template(args):
     if not matches:
         print(f"No template found with hash_id {args.HASH_ID}")
         return 1
+    if len(matches) > 1:
+        me = http_get(args, apiurl(args, "/users/current"), headers=headers)
+        me.raise_for_status()
+        own = [match for match in matches if match.get("creator_id") == me.json().get("id")]
+        matches = own or matches
     jup_direct = args.jupyter and args.direct
     ssh_direct = args.ssh and args.direct
     use_ssh = args.ssh or args.jupyter
