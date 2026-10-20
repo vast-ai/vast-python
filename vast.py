@@ -2638,6 +2638,8 @@ def create__subaccount(args):
 
         Notes:
           - You cannot create a team from within another team account.
+          - Your API key keeps acting on your personal account. To work in the team,
+            switch to it in the console and create an API key there.
 
         For more details, see:
         https://vast.ai/docs/teams-quickstart

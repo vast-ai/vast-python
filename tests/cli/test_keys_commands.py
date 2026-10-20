@@ -1,6 +1,7 @@
 """Integration tests for SSH/API key CLI commands with mocked HTTP."""
 
 import pytest
+from requests.exceptions import HTTPError
 
 
 class TestShowSshKeys:
@@ -67,3 +68,14 @@ class TestDeleteApiKey:
         patch_get_client.delete.assert_called_once()
         call_args = patch_get_client.delete.call_args
         assert "/auth/apikeys/1/" in call_args[0][0]
+
+
+class TestCreateApiKey:
+    def test_denied_mint_propagates_server_error(self, parse_argv, patch_get_client, mock_response, tmp_path):
+        """A rejected mint must reach the CLI error handler, which prints the server's reason."""
+        perms = tmp_path / "perms.json"
+        perms.write_text('{"api": {"user_write": {"api.team": {"POST": {}}}}}')
+        patch_get_client.post.return_value = mock_response(403, {"error": "delegation_exceeds_issuer", "msg": "no explicit grant"})
+        args = parse_argv(["create", "api-key", "--name", "c", "--permission_file", str(perms)])
+        with pytest.raises(HTTPError):
+            args.func(args)

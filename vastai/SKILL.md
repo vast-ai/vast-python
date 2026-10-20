@@ -298,7 +298,7 @@ vastai show deposit <id>                                 # Reserved instance dep
 ### Teams
 
 ```bash
-vastai create team --name "myteam"                       # Create team
+vastai create team --team-name "myteam"                  # Create team; your key stays on your personal account
 vastai show members                                      # List team members
 vastai invite member --email user@example.com            # Invite member
 vastai remove member <id>                                # Remove member
