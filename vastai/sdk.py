@@ -1041,7 +1041,11 @@ class VastAI:
         extra_filters: Optional[dict] = None,
         readme_visible: Optional[bool] = None, private: Optional[bool] = None,
     ) -> dict:
-        """Update an existing template by creating a new version of it with a new hash_id."""
+        """Update an existing template by creating a new version of it with a new hash_id.
+
+        Raises:
+            ValueError: No template with this hash_id is visible to the caller.
+        """
         return offers.update_template(
             self.client, hash_id=hash_id,
             name=name, image=image, image_tag=image_tag, href=href,
