@@ -137,9 +137,9 @@ class TestUpdateTemplate:
             "success": True, "template": {"id": 43, "hash_id": "def456"}
         })
         args = parse_argv(["update", "template", "abc123", "--name", "Renamed", "--no-default"])
-        args.func(args)
+        assert args.func(args) is None
         get_args = patch_get_client.get.call_args
-        assert "/template/" in get_args[0][0]
+        assert get_args[0][0] == "/template/"
         assert get_args[1]["query_args"]["select_filters"] == {"hash_id": {"eq": "abc123"}}
         put_args = patch_get_client.put.call_args
         assert put_args[0][0] == "/api/v1/template/"
@@ -151,6 +151,26 @@ class TestUpdateTemplate:
     def test_update_template_unknown_hash_does_not_put(self, parse_argv, patch_get_client, mock_response, capsys):
         patch_get_client.get.return_value = mock_response(200, {"success": False, "msg": "No templates found"})
         args = parse_argv(["update", "template", "nope", "--no-default"])
-        args.func(args)
+        assert args.func(args) == 1
         patch_get_client.put.assert_not_called()
-        assert "nope" in capsys.readouterr().out
+        assert capsys.readouterr().out.strip() == "No template found with hash_id nope"
+
+    def test_update_template_failed_response_prints_msg_and_fails(self, parse_argv, patch_get_client, mock_response, capsys):
+        patch_get_client.get.return_value = mock_response(200, {
+            "success": True, "templates": [{"id": 42, "hash_id": "abc123"}]
+        })
+        patch_get_client.put.return_value = mock_response(200, {"success": False, "msg": "Template name is required"})
+        args = parse_argv(["update", "template", "abc123", "--no-default"])
+        assert args.func(args) == 1
+        assert capsys.readouterr().out.strip() == "Template name is required"
+
+    def test_update_template_http_error_prints_api_msg_and_fails(self, parse_argv, patch_get_client, mock_response, capsys):
+        patch_get_client.get.return_value = mock_response(200, {
+            "success": True, "templates": [{"id": 42, "hash_id": "abc123"}]
+        })
+        patch_get_client.put.return_value = mock_response(400, {
+            "success": False, "error": "invalid_args", "msg": "Template ID is required for update"
+        })
+        args = parse_argv(["update", "template", "abc123", "--no-default"])
+        assert args.func(args) == 1
+        assert capsys.readouterr().out.strip() == "Template ID is required for update"

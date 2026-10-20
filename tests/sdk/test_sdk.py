@@ -344,6 +344,28 @@ class TestCreateTemplate:
             assert kw["extra_filters"] == {"num_gpus": {"eq": "2"}}
 
 
+class TestUpdateTemplate:
+    def test_resolves_id_from_hash_then_puts_v1(self, sdk):
+        sdk.client.get.return_value.json.return_value = {
+            "success": True, "templates": [{"id": 7, "hash_id": "h"}]
+        }
+        sdk.client.put.return_value.json.return_value = {"success": True, "template": {"id": 8}}
+        result = sdk.update_template(hash_id="h", image="img")
+        assert sdk.client.get.call_args[0][0] == "/template/"
+        assert sdk.client.get.call_args.kwargs["query_args"]["select_filters"] == {"hash_id": {"eq": "h"}}
+        assert sdk.client.put.call_args[0][0] == "/api/v1/template/"
+        payload = sdk.client.put.call_args.kwargs["json_data"]
+        assert payload["id"] == 7
+        assert payload["hash_id"] == "h"
+        assert result == {"success": True, "template": {"id": 8}}
+
+    def test_unknown_hash_raises_value_error_before_put(self, sdk):
+        sdk.client.get.return_value.json.return_value = {"success": False, "msg": "No templates found"}
+        with pytest.raises(ValueError, match="No template found with hash_id nope"):
+            sdk.update_template(hash_id="nope")
+        sdk.client.put.assert_not_called()
+
+
 # ---------------------------------------------------------------------------
 # copy — vast URL parsing
 # ---------------------------------------------------------------------------

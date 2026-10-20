@@ -585,8 +585,10 @@ def update__template(args):
             print(f"updated template: {json.dumps(rj['template'], indent=1)}")
         else:
             print(rj.get("msg", "template update failed"))
+            return 1
     except Exception as e:
         print(_response_msg(getattr(e, "response", None)) or str(e))
+        return 1
 
 
 def _response_msg(response):

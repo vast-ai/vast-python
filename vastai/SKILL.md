@@ -265,7 +265,7 @@ vastai delete scheduled-job <id>                         # Delete scheduled job
 ```bash
 vastai search templates "pytorch"                        # Search templates
 vastai create template --name "x" --image "img"          # Create template
-vastai update template <hash_id> ...                    # Update template (edits create a new version)
+vastai update template <hash_id> ...                     # Update template (edits create a new version)
 vastai delete template <id>                              # Delete template
 ```
 

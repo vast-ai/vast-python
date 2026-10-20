@@ -7793,7 +7793,8 @@ def update__template(args):
         if rj["success"]:
             print(f"updated template: {json.dumps(rj['template'], indent=1)}")
         else:
-            print("template update failed")
+            print(rj.get("msg", "template update failed"))
+            return 1
     except requests.exceptions.JSONDecodeError as e:
         print(str(e))
         #print(r.text)
