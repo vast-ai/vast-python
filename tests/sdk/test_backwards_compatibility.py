@@ -26,7 +26,8 @@ class StubResponse:
     status_code = 200
 
     def json(self):
-        return {"offers": [], "instances": [], "templates": []}
+        # update_template resolves its id from this listing before it PUTs.
+        return {"offers": [], "instances": [], "templates": [{"id": 1, "hash_id": "h"}]}
 
     def raise_for_status(self):
         return None
