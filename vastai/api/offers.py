@@ -381,6 +381,10 @@ def update_template(client: VastClient, hash_id: str, name: str = None,
                     private: bool = True) -> dict:
     """Update an existing template.
 
+    Resolves the template's numeric id from its hash_id first; the v1 update
+    endpoint requires both. Edits always produce a new template version with a
+    new hash_id, so send the full template rather than only the changed fields.
+
     Args:
         client: VastClient instance.
         hash_id: Hash ID of the template to update.
@@ -388,8 +392,12 @@ def update_template(client: VastClient, hash_id: str, name: str = None,
 
     Returns:
         Response dict with updated template info.
+
+    Raises:
+        ValueError: No template with this hash_id is visible to the caller.
     """
     template = {
+        "id": resolve_template_id(client, hash_id),
         "hash_id": hash_id,
         "name": name,
         "image": image,
@@ -412,9 +420,28 @@ def update_template(client: VastClient, hash_id: str, name: str = None,
         "desc": desc,
         "private": private,
     }
-    r = client.put("/template/", json_data=template)
+    r = client.put("/api/v1/template/", json_data=template)
     r.raise_for_status()
     return r.json()
+
+
+def resolve_template_id(client: VastClient, hash_id: str) -> int:
+    """Return the numeric id of the template whose hash_id matches.
+
+    Args:
+        client: VastClient instance.
+        hash_id: Hash ID of the template to look up.
+
+    Returns:
+        The template's numeric id.
+
+    Raises:
+        ValueError: No template with this hash_id is visible to the caller.
+    """
+    matches = search_templates(client, {"hash_id": {"eq": hash_id}})
+    if not matches:
+        raise ValueError(f"No template found with hash_id {hash_id}")
+    return matches[0]["id"]
 
 
 def delete_template(client: VastClient, hash_id: str = None,

@@ -126,3 +126,31 @@ class TestDeleteTemplate:
         args = parse_argv(["delete", "template", "--template-id", "42"])
         args.func(args)
         patch_get_client.delete.assert_called_once()
+
+
+class TestUpdateTemplate:
+    def test_update_template_resolves_id_then_puts_v1(self, parse_argv, patch_get_client, mock_response, capsys):
+        patch_get_client.get.return_value = mock_response(200, {
+            "success": True, "templates": [{"id": 42, "hash_id": "abc123"}]
+        })
+        patch_get_client.put.return_value = mock_response(200, {
+            "success": True, "template": {"id": 43, "hash_id": "def456"}
+        })
+        args = parse_argv(["update", "template", "abc123", "--name", "Renamed", "--no-default"])
+        args.func(args)
+        get_args = patch_get_client.get.call_args
+        assert "/template/" in get_args[0][0]
+        assert get_args[1]["query_args"]["select_filters"] == {"hash_id": {"eq": "abc123"}}
+        put_args = patch_get_client.put.call_args
+        assert put_args[0][0] == "/api/v1/template/"
+        assert put_args[1]["json_data"]["id"] == 42
+        assert put_args[1]["json_data"]["hash_id"] == "abc123"
+        assert put_args[1]["json_data"]["name"] == "Renamed"
+        assert "updated template" in capsys.readouterr().out
+
+    def test_update_template_unknown_hash_does_not_put(self, parse_argv, patch_get_client, mock_response, capsys):
+        patch_get_client.get.return_value = mock_response(200, {"success": False, "msg": "No templates found"})
+        args = parse_argv(["update", "template", "nope", "--no-default"])
+        args.func(args)
+        patch_get_client.put.assert_not_called()
+        assert "nope" in capsys.readouterr().out

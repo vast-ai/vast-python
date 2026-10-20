@@ -7734,7 +7734,14 @@ def update__team_role(args):
     """)
 )
 def update__template(args):
-    url = apiurl(args, f"/template/")
+    url = apiurl(args, "/api/v1/template/")
+    lookup_url = apiurl(args, "/template/", {"select_cols": ["*"], "select_filters": {"hash_id": {"eq": args.HASH_ID}}})
+    lookup = http_get(args, lookup_url, headers=headers)
+    lookup.raise_for_status()
+    matches = lookup.json().get("templates", [])
+    if not matches:
+        print(f"No template found with hash_id {args.HASH_ID}")
+        return 1
     jup_direct = args.jupyter and args.direct
     ssh_direct = args.ssh and args.direct
     use_ssh = args.ssh or args.jupyter
@@ -7750,6 +7757,7 @@ def update__template(args):
     
     extra_filters = parse_query(args.search_params, default_search_query, offers_fields, offers_alias, offers_mult)
     template = {
+        "id": matches[0]["id"],
         "hash_id": args.HASH_ID,
         "name" : args.name,
         "image" : args.image,

@@ -548,6 +548,10 @@ def create__template(args):
     argument("--public", help="make template available to public", action="store_true"),
     usage="vastai update template HASH_ID",
     help="Update an existing template",
+    epilog=deindent("""
+        Edits create a new version of the template with a new hash id; the original stays
+        valid for anyone already using it. Send the full template, not only the changed fields.
+    """),
 )
 def update__template(args):
     """Update an existing template."""
@@ -576,9 +580,20 @@ def update__template(args):
         if rj.get("success"):
             print(f"updated template: {json.dumps(rj['template'], indent=1)}")
         else:
-            print("template update failed")
+            print(rj.get("msg", "template update failed"))
     except Exception as e:
-        print(str(e))
+        print(_response_msg(getattr(e, "response", None)) or str(e))
+
+
+def _response_msg(response):
+    """Return the API's msg from an error response body, or None when there is none."""
+    if response is None:
+        return None
+    try:
+        body = response.json()
+    except ValueError:
+        return None
+    return body.get("msg") if isinstance(body, dict) else None
 
 
 @parser.command(
