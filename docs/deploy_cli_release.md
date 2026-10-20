@@ -19,28 +19,13 @@ git log $(git describe --tags --abbrev=0)..master --oneline
 - Only fixes/docs/chores → bump patch (`1.8.3` → `1.8.4`).
 - Format is `vX.Y.Z` with no leading zeros; CI only fires on that pattern.
 
-## 3. Confirm master is green
-
-Master commits have no checks of their own, so check the PRs that are shipping:
-
-```bash
-gh pr checks <PR#>   # for each PR in the log above
-```
-
-Then run the CI test set locally on master head, since each PR was tested
-without the others merged in:
-
-```bash
-cd tests && poetry install && poetry run pytest -q cli api sdk scripts
-```
-
-## 4. Tag and push
+## 3. Tag and push
 
 ```bash
 git tag vX.Y.Z && git push origin vX.Y.Z
 ```
 
-## 5. Verify
+## 4. Verify
 
 ```bash
 gh run watch --repo vast-ai/vast-cli   # publish workflow, all jobs green
