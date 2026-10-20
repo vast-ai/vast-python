@@ -551,6 +551,10 @@ def create__template(args):
     epilog=deindent("""
         Edits create a new version of the template with a new hash id; the original stays
         valid for anyone already using it. Send the full template, not only the changed fields.
+
+        Examples:
+
+        vastai update template c81e7ab0e928a508510d1979346de10d --name "tgi-llama2-7B-quantized" --image "ghcr.io/huggingface/text-generation-inference:1.0.3" --env "-p 3000:3000 -e MODEL_ARGS='--model-id TheBloke/Llama-2-7B-chat-GPTQ --quantize gptq'" --onstart-cmd 'wget -O - https://raw.githubusercontent.com/vast-ai/vast-pyworker/main/scripts/launch_tgi.sh | bash' --search_params "gpu_ram>=23 num_gpus=1 gpu_name=RTX_3090 inet_down>128 direct_port_count>3 disk_space>=192 driver_version>=535086005 rented=False" --disk_space 8.0 --ssh --direct
     """),
 )
 def update__template(args):
