@@ -39,8 +39,6 @@ def create__api_key(args):
         print("api-key created {}".format(result))
     except FileNotFoundError:
         print("Error: Permission file '{}' not found.".format(args.permission_file))
-    except Exception as e:
-        print("An unexpected error occurred:", e)
 
 
 @parser.command(
