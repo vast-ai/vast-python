@@ -498,6 +498,69 @@ class TestSendMetricsAndReset:
         assert m.model_metrics.workload_served == 9.0
         assert m.update_pending is True
 
+    async def test_send_metrics_reports_absolute_disk_usage_and_commits_baseline(
+        self, make_pyworker_metrics, make_metrics_aiohttp_post, metrics_worker_status_context
+    ) -> None:
+        """
+        Verifies the payload carries the absolute disk figure and a delivered report moves the baseline.
+
+        This test verifies by:
+        1. Starting from a known last_disk_usage with a larger current reading
+        2. Awaiting a successful __send_metrics_and_reset
+        3. Asserting disk_usage and additional_disk_usage in the body, and last_disk_usage advanced
+
+        Assumptions:
+        - metrics_worker_status_context patches get_disk_usage_GB to disk_gb
+        """
+        m = make_pyworker_metrics()
+        m.system_metrics.last_disk_usage = 4.0
+
+        mock_session, _ = make_metrics_aiohttp_post.session_ok()
+
+        with metrics_worker_status_context(m, mock_session, disk_gb=10.0):
+            await m._Metrics__send_metrics_and_reset()
+
+        body = mock_session.post.call_args[1]["json"]
+        assert body["disk_usage"] == 10.0
+        assert body["additional_disk_usage"] == 6.0
+        assert m.system_metrics.last_disk_usage == 10.0
+
+    async def test_send_metrics_keeps_disk_baseline_when_all_posts_fail(
+        self, make_pyworker_metrics, make_metrics_aiohttp_post, metrics_worker_status_context
+    ) -> None:
+        """
+        Verifies a failed report does not move the disk baseline, so its bytes ride the next delta.
+
+        This test verifies by:
+        1. Failing every POST attempt
+        2. Asserting last_disk_usage is unchanged while disk_usage holds the new reading
+        3. Sending successfully with a larger reading and asserting the delta spans both intervals
+
+        Assumptions:
+        - aiohttp.ClientResponseError is raised from raise_for_status path
+        """
+        m = make_pyworker_metrics()
+        m.system_metrics.last_disk_usage = 4.0
+
+        failing_session = MagicMock()
+        failing_session.post = MagicMock(
+            return_value=make_metrics_aiohttp_post.context_client_error(),
+        )
+        with metrics_worker_status_context(m, failing_session, disk_gb=10.0, mock_asyncio_sleep=True):
+            await m._Metrics__send_metrics_and_reset()
+
+        assert m.system_metrics.disk_usage == 10.0
+        assert m.system_metrics.last_disk_usage == 4.0
+
+        ok_session, _ = make_metrics_aiohttp_post.session_ok()
+        with metrics_worker_status_context(m, ok_session, disk_gb=12.0):
+            await m._Metrics__send_metrics_and_reset()
+
+        body = ok_session.post.call_args[1]["json"]
+        assert body["disk_usage"] == 12.0
+        assert body["additional_disk_usage"] == 8.0
+        assert m.system_metrics.last_disk_usage == 12.0
+
     async def test_send_metrics_retries_after_timeout_then_succeeds(
         self, make_pyworker_metrics, make_metrics_aiohttp_post, metrics_worker_status_context
     ) -> None:

@@ -424,7 +424,7 @@ class TestEndpointHandlerAbstract:
 
 
 class TestSystemMetrics:
-    """SystemMetrics.empty, disk usage helpers, and reset behavior."""
+    """SystemMetrics.empty and the disk usage helpers."""
 
     def test_empty_sets_loading_start_and_disk_from_helpers(self) -> None:
         """
@@ -449,20 +449,22 @@ class TestSystemMetrics:
         assert m.model_loading_start == 12345.0
         assert m.model_loading_time is None
         assert m.last_disk_usage == 99.5
+        assert m.disk_usage == 99.5
         assert m.additional_disk_usage == 0.0
         assert m.model_is_loaded is False
 
-    def test_update_disk_usage_sets_additional_and_last(self) -> None:
+    def test_update_disk_usage_sets_absolute_and_delta_without_moving_baseline(self) -> None:
         """
-        Verifies update_disk_usage computes delta from last_disk_usage.
+        Verifies update_disk_usage refreshes the absolute figure and the delta from last_disk_usage.
 
         This test verifies by:
         1. Constructing SystemMetrics with known last_disk_usage
         2. Patching get_disk_usage_GB to a larger value
-        3. Calling update_disk_usage and asserting additional_disk_usage and last
+        3. Asserting disk_usage, additional_disk_usage, and that last_disk_usage is untouched
 
         Assumptions:
         - get_disk_usage_GB is the source of current usage (mocked, no real psutil)
+        - The baseline only moves on commit_disk_usage, after a successful report
         """
         m = SystemMetrics(
             model_loading_start=0.0,
@@ -473,74 +475,64 @@ class TestSystemMetrics:
         )
         with patch.object(SystemMetrics, "get_disk_usage_GB", return_value=13.0):
             m.update_disk_usage()
-        assert m.last_disk_usage == 13.0
+        assert m.disk_usage == 13.0
         assert m.additional_disk_usage == 3.0
+        assert m.last_disk_usage == 10.0
 
-    def test_reset_clears_model_loading_time_when_matches_expected(self) -> None:
+    def test_update_disk_usage_accumulates_delta_until_committed(self) -> None:
         """
-        Verifies reset(None) clears model_loading_time when it is already None.
+        Verifies bytes from an unreported interval are carried into the next delta.
 
         This test verifies by:
-        1. Building metrics with model_loading_time None
-        2. Calling reset(None)
-        3. Asserting model_loading_time stays None
+        1. Updating twice with growing usage and no commit in between
+        2. Asserting the second delta spans both intervals
+        3. Committing, updating again, and asserting the delta restarts from the commit
 
         Assumptions:
-        - Condition is equality check against expected argument
+        - A failed report never calls commit_disk_usage
         """
         m = SystemMetrics(
             model_loading_start=0.0,
             model_loading_time=None,
-            last_disk_usage=0.0,
+            last_disk_usage=10.0,
             additional_disk_usage=0.0,
-            model_is_loaded=True,
+            model_is_loaded=False,
         )
-        m.reset(None)
-        assert m.model_loading_time is None
+        with patch.object(SystemMetrics, "get_disk_usage_GB", return_value=13.0):
+            m.update_disk_usage()
+        with patch.object(SystemMetrics, "get_disk_usage_GB", return_value=15.0):
+            m.update_disk_usage()
+        assert m.additional_disk_usage == 5.0
+        assert m.last_disk_usage == 10.0
 
-    def test_reset_clears_model_loading_time_when_equal_to_expected(self) -> None:
+        m.commit_disk_usage()
+        assert m.last_disk_usage == 15.0
+        with patch.object(SystemMetrics, "get_disk_usage_GB", return_value=16.0):
+            m.update_disk_usage()
+        assert m.additional_disk_usage == 1.0
+
+    def test_update_disk_usage_passes_negative_delta_through(self) -> None:
         """
-        Verifies reset(expected) sets model_loading_time to None when it equals expected.
+        Verifies a shrinking filesystem yields a negative delta rather than being clamped.
 
         This test verifies by:
-        1. Setting model_loading_time to a known float
-        2. Calling reset with that same float
-        3. Asserting model_loading_time becomes None
+        1. Updating with usage below last_disk_usage
+        2. Asserting additional_disk_usage is negative and disk_usage is the new absolute
 
         Assumptions:
-        - Autoscaler one-shot semantics per data_types docstring
+        - Clamping, if any, is the consumer's job; the worker reports what it measured
         """
         m = SystemMetrics(
             model_loading_start=0.0,
-            model_loading_time=42.0,
-            last_disk_usage=0.0,
+            model_loading_time=None,
+            last_disk_usage=10.0,
             additional_disk_usage=0.0,
-            model_is_loaded=True,
+            model_is_loaded=False,
         )
-        m.reset(42.0)
-        assert m.model_loading_time is None
-
-    def test_reset_leaves_model_loading_time_when_expected_mismatch(self) -> None:
-        """
-        Verifies reset does not clear model_loading_time when value differs from expected.
-
-        This test verifies by:
-        1. Setting model_loading_time to 10.0
-        2. Calling reset(99.0)
-        3. Asserting model_loading_time remains 10.0
-
-        Assumptions:
-        - Inequality means no reset of loading time
-        """
-        m = SystemMetrics(
-            model_loading_start=0.0,
-            model_loading_time=10.0,
-            last_disk_usage=0.0,
-            additional_disk_usage=0.0,
-            model_is_loaded=True,
-        )
-        m.reset(99.0)
-        assert m.model_loading_time == 10.0
+        with patch.object(SystemMetrics, "get_disk_usage_GB", return_value=8.0):
+            m.update_disk_usage()
+        assert m.additional_disk_usage == -2.0
+        assert m.disk_usage == 8.0
 
     def test_get_disk_usage_gb_converts_psutil_used_bytes_to_gb(self) -> None:
         """
@@ -1025,10 +1017,12 @@ class TestWorkerStatusData:
             num_requests_working=9,
             num_requests_recieved=10,
             additional_disk_usage=11.0,
+            disk_usage=12.0,
             working_request_idxs=[1, 2],
             url="http://worker",
         )
         assert ws.id == 1
+        assert ws.disk_usage == 12.0
         assert ws.working_request_idxs == [1, 2]
         assert ws.url == "http://worker"
 

@@ -235,6 +235,7 @@ class SystemMetrics:
     last_disk_usage: float
     additional_disk_usage: float
     model_is_loaded: bool
+    disk_usage: float = 0.0
 
     @staticmethod
     def get_disk_usage_GB():
@@ -242,25 +243,24 @@ class SystemMetrics:
 
     @classmethod
     def empty(cls):
+        disk_usage = SystemMetrics.get_disk_usage_GB()
         return cls(
             model_loading_start=time.time(),
             model_loading_time=None,
-            last_disk_usage=SystemMetrics.get_disk_usage_GB(),
+            last_disk_usage=disk_usage,
             additional_disk_usage=0.0,
             model_is_loaded=False,
+            disk_usage=disk_usage,
         )
 
     def update_disk_usage(self):
-        disk_usage = SystemMetrics.get_disk_usage_GB()
-        self.additional_disk_usage = disk_usage - self.last_disk_usage
-        self.last_disk_usage = disk_usage
+        """Refresh the absolute figure; the delta is measured against the last successful report."""
+        self.disk_usage = SystemMetrics.get_disk_usage_GB()
+        self.additional_disk_usage = self.disk_usage - self.last_disk_usage
 
-    def reset(self, expected: float | None) -> None:
-        # autoscaler expects model_loading_time to be populated only once, when the instance has
-        # finished benchmarking and is ready to receive requests. This applies to restarted instances
-        # as well: they should send model_loading_time once when they are done loading
-        if self.model_loading_time == expected:
-            self.model_loading_time = None
+    def commit_disk_usage(self):
+        """Call once a report carrying the current figures was delivered."""
+        self.last_disk_usage = self.disk_usage
 
 
 @dataclass
@@ -363,6 +363,7 @@ class WorkerStatusData:
     num_requests_working: int
     num_requests_recieved: int
     additional_disk_usage: float
+    disk_usage: float
     working_request_idxs: list[int]
     url: str
 
