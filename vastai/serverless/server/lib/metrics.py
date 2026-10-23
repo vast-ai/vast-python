@@ -252,6 +252,7 @@ class Metrics:
                 num_requests_working=len(self.model_metrics.requests_working),
                 num_requests_recieved=len(self.model_metrics.requests_recieved),
                 additional_disk_usage=self.system_metrics.additional_disk_usage,
+                disk_usage=self.system_metrics.disk_usage,
                 working_request_idxs=self.model_metrics.working_request_idxs,
                 cur_capacity=0,
                 max_capacity=0,
@@ -306,4 +307,5 @@ class Metrics:
         if sent:
             self.update_pending = False
             self.model_metrics.reset()
+            self.system_metrics.commit_disk_usage()
             self.last_metric_update = time.time()
